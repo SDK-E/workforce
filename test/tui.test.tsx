@@ -57,6 +57,8 @@ test("task view renders status, risk, assignee, and objective", () => {
           managerId: "ceo",
           assigneeId: "engineer-1",
           reviewerId: "arm",
+          priority: 80,
+          dueAt: null,
           createdAt: company.createdAt,
           updatedAt: company.createdAt,
         },
@@ -64,7 +66,7 @@ test("task view renders status, risk, assignee, and objective", () => {
     />,
   );
   const frame = view.lastFrame() ?? "";
-  assert.match(frame, /\[verifying\] Verify the release/);
+  assert.match(frame, /\[verifying\] P80 · Verify the release/);
   assert.match(frame, /high risk/);
   assert.match(frame, /engineer-1/);
   view.unmount();

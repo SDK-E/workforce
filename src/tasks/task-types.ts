@@ -65,6 +65,8 @@ export interface TaskRecord {
   managerId: string;
   assigneeId: string | null;
   reviewerId: string | null;
+  priority: number;
+  dueAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -85,4 +87,36 @@ export interface CreateTaskInput {
   managerId: string;
   assigneeId?: string | null;
   reviewerId?: string | null;
+  priority?: number;
+  dueAt?: string | null;
+}
+
+export interface TaskRequirementVersion {
+  companyId: string;
+  taskId: string;
+  version: number;
+  objective: string;
+  nonGoals: string[];
+  acceptanceCriteria: string[];
+  capabilities: string[];
+  networkPolicy: Record<string, unknown>;
+  resourcePolicy: Record<string, unknown>;
+  changedBy: string;
+  changeReason: string;
+  checkpointId: string | null;
+  createdAt: string;
+}
+
+export interface UpdateTaskRequirementsInput {
+  companyId: string;
+  taskId: string;
+  objective: string;
+  nonGoals: string[];
+  acceptanceCriteria: string[];
+  capabilities: string[];
+  networkPolicy: Record<string, unknown>;
+  resourcePolicy: Record<string, unknown>;
+  changedBy: string;
+  changeReason: string;
+  checkpointId?: string | null;
 }

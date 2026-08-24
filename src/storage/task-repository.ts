@@ -6,16 +6,22 @@ import type { CompanyRepository } from "./company-repository.js";
 import type { WorkforceDatabase } from "./database.js";
 import { parseJson } from "./serialization.js";
 import { sanitizeTerminal } from "./sanitize-terminal.js";
+import { TaskRequirementRepository } from "../tasks/task-requirement-repository.js";
 
 export class TaskRepository {
+  readonly requirements: TaskRequirementRepository;
+
   constructor(
     private readonly database: WorkforceDatabase,
     private readonly companies: CompanyRepository,
     private readonly audit: AuditRepository,
-  ) {}
+  ) {
+    this.requirements = new TaskRequirementRepository(database, audit);
+  }
 
   create(input: CreateTaskInput): TaskRecord {
     this.companies.require(input.companyId);
+    this.validateRelationships(input);
     if (input.acceptanceCriteria.length === 0)
       throw new Error("A task requires acceptance criteria");
     const now = new Date().toISOString();
@@ -41,12 +47,15 @@ export class TaskRepository {
       managerId: input.managerId,
       assigneeId: input.assigneeId ?? null,
       reviewerId: input.reviewerId ?? null,
+      priority: input.priority ?? 50,
+      dueAt: input.dueAt ?? null,
       createdAt: now,
       updatedAt: now,
     };
     if (!task.objective) throw new Error("A task objective is required");
     this.database.transaction(() => {
       this.insert(task);
+      this.requirements.createInitial(task, "human");
       this.audit.append("task.created", "human", task.companyId, {
         taskId: task.id,
         objective: task.objective,
@@ -63,18 +72,30 @@ export class TaskRepository {
   }
 
   list(companyId: string, status?: TaskStatus, limit = 100): TaskRecord[] {
+    const bounded = Math.min(Math.max(limit, 1), 100);
     const rows = (
       status
         ? this.database.connection
             .prepare(
               "SELECT * FROM tasks WHERE company_id = ? AND status = ? ORDER BY updated_at DESC LIMIT ?",
             )
-            .all(companyId, status, limit)
+            .all(companyId, status, bounded)
         : this.database.connection
             .prepare("SELECT * FROM tasks WHERE company_id = ? ORDER BY updated_at DESC LIMIT ?")
-            .all(companyId, limit)
+            .all(companyId, bounded)
     ) as Record<string, unknown>[];
     return rows.map((row) => this.map(row));
+  }
+
+  addDependency(companyId: string, taskId: string, dependsOnTaskId: string, actorId: string): void {
+    if (!this.get(companyId, taskId) || !this.get(companyId, dependsOnTaskId))
+      throw new Error("Task dependencies must belong to the same company");
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare("INSERT INTO task_dependencies VALUES (?, ?, ?, ?)")
+        .run(companyId, taskId, dependsOnTaskId, new Date().toISOString());
+      this.audit.append("task.dependency-added", actorId, companyId, { taskId, dependsOnTaskId });
+    });
   }
 
   transition(
@@ -128,7 +149,8 @@ export class TaskRepository {
       (id, company_id, project_id, parent_task_id, objective, non_goals_json,
        acceptance_criteria_json, status, risk, data_sensitivity, capabilities_json,
        network_policy_json, resource_policy_json, manager_id, assignee_id, reviewer_id,
-       created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       created_at, updated_at, priority, due_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         task.id,
@@ -149,6 +171,8 @@ export class TaskRepository {
         task.reviewerId,
         task.createdAt,
         task.updatedAt,
+        task.priority,
+        task.dueAt,
       );
   }
 
@@ -170,8 +194,31 @@ export class TaskRepository {
       managerId: String(row.manager_id),
       assigneeId: typeof row.assignee_id === "string" ? row.assignee_id : null,
       reviewerId: typeof row.reviewer_id === "string" ? row.reviewer_id : null,
+      priority: Number(row.priority),
+      dueAt: typeof row.due_at === "string" ? row.due_at : null,
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at),
     };
+  }
+
+  private validateRelationships(input: CreateTaskInput): void {
+    if (input.parentTaskId && !this.get(input.companyId, input.parentTaskId))
+      throw new Error("Parent task must belong to the same company");
+    if (input.projectId) {
+      const project = this.database.connection
+        .prepare("SELECT kind FROM strategy_items WHERE company_id=? AND id=?")
+        .get(input.companyId, input.projectId) as { kind: string } | undefined;
+      if (project?.kind !== "project")
+        throw new Error("Task project must be a project in the same company");
+    }
+    for (const employeeId of [input.managerId, input.assigneeId, input.reviewerId]) {
+      if (!employeeId) continue;
+      const employee = this.database.connection
+        .prepare("SELECT 1 FROM employees WHERE company_id=? AND id=?")
+        .get(input.companyId, employeeId);
+      if (!employee) throw new Error(`Task owner must belong to the same company: ${employeeId}`);
+    }
+    if ((input.priority ?? 50) < 0 || (input.priority ?? 50) > 100)
+      throw new Error("Task priority must be between 0 and 100");
   }
 }

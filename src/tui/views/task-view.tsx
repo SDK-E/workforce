@@ -10,7 +10,9 @@ export function TaskView({ tasks }: { tasks: TaskRecord[] }) {
       ) : (
         tasks.map((task) => (
           <Text key={task.id}>
-            [{task.status}] {task.objective} · {task.risk} risk · {task.assigneeId ?? "unassigned"}
+            [{task.status}] P{task.priority} · {task.objective} · {task.risk} risk ·{" "}
+            {task.assigneeId ?? "unassigned"}
+            {task.dueAt ? ` · due ${task.dueAt}` : ""}
           </Text>
         ))
       )}

@@ -76,3 +76,79 @@ test("invalid task transitions are refused", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("requirements are versioned and active attempts require safe checkpoints", () => {
+  const root = mkdtempSync(join(tmpdir(), "workforce-requirements-"));
+  const store = new StateStore(root);
+  try {
+    store.initialize();
+    store.createCompany({ id: "acme", name: "Acme" });
+    const parent = store.createTask({
+      id: "parent",
+      companyId: "acme",
+      objective: "Parent",
+      acceptanceCriteria: ["Accepted"],
+      risk: "low",
+      dataSensitivity: "internal",
+      managerId: "ceo",
+    });
+    const task = store.createTask({
+      id: "child",
+      companyId: "acme",
+      parentTaskId: parent.id,
+      objective: "Initial objective",
+      acceptanceCriteria: ["Initial gate"],
+      risk: "medium",
+      dataSensitivity: "internal",
+      managerId: "ceo",
+      priority: 90,
+    });
+    store.tasksRepository.addDependency("acme", task.id, parent.id, "ceo");
+    assert.equal(store.tasksRepository.requirements.list("acme", task.id)[0]?.version, 1);
+    const attempt = store.attempts.enqueue({
+      id: "active-attempt",
+      companyId: "acme",
+      taskId: task.id,
+      employeeId: "arm",
+      sandbox: {} as never,
+      command: [],
+      secretNames: [],
+    });
+    store.attempts.acquire(attempt, "test-supervisor");
+    const update = {
+      companyId: "acme",
+      taskId: task.id,
+      objective: "Revised objective",
+      nonGoals: [],
+      acceptanceCriteria: ["Revised gate"],
+      capabilities: ["engineering"],
+      networkPolicy: { mode: "none" },
+      resourcePolicy: { memoryMb: 512 },
+      changedBy: "ceo",
+      changeReason: "New verified requirement",
+    };
+    assert.throws(() => store.tasksRepository.requirements.update(update), /safe checkpoint/);
+    const version = store.tasksRepository.requirements.update({
+      ...update,
+      checkpointId: "checkpoint-1",
+    });
+    assert.equal(version.version, 2);
+    assert.equal(store.tasksRepository.get("acme", task.id)?.objective, "Revised objective");
+    assert.throws(
+      () =>
+        store.createTask({
+          companyId: "acme",
+          projectId: "missing",
+          objective: "Bad project",
+          acceptanceCriteria: ["x"],
+          risk: "low",
+          dataSensitivity: "internal",
+          managerId: "ceo",
+        }),
+      /project in the same company/,
+    );
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
