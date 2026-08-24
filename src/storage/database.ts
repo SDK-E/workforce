@@ -1,16 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import {
-  CURRENT_SCHEMA_VERSION,
-  INITIAL_SCHEMA,
-  TASKS_SCHEMA,
-  TASKS_SCHEMA_VERSION,
-  ORGANIZATION_SCHEMA,
-  ORGANIZATION_SCHEMA_VERSION,
-  REMOVE_ENTITIES_SCHEMA,
-  REMOVE_ENTITIES_SCHEMA_VERSION,
-} from "./schema.js";
+import { loadMigrations } from "./migration-loader.js";
 
 export class WorkforceDatabase {
   readonly root: string;
@@ -71,39 +62,14 @@ export class WorkforceDatabase {
     const exists = this.connection
       .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'")
       .get();
-    if (!exists) {
-      this.connection.exec(INITIAL_SCHEMA);
-      this.recordMigration(CURRENT_SCHEMA_VERSION);
-    }
-    const row = this.connection
-      .prepare("SELECT max(version) AS version FROM schema_migrations")
-      .get() as { version: number };
-    if (row.version < TASKS_SCHEMA_VERSION) {
-      this.connection.exec(TASKS_SCHEMA);
-      this.recordMigration(TASKS_SCHEMA_VERSION);
-    }
-    const afterTasks = this.connection
-      .prepare("SELECT max(version) AS version FROM schema_migrations")
-      .get() as { version: number };
-    if (afterTasks.version < ORGANIZATION_SCHEMA_VERSION) {
-      this.connection.exec(ORGANIZATION_SCHEMA);
-      this.recordMigration(ORGANIZATION_SCHEMA_VERSION);
-    }
-    const afterOrganization = this.currentVersion();
-    if (afterOrganization < REMOVE_ENTITIES_SCHEMA_VERSION) {
-      const entitiesTable = this.connection
-        .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'entities'")
-        .get();
-      if (entitiesTable) {
-        const legacy = this.connection.prepare("SELECT count(*) AS count FROM entities").get() as {
-          count: number;
-        };
-        if (legacy.count > 0) {
-          throw new Error("Refusing to remove non-empty legacy entities table");
-        }
-      }
-      this.connection.exec(REMOVE_ENTITIES_SCHEMA);
-      this.recordMigration(REMOVE_ENTITIES_SCHEMA_VERSION);
+    let version = exists ? this.currentVersion() : 0;
+    for (const migration of loadMigrations()) {
+      if (migration.version <= version) continue;
+      if (migration.version === 4 && this.tableRowCount("entities") > 0)
+        throw new Error("Refusing to remove non-empty legacy entities table");
+      this.connection.exec(migration.sql);
+      this.recordMigration(migration.version);
+      version = migration.version;
     }
   }
 
@@ -112,6 +78,18 @@ export class WorkforceDatabase {
       .prepare("SELECT max(version) AS version FROM schema_migrations")
       .get() as { version: number };
     return row.version;
+  }
+
+  private tableRowCount(table: string): number {
+    const exists = this.connection
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(table);
+    if (!exists) return 0;
+    if (!/^[a-z_]+$/.test(table)) throw new Error("Invalid migration table name");
+    const row = this.connection.prepare(`SELECT count(*) AS count FROM ${table}`).get() as {
+      count: number;
+    };
+    return row.count;
   }
 
   private recordMigration(version: number): void {

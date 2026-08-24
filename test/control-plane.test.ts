@@ -25,7 +25,7 @@ test("company onboarding persists CEO and ARM and enforces isolation", () => {
       .prepare("SELECT max(version) AS version FROM schema_migrations")
       .get() as { version: number };
     assert.equal(entityTable, undefined);
-    assert.equal(migration.version, 4);
+    assert.equal(migration.version, 5);
     state.createCompany({ id: "acme", name: "Acme", mission: "Ship safely" });
     state.createCompany({ id: "other", name: "Other" });
     assert.deepEqual(

@@ -1,5 +1,5 @@
 import { Box, Text } from "ink";
-import type { MessageRecord } from "../../storage/records.js";
+import type { MessageRecord } from "../../conversations/conversation-types.js";
 
 export function ConversationView({ messages }: { messages: MessageRecord[] }) {
   return (

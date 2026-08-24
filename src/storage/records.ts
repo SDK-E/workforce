@@ -31,14 +31,3 @@ export interface UpdateCompanyInput {
   policies?: Record<string, unknown>;
   budgetCents?: number;
 }
-
-export interface MessageRecord {
-  id: string;
-  companyId: string;
-  roomId: string;
-  threadId: string | null;
-  authorId: string;
-  body: string;
-  createdAt: string;
-  pinned: boolean;
-}

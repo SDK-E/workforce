@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { AuditRepository } from "./audit-repository.js";
 import type { CompanyRepository } from "./company-repository.js";
 import type { WorkforceDatabase } from "./database.js";
-import type { MessageRecord } from "./records.js";
+import type { MessageRecord } from "../conversations/conversation-types.js";
 import { sanitizeTerminal } from "./sanitize-terminal.js";
 
 export class ConversationRepository {
@@ -29,10 +29,18 @@ export class ConversationRepository {
       body: sanitizeTerminal(body),
       createdAt: new Date().toISOString(),
       pinned: false,
+      status: "sent",
+      updatedAt: new Date().toISOString(),
+      redactedBy: null,
+      redactionReason: null,
     };
     this.database.transaction(() => {
       this.database.connection
-        .prepare("INSERT INTO messages VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+        .prepare(
+          `INSERT INTO messages
+           (id, company_id, room_id, thread_id, author_id, body, pinned, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
         .run(
           message.id,
           companyId,
@@ -67,6 +75,10 @@ export class ConversationRepository {
       body: String(row.body),
       createdAt: String(row.created_at),
       pinned: Number(row.pinned) === 1,
+      status: String(row.status) as MessageRecord["status"],
+      updatedAt: String(row.updated_at ?? row.created_at),
+      redactedBy: typeof row.redacted_by === "string" ? row.redacted_by : null,
+      redactionReason: typeof row.redaction_reason === "string" ? row.redaction_reason : null,
     }));
   }
 }

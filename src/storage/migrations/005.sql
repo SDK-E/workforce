@@ -1,0 +1,10 @@
+ALTER TABLE messages ADD COLUMN status TEXT NOT NULL DEFAULT 'sent' CHECK(status IN ('sent','edited','redacted'));
+ALTER TABLE messages ADD COLUMN updated_at TEXT;
+ALTER TABLE messages ADD COLUMN redacted_by TEXT;
+ALTER TABLE messages ADD COLUMN redaction_reason TEXT;
+CREATE TABLE room_memberships (company_id TEXT NOT NULL, room_id TEXT NOT NULL, employee_id TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('owner','moderator','member','observer')), joined_at TEXT NOT NULL, PRIMARY KEY(company_id,room_id,employee_id), FOREIGN KEY(company_id,room_id) REFERENCES rooms(company_id,id), FOREIGN KEY(company_id,employee_id) REFERENCES employees(company_id,id));
+CREATE TABLE conversation_threads (id TEXT NOT NULL, company_id TEXT NOT NULL, room_id TEXT NOT NULL, title TEXT NOT NULL, created_by TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('open','closed','archived')), created_at TEXT NOT NULL, updated_at TEXT NOT NULL, PRIMARY KEY(company_id,id), FOREIGN KEY(company_id,room_id) REFERENCES rooms(company_id,id));
+CREATE INDEX conversation_threads_room ON conversation_threads(company_id,room_id,updated_at DESC);
+CREATE TABLE attachments (id TEXT NOT NULL, company_id TEXT NOT NULL, message_id TEXT NOT NULL REFERENCES messages(id), filename TEXT NOT NULL, media_type TEXT NOT NULL, size_bytes INTEGER NOT NULL CHECK(size_bytes>=0), digest TEXT NOT NULL, artifact_uri TEXT NOT NULL, created_by TEXT NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY(company_id,id));
+CREATE INDEX attachments_message ON attachments(company_id,message_id);
+CREATE TABLE room_pins (company_id TEXT NOT NULL, room_id TEXT NOT NULL, message_id TEXT NOT NULL REFERENCES messages(id), pinned_by TEXT NOT NULL, pinned_at TEXT NOT NULL, PRIMARY KEY(company_id,room_id,message_id), FOREIGN KEY(company_id,room_id) REFERENCES rooms(company_id,id));

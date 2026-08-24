@@ -19,12 +19,8 @@ import type {
   StrategyItemKind,
 } from "../strategy/strategy-types.js";
 import type { CreateTaskInput, TaskEvent, TaskRecord, TaskStatus } from "../tasks/task-types.js";
-import type {
-  CompanyRecord,
-  CreateCompanyInput,
-  MessageRecord,
-  UpdateCompanyInput,
-} from "./records.js";
+import type { CompanyRecord, CreateCompanyInput, UpdateCompanyInput } from "./records.js";
+import type { MessageRecord } from "../conversations/conversation-types.js";
 
 /** Composition facade used by the application while feature services are introduced. */
 export class StateStore {

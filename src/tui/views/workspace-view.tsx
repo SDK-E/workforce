@@ -1,4 +1,5 @@
-import type { CompanyRecord, MessageRecord } from "../../storage/records.js";
+import type { MessageRecord } from "../../conversations/conversation-types.js";
+import type { CompanyRecord } from "../../storage/records.js";
 import type { OrganizationUnit } from "../../organizations/organization-types.js";
 import type { StrategyItem, StrategyItemKind } from "../../strategy/strategy-types.js";
 import type { TaskRecord } from "../../tasks/task-types.js";
