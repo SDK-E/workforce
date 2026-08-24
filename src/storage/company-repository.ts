@@ -20,11 +20,11 @@ export class CompanyRepository {
     if (!COMPANY_ID_PATTERN.test(id))
       throw new Error("Company id must be 2-64 lowercase letters, numbers, or hyphens");
     const company = this.build(id, input, now);
-    if (!company.name) throw new Error("Company name is required");
+    if (!company.name || !Number.isSafeInteger(company.budgetCents) || company.budgetCents < 0)
+      throw new Error("Company name and a valid non-negative budget are required");
     this.database.transaction(() => {
       this.insert(company);
       for (const employee of this.durableEmployees(now)) this.insertEmployee(id, employee);
-      this.insertRooms(id, now);
       this.audit.append("company.created", "human", id, { name: company.name });
     });
     return company;
@@ -117,7 +117,7 @@ export class CompanyRepository {
       mission: sanitizeTerminal(input.mission ?? ""),
       vision: sanitizeTerminal(input.vision ?? ""),
       values: (input.values ?? []).map((value) => sanitizeTerminal(value, 200)),
-      policies: input.policies ?? { network: "deny-by-default", terminationApproval: "ceo" },
+      policies: input.policies ?? {},
       budgetCents: input.budgetCents ?? 0,
       createdAt,
     };
@@ -155,21 +155,6 @@ export class CompanyRepository {
         JSON.stringify(employee.capabilityTags),
         employee.hiredAt,
       );
-  }
-
-  private insertRooms(companyId: string, createdAt: string): void {
-    const insert = this.database.connection.prepare("INSERT INTO rooms VALUES (?, ?, ?, ?, ?)");
-    const insertSettings = this.database.connection.prepare(
-      "INSERT INTO room_settings VALUES (?, ?, NULL, '', 'active', ?)",
-    );
-    for (const [id, name, kind] of [
-      ["ceo-office", "CEO Office", "private-office"],
-      ["arm-office", "ARM Office", "private-office"],
-      ["company-lobby", "Company Lobby", "company"],
-    ] as const) {
-      insert.run(id, companyId, name, kind, createdAt);
-      insertSettings.run(companyId, id, createdAt);
-    }
   }
 
   private durableEmployees(hiredAt: string): Employee[] {

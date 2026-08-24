@@ -16,7 +16,7 @@ export function MessageForm(props: {
   onCancel: () => void;
 }) {
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(["ceo-office", "human", "-", ""]);
+  const [values, setValues] = useState(["", "human", "-", ""]);
   const confirming = step === FIELDS.length;
   useInput((_input, key) => {
     if (key.escape) props.onCancel();

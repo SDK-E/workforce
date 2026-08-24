@@ -61,9 +61,11 @@ test("chat is company scoped and terminal escapes are removed", () => {
     state.initialize();
     state.createCompany({ id: "one", name: "One" });
     state.createCompany({ id: "two", name: "Two" });
-    state.addMessage("one", "ceo-office", "human", "hello\u001b[2J");
-    assert.equal(state.messages("one", "ceo-office")[0]?.body, "hello[2J");
-    assert.equal(state.messages("two", "ceo-office").length, 0);
+    const roomOne = state.conversations.rooms.create("one", "Leadership", "private", "human");
+    const roomTwo = state.conversations.rooms.create("two", "Leadership", "private", "human");
+    state.addMessage("one", roomOne.id, "human", "hello\u001b[2J");
+    assert.equal(state.messages("one", roomOne.id)[0]?.body, "hello[2J");
+    assert.equal(state.messages("two", roomTwo.id).length, 0);
     assert.equal(sanitizeTerminal("a\u0000b"), "ab");
     assert.ok(state.verifyAuditChain());
     state.close();

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import TextInput from "ink-text-input";
 import type { CompanyRecord, UpdateCompanyInput } from "../../storage/records.js";
+import { FormFrame } from "./form-frame.js";
 
 interface CompanyFormProps {
   company: CompanyRecord;
@@ -50,25 +51,16 @@ export function CompanyForm({ company, terminalWidth, onSubmit, onCancel }: Comp
   }
 
   return (
-    <Box
-      position="absolute"
-      marginTop={4}
-      marginLeft={Math.max(2, Math.floor(terminalWidth / 5))}
-      width={Math.max(44, Math.floor((terminalWidth * 3) / 5))}
-      borderStyle="double"
-      borderColor="cyan"
-      flexDirection="column"
-      paddingX={2}
+    <FormFrame
+      title={`Configure ${company.displayName}`}
+      terminalWidth={terminalWidth}
+      footer={`Enter next/save · Esc cancel · ${step + 1}/${FIELDS.length}`}
     >
-      <Text bold>Configure {company.displayName}</Text>
       <Text>{FIELDS[step]}</Text>
       <Box>
         <Text color="cyan">› </Text>
         <TextInput value={currentValue} onChange={updateCurrent} onSubmit={submitCurrent} />
       </Box>
-      <Text dimColor>
-        Enter next/save · Esc cancel · {step + 1}/{FIELDS.length}
-      </Text>
-    </Box>
+    </FormFrame>
   );
 }
