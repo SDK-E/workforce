@@ -82,6 +82,16 @@ export class MailRepository {
     return rows.map(mapMail);
   }
 
+  listCompany(companyId: string, includeArchived = true): MailRecord[] {
+    const rows = this.database.connection
+      .prepare(
+        `SELECT * FROM agent_mail WHERE company_id=? ${includeArchived ? "" : "AND status!='archived'"}
+         ORDER BY created_at DESC LIMIT 500`,
+      )
+      .all(companyId) as Record<string, unknown>[];
+    return rows.map(mapMail);
+  }
+
   markRead(companyId: string, id: string, actorId: string): MailRecord {
     return this.setStatus(companyId, id, "read", actorId);
   }

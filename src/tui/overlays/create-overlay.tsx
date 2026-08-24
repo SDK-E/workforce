@@ -11,6 +11,10 @@ import { CompanyCreateForm } from "./company-create-form.js";
 import { MessageForm } from "./message-form.js";
 import { MeetingForm } from "./meeting-form.js";
 import { ApprovalDecisionForm } from "./approval-decision-form.js";
+import { McpServerForm } from "./mcp-server-form.js";
+import { ProjectIntegrationForm } from "./project-integration-form.js";
+import { MailForm } from "./mail-form.js";
+import { AutomationForm } from "./automation-form.js";
 
 export type CreateFormKind =
   | "company-create"
@@ -21,7 +25,11 @@ export type CreateFormKind =
   | "agent-profile"
   | "message"
   | "meeting"
-  | "approval-decision";
+  | "approval-decision"
+  | "mcp-server"
+  | "project-integration"
+  | "mail"
+  | "automation";
 
 interface CreateOverlayProps {
   kind: CreateFormKind;
@@ -46,6 +54,8 @@ export function CreateOverlay(props: CreateOverlayProps) {
   }
   if (props.kind === "company-create" || props.kind === "company-edit")
     return <CompanyMutationOverlay {...props} finish={finish} />;
+  if (["mcp-server", "project-integration", "mail", "automation"].includes(props.kind))
+    return <CapabilityMutationOverlay {...props} finish={finish} />;
   if (props.kind === "organization")
     return (
       <OrganizationForm
@@ -149,6 +159,64 @@ export function CreateOverlay(props: CreateOverlayProps) {
   );
 }
 
+type MutationOverlayProps = CreateOverlayProps & {
+  finish: (action: () => void, success: string) => void;
+};
+
+function CapabilityMutationOverlay(props: MutationOverlayProps) {
+  if (props.kind === "mcp-server")
+    return (
+      <McpServerForm
+        companyId={props.company.id}
+        terminalWidth={props.terminalWidth}
+        onCancel={props.onClose}
+        onSubmit={(input) => {
+          props.finish(() => {
+            props.store.mcpServers.save(input, "human");
+          }, "MCP server registered and awaiting verification");
+        }}
+      />
+    );
+  if (props.kind === "project-integration")
+    return (
+      <ProjectIntegrationForm
+        companyId={props.company.id}
+        terminalWidth={props.terminalWidth}
+        onCancel={props.onClose}
+        onSubmit={(input) => {
+          props.finish(() => {
+            props.store.projectIntegrations.save(input, "human");
+          }, "Project integration configured and audited");
+        }}
+      />
+    );
+  if (props.kind === "mail")
+    return (
+      <MailForm
+        companyId={props.company.id}
+        terminalWidth={props.terminalWidth}
+        onCancel={props.onClose}
+        onSubmit={(input) => {
+          props.finish(() => {
+            props.store.mail.send(input);
+          }, "Mail sent and audited");
+        }}
+      />
+    );
+  return (
+    <AutomationForm
+      companyId={props.company.id}
+      terminalWidth={props.terminalWidth}
+      onCancel={props.onClose}
+      onSubmit={(input) => {
+        props.finish(() => {
+          props.store.automations.propose(input);
+        }, "Automation proposed for governed approval");
+      }}
+    />
+  );
+}
+
 function CompanyMutationOverlay(
   props: CreateOverlayProps & { finish: (action: () => void, success: string) => void },
 ) {
@@ -187,6 +255,10 @@ export function createFormForSection(section: string): CreateFormKind | null {
   if (section === "Employees") return "agent-profile";
   if (section === "CEO office" || section === "Conversations") return "message";
   if (section === "Meetings") return "meeting";
+  if (section === "MCP servers") return "mcp-server";
+  if (section === "Project integrations") return "project-integration";
+  if (section === "Mail") return "mail";
+  if (section === "Automations") return "automation";
   return section === "Tasks" ? "task" : null;
 }
 

@@ -11,9 +11,9 @@ interface ConversationViewProps {
 export function ConversationView({ messages, rooms, threads }: ConversationViewProps) {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
-      <Text bold>CEO office conversation</Text>
+      <Text bold>{rooms[0]?.name ?? "Company conversations"}</Text>
       <Text dimColor>
-        {rooms.length} rooms · {threads.length} CEO-office threads
+        {rooms.length} rooms · {threads.length} threads in the selected room
       </Text>
       {messages.length === 0 ? (
         <Text dimColor>No messages yet.</Text>

@@ -52,6 +52,11 @@ function loadWorkspaceData(store: StateStore, companyId: string) {
     environments: store.environments.list(companyId),
     models: store.models.list(companyId),
     agentProfiles: store.agentProfiles.list(companyId),
+    mcpServers: store.mcpServers.list(companyId),
+    projectIntegrations: store.projectIntegrations.list(companyId),
+    mail: store.mail.listCompany(companyId),
+    automations: store.automations.list(companyId),
+    runtime: store.autonomy.get(companyId),
     companies: store.companies(),
   };
 }

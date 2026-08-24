@@ -132,7 +132,8 @@ test("conversation view exposes rooms, threads, pins, and message state", () => 
     />,
   );
   const frame = view.lastFrame() ?? "";
-  assert.match(frame, /1 rooms · 1 CEO-office threads/);
+  assert.match(frame, /Engineering/);
+  assert.match(frame, /1 rooms · 1 threads in the selected room/);
   assert.match(frame, /◆ arm: Evidence attached \(edited\)/);
   view.unmount();
 });

@@ -42,6 +42,17 @@ import type {
   ToolRecord,
 } from "../../registries/registry-types.js";
 import type { AgentProfile } from "../../employees/agent-profile-types.js";
+import type {
+  MailRecord,
+  McpServerRecord,
+  ProjectIntegrationRecord,
+} from "../../integrations/integration-types.js";
+import type { AutomationRecord } from "../../automations/automation-types.js";
+import type { CompanyRuntime } from "../../autonomy/autonomy-types.js";
+import { McpServerView } from "./mcp-server-view.js";
+import { ProjectIntegrationView } from "./project-integration-view.js";
+import { MailView } from "./mail-view.js";
+import { AutomationView } from "./automation-view.js";
 
 interface WorkspaceViewProps {
   section: string;
@@ -69,6 +80,11 @@ interface WorkspaceViewProps {
   environments: EnvironmentRecord[];
   models: ModelRecord[];
   agentProfiles: AgentProfile[];
+  mcpServers: McpServerRecord[];
+  projectIntegrations: ProjectIntegrationRecord[];
+  mail: MailRecord[];
+  automations: AutomationRecord[];
+  runtime: CompanyRuntime | undefined;
   compact: boolean;
   companies: CompanyRecord[];
   onCompanySelect: (company: CompanyRecord) => void;
@@ -128,6 +144,7 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       <ConversationView messages={props.messages} rooms={props.rooms} threads={props.threads} />
     );
   }
+  if (props.section === "Mail") return <MailView mail={props.mail} />;
   if (props.section === "Live work") return <LiveWorkView attempts={props.attempts} />;
   if (props.section === "Deliverables") return <DeliverableView artifacts={props.artifacts} />;
   if (["Tools", "Environments", "Models & engines", "Docker & resources"].includes(props.section))
@@ -140,8 +157,13 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         models={props.models}
       />
     );
+  if (props.section === "MCP servers") return <McpServerView servers={props.mcpServers} />;
+  if (props.section === "Project integrations")
+    return <ProjectIntegrationView integrations={props.projectIntegrations} />;
+  if (props.section === "Automations") return <AutomationView automations={props.automations} />;
   if (props.section === "Audit")
     return <AuditView events={props.events} verified={props.auditVerified} />;
-  if (props.section === "Settings") return <SettingsView company={props.company} />;
+  if (props.section === "Settings")
+    return <SettingsView company={props.company} runtime={props.runtime} />;
   return <DiagnosticsView events={props.events} />;
 }
