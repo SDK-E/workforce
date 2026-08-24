@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execa } from "execa";
 import type { SandboxSpec } from "./domain.js";
 
 export interface DockerStatus {
@@ -7,40 +7,51 @@ export interface DockerStatus {
   reason?: string;
 }
 
+export interface EgressRuntimePolicy {
+  networkName: string;
+  proxyUrl: string;
+}
+
 export async function dockerStatus(): Promise<DockerStatus> {
-  return await new Promise((resolve) => {
-    const child = spawn("docker", ["version", "--format", "{{.Server.Version}}"], {
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let stdout = "",
-      stderr = "";
-    child.stdout.on("data", (chunk) => (stdout += chunk));
-    child.stderr.on("data", (chunk) => (stderr += chunk));
-    child.once("error", (error) => resolve({ available: false, reason: error.message }));
-    child.once("close", (code) =>
-      resolve(
-        code === 0
-          ? { available: true, version: stdout.trim() }
-          : { available: false, reason: stderr.trim() || `docker exited ${code}` },
-      ),
-    );
+  const result = await execa("docker", ["version", "--format", "{{.Server.Version}}"], {
+    reject: false,
+    timeout: 5_000,
   });
+  if (result.exitCode === 0) {
+    return { available: true, version: result.stdout.trim() };
+  }
+  const stderr = result.stderr.trim();
+  return {
+    available: false,
+    reason: stderr.length > 0 ? stderr : (result.shortMessage ?? "Docker is unavailable"),
+  };
+}
+
+export async function dockerImageExists(image: string): Promise<boolean> {
+  const result = await execa("docker", ["image", "inspect", image], {
+    reject: false,
+    timeout: 5_000,
+  });
+  return result.exitCode === 0;
 }
 
 export function dockerRunArguments(
   spec: SandboxSpec,
   attemptId: string,
   command: string[],
+  egress?: EgressRuntimePolicy,
 ): string[] {
   if (spec.rejectedCapabilities.length)
     throw new Error(
       `Sandbox plan has rejected capabilities: ${spec.rejectedCapabilities.join(", ")}`,
     );
-  if (spec.networkMode === "allowlisted") {
+  if (spec.networkMode !== "none" && !egress) {
     throw new Error(
-      "Allowlisted networking requires the workforce egress proxy; direct Docker networking is intentionally refused.",
+      "Networked execution requires the workforce egress proxy; direct Docker networking is intentionally refused.",
     );
   }
+  const dockerNetwork = spec.networkMode === "none" ? "none" : egress?.networkName;
+  if (!dockerNetwork) throw new Error("An internal egress network is required");
   const args = [
     "run",
     "--rm",
@@ -58,7 +69,7 @@ export function dockerRunArguments(
     "--security-opt",
     "no-new-privileges:true",
     "--network",
-    "none",
+    dockerNetwork,
     "--cpus",
     String(spec.cpu),
     "--memory",
@@ -68,6 +79,12 @@ export function dockerRunArguments(
     "--mount",
     `type=volume,src=${spec.workspace.name},dst=/work`,
   ];
+  if (egress) {
+    args.push("--env", `HTTP_PROXY=${egress.proxyUrl}`);
+    args.push("--env", `HTTPS_PROXY=${egress.proxyUrl}`);
+    args.push("--env", "NO_PROXY=");
+    args.push("--label", `workforce.network-policy=${spec.networkMode}`);
+  }
   for (const tmpfs of spec.tmpfs) args.push("--tmpfs", tmpfs);
   args.push(spec.image, ...command);
   return args;

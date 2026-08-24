@@ -69,3 +69,26 @@ test("refuses direct allowlisted networking until egress proxy exists", () => {
   const spec = planSandbox(job);
   assert.throws(() => dockerRunArguments(spec, "attempt-2", ["kilo", "run"]), /egress proxy/);
 });
+
+test("approved broad internet is routed only through the audited egress network", () => {
+  const job = JobRequirementsSchema.parse({
+    ...base,
+    dataSensitivity: "public",
+    capabilities: { ...base.capabilities, publicInternet: true },
+    network: {
+      mode: "audited-internet",
+      allowedHosts: [],
+      reason: "engineering documentation and registries",
+      approvedBy: "ceo",
+    },
+  });
+  const spec = planSandbox(job);
+  assert.equal(spec.networkMode, "audited-internet");
+  const args = dockerRunArguments(spec, "attempt-networked", ["kilo", "run"], {
+    networkName: "workforce-egress-internal",
+    proxyUrl: "http://workforce-egress-proxy:3128",
+  });
+  assert.ok(args.includes("workforce-egress-internal"));
+  assert.ok(args.includes("HTTP_PROXY=http://workforce-egress-proxy:3128"));
+  assert.ok(!args.includes("bridge"));
+});

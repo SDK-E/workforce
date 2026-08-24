@@ -1,0 +1,177 @@
+import { randomUUID } from "node:crypto";
+import type { CreateTaskInput, TaskEvent, TaskRecord, TaskStatus } from "../tasks/task-types.js";
+import { nextTaskStatus } from "../tasks/task-machine.js";
+import type { AuditRepository } from "./audit-repository.js";
+import type { CompanyRepository } from "./company-repository.js";
+import type { WorkforceDatabase } from "./database.js";
+import { parseJson } from "./serialization.js";
+import { sanitizeTerminal } from "./sanitize-terminal.js";
+
+export class TaskRepository {
+  constructor(
+    private readonly database: WorkforceDatabase,
+    private readonly companies: CompanyRepository,
+    private readonly audit: AuditRepository,
+  ) {}
+
+  create(input: CreateTaskInput): TaskRecord {
+    this.companies.require(input.companyId);
+    if (input.acceptanceCriteria.length === 0)
+      throw new Error("A task requires acceptance criteria");
+    const now = new Date().toISOString();
+    const task: TaskRecord = {
+      id: input.id ?? randomUUID(),
+      companyId: input.companyId,
+      projectId: input.projectId ?? null,
+      parentTaskId: input.parentTaskId ?? null,
+      objective: sanitizeTerminal(input.objective),
+      nonGoals: (input.nonGoals ?? []).map((value) => sanitizeTerminal(value, 2_000)),
+      acceptanceCriteria: input.acceptanceCriteria.map((value) => sanitizeTerminal(value, 2_000)),
+      status: "draft",
+      risk: input.risk,
+      dataSensitivity: input.dataSensitivity,
+      capabilities: input.capabilities ?? [],
+      networkPolicy: input.networkPolicy ?? { mode: "none" },
+      resourcePolicy: input.resourcePolicy ?? {
+        cpu: 1,
+        memoryMb: 768,
+        pids: 128,
+        timeoutSeconds: 1800,
+      },
+      managerId: input.managerId,
+      assigneeId: input.assigneeId ?? null,
+      reviewerId: input.reviewerId ?? null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    if (!task.objective) throw new Error("A task objective is required");
+    this.database.transaction(() => {
+      this.insert(task);
+      this.audit.append("task.created", "human", task.companyId, {
+        taskId: task.id,
+        objective: task.objective,
+      });
+    });
+    return task;
+  }
+
+  get(companyId: string, taskId: string): TaskRecord | undefined {
+    const row = this.database.connection
+      .prepare("SELECT * FROM tasks WHERE company_id = ? AND id = ?")
+      .get(companyId, taskId) as Record<string, unknown> | undefined;
+    return row ? this.map(row) : undefined;
+  }
+
+  list(companyId: string, status?: TaskStatus, limit = 100): TaskRecord[] {
+    const rows = (
+      status
+        ? this.database.connection
+            .prepare(
+              "SELECT * FROM tasks WHERE company_id = ? AND status = ? ORDER BY updated_at DESC LIMIT ?",
+            )
+            .all(companyId, status, limit)
+        : this.database.connection
+            .prepare("SELECT * FROM tasks WHERE company_id = ? ORDER BY updated_at DESC LIMIT ?")
+            .all(companyId, limit)
+    ) as Record<string, unknown>[];
+    return rows.map((row) => this.map(row));
+  }
+
+  transition(
+    companyId: string,
+    taskId: string,
+    event: TaskEvent,
+    actorId: string,
+    rationale: string,
+    acceptanceApproved = false,
+  ): TaskRecord {
+    const current = this.get(companyId, taskId);
+    if (!current) throw new Error(`Unknown task: ${taskId}`);
+    if (event === "COMPLETE" && !acceptanceApproved)
+      throw new Error("Task completion requires accepted independent evidence");
+    const status = nextTaskStatus(current.status, event);
+    const now = new Date().toISOString();
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare("UPDATE tasks SET status = ?, updated_at = ? WHERE company_id = ? AND id = ?")
+        .run(status, now, companyId, taskId);
+      this.database.connection
+        .prepare(
+          `INSERT INTO task_transitions
+        (company_id, task_id, from_status, to_status, event, actor_id, rationale, occurred_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          companyId,
+          taskId,
+          current.status,
+          status,
+          event,
+          actorId,
+          sanitizeTerminal(rationale, 4_000),
+          now,
+        );
+      this.audit.append("task.transitioned", actorId, companyId, {
+        taskId,
+        from: current.status,
+        to: status,
+        event,
+      });
+    });
+    return { ...current, status, updatedAt: now };
+  }
+
+  private insert(task: TaskRecord): void {
+    this.database.connection
+      .prepare(
+        `INSERT INTO tasks
+      (id, company_id, project_id, parent_task_id, objective, non_goals_json,
+       acceptance_criteria_json, status, risk, data_sensitivity, capabilities_json,
+       network_policy_json, resource_policy_json, manager_id, assignee_id, reviewer_id,
+       created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        task.id,
+        task.companyId,
+        task.projectId,
+        task.parentTaskId,
+        task.objective,
+        JSON.stringify(task.nonGoals),
+        JSON.stringify(task.acceptanceCriteria),
+        task.status,
+        task.risk,
+        task.dataSensitivity,
+        JSON.stringify(task.capabilities),
+        JSON.stringify(task.networkPolicy),
+        JSON.stringify(task.resourcePolicy),
+        task.managerId,
+        task.assigneeId,
+        task.reviewerId,
+        task.createdAt,
+        task.updatedAt,
+      );
+  }
+
+  private map(row: Record<string, unknown>): TaskRecord {
+    return {
+      id: String(row.id),
+      companyId: String(row.company_id),
+      projectId: typeof row.project_id === "string" ? row.project_id : null,
+      parentTaskId: typeof row.parent_task_id === "string" ? row.parent_task_id : null,
+      objective: String(row.objective),
+      nonGoals: parseJson(row.non_goals_json),
+      acceptanceCriteria: parseJson(row.acceptance_criteria_json),
+      status: String(row.status) as TaskStatus,
+      risk: String(row.risk) as TaskRecord["risk"],
+      dataSensitivity: String(row.data_sensitivity) as TaskRecord["dataSensitivity"],
+      capabilities: parseJson(row.capabilities_json),
+      networkPolicy: parseJson(row.network_policy_json),
+      resourcePolicy: parseJson(row.resource_policy_json),
+      managerId: String(row.manager_id),
+      assigneeId: typeof row.assignee_id === "string" ? row.assignee_id : null,
+      reviewerId: typeof row.reviewer_id === "string" ? row.reviewer_id : null,
+      createdAt: String(row.created_at),
+      updatedAt: String(row.updated_at),
+    };
+  }
+}

@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, Text } from "ink";
 import type { DockerStatus } from "../../docker-runtime.js";
 import type { CompanyRecord, EntityRecord } from "../../storage/records.js";

@@ -38,8 +38,10 @@ export const JobRequirementsSchema = z.object({
     )
     .min(1),
   network: z.object({
+    mode: z.enum(["none", "search-only", "allowlisted", "audited-internet"]).optional(),
     allowedHosts: z.array(z.string()).max(100),
     reason: z.string().max(2_000),
+    approvedBy: z.string().min(1).max(200).optional(),
   }),
   resources: z.object({
     cpu: z.number().positive().max(8),
@@ -57,7 +59,7 @@ export const SandboxSpecSchema = z.object({
   profile: z.enum(["document", "research", "engineering", "browser", "restricted-review"]),
   image: z.string(),
   engine: EngineSchema,
-  networkMode: z.enum(["none", "allowlisted"]),
+  networkMode: z.enum(["none", "search-only", "allowlisted", "audited-internet"]),
   allowedHosts: z.array(z.string()),
   readOnlyRoot: z.literal(true),
   nonRoot: z.literal(true),

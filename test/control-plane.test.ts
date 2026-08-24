@@ -3,19 +3,21 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { StateStore, sanitizeTerminal } from "../src/state.js";
-import { evaluateAcceptance } from "../src/acceptance.js";
-import { CapacityController, diagnoseStall } from "../src/supervisor.js";
+import { evaluateAcceptance } from "../src/acceptance/evaluate-acceptance.js";
+import { sanitizeTerminal } from "../src/storage/sanitize-terminal.js";
+import { StateStore } from "../src/storage/state-store.js";
+import { CapacityController } from "../src/supervision/capacity-controller.js";
+import { diagnoseStall } from "../src/supervision/diagnose-stall.js";
 
 function store() {
   const root = mkdtempSync(join(tmpdir(), "workforce-test-"));
   const state = new StateStore(root);
   return { root, state };
 }
-test("company onboarding persists CEO and ARM and enforces isolation", async () => {
+test("company onboarding persists CEO and ARM and enforces isolation", () => {
   const { root, state } = store();
   try {
-    await state.initialize();
+    state.initialize();
     state.createCompany({ id: "acme", name: "Acme", mission: "Ship safely" });
     state.createCompany({ id: "other", name: "Other" });
     assert.deepEqual(
@@ -29,7 +31,7 @@ test("company onboarding persists CEO and ARM and enforces isolation", async () 
     assert.equal(state.entities("other").length, 0);
     state.close();
     const reopened = new StateStore(root);
-    await reopened.initialize();
+    reopened.initialize();
     assert.equal(reopened.company("acme")?.mission, "Ship safely");
     assert.equal(reopened.entities("acme", "project")[0]?.name, "Apollo");
     reopened.close();
@@ -37,10 +39,10 @@ test("company onboarding persists CEO and ARM and enforces isolation", async () 
     rmSync(root, { recursive: true, force: true });
   }
 });
-test("chat is company scoped and terminal escapes are removed", async () => {
+test("chat is company scoped and terminal escapes are removed", () => {
   const { root, state } = store();
   try {
-    await state.initialize();
+    state.initialize();
     state.createCompany({ id: "one", name: "One" });
     state.createCompany({ id: "two", name: "Two" });
     state.addMessage("one", "ceo-office", "human", "hello\u001b[2J");

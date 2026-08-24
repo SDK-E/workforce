@@ -25,3 +25,7 @@ Entrypoints and views may depend on application and domain APIs. Domain policy m
 ## Compatibility
 
 When moving a public module, retain a small re-export facade until all consumers migrate. Never duplicate the underlying implementation to preserve an old import.
+
+## Open-source reuse
+
+Evaluate maintained packages before implementing generic infrastructure. Record decisions in [package-decisions.md](package-decisions.md). Workforce policy remains local domain code; generic state machines, logging, process control, and terminal inputs should use reviewed packages.

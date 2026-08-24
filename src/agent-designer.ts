@@ -82,7 +82,7 @@ export function designAgentForJob(job: JobRequirements, manager = "arm"): AgentB
     },
     jobId: job.id,
     sandbox,
-    enginePolicy: { preferred: job.enginePreference[0]!, fallbacks: job.enginePreference.slice(1) },
+    enginePolicy: { preferred: sandbox.engine, fallbacks: job.enginePreference.slice(1) },
     instructions,
     permissions: sandbox.tools,
     skills: [...new Set(skills)].sort(),

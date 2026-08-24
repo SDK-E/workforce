@@ -1,20 +1,11 @@
-import { dockerStatus } from "./docker-runtime.js";
-import { spawn } from "node:child_process";
-
-async function imageExists(image: string): Promise<boolean> {
-  return await new Promise((resolve) => {
-    const child = spawn("docker", ["image", "inspect", image], { stdio: "ignore" });
-    child.once("error", () => resolve(false));
-    child.once("close", (code) => resolve(code === 0));
-  });
-}
+import { dockerImageExists, dockerStatus } from "./docker-runtime.js";
 
 const docker = await dockerStatus();
 const images = docker.available
   ? await Promise.all([
-      imageExists("workforce-agent-base:0.1.0"),
-      imageExists("workforce-agent-builder:0.1.0"),
-      imageExists("workforce-agent-reviewer:0.1.0"),
+      dockerImageExists("workforce-agent-base:0.1.0"),
+      dockerImageExists("workforce-agent-builder:0.1.0"),
+      dockerImageExists("workforce-agent-reviewer:0.1.0"),
     ])
   : [false, false, false];
 const imagesReady = images.every(Boolean);

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Box, useInput, useStdout } from "ink";
 import type { DockerStatus } from "../docker-runtime.js";
 import type { CompanyRecord } from "../storage/records.js";
@@ -30,10 +30,10 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
     "Ready — no agent work starts without an approved task",
   );
 
-  const width = stdout?.columns ?? 100;
-  const height = stdout?.rows ?? 30;
+  const width = stdout.columns;
+  const height = stdout.rows;
   const compact = width < 88;
-  const selectedSection = NAVIGATION_SECTIONS[selectedIndex]!;
+  const selectedSection = NAVIGATION_SECTIONS[selectedIndex] ?? NAVIGATION_SECTIONS[0];
   const employees = useMemo(() => store.employees(initialCompany.id), [store, initialCompany.id]);
   const entities = store.entities(initialCompany.id);
   const pendingApprovals = store.pendingApprovals(initialCompany.id);

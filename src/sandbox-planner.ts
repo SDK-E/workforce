@@ -12,6 +12,8 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
   const { capabilities: c } = job;
   const decisions: string[] = [];
   const rejectedCapabilities: string[] = [];
+  const engine = job.enginePreference[0];
+  if (!engine) throw new Error("At least one engine preference is required");
 
   let profile: keyof typeof IMAGE_BY_PROFILE = "document";
   if (job.dataSensitivity === "restricted" || job.risk === "critical")
@@ -33,14 +35,23 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
       "Critical-risk work is review-only until a human approves a lower-level execution task.",
     );
   }
-  if (c.publicInternet && job.network.allowedHosts.length === 0) {
+  const requestedNetworkMode = job.network.mode ?? "allowlisted";
+  if (
+    c.publicInternet &&
+    requestedNetworkMode === "allowlisted" &&
+    job.network.allowedHosts.length === 0
+  ) {
     rejectedCapabilities.push("publicInternet");
     decisions.push("Internet was requested without allowlisted hosts.");
+  }
+  if (c.publicInternet && requestedNetworkMode === "audited-internet" && !job.network.approvedBy) {
+    rejectedCapabilities.push("publicInternet");
+    decisions.push("Broad audited internet requires an explicit approving authority.");
   }
 
   const networkApproved =
     c.publicInternet &&
-    job.network.allowedHosts.length > 0 &&
+    (requestedNetworkMode === "audited-internet" || job.network.allowedHosts.length > 0) &&
     job.dataSensitivity !== "restricted" &&
     job.risk !== "critical";
   const tools = ["read", "write-output", "workforce-chat", "workforce-checkpoint"];
@@ -59,7 +70,9 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
   );
   decisions.push(
     networkApproved
-      ? `Network restricted to ${job.network.allowedHosts.join(", ")}.`
+      ? requestedNetworkMode === "audited-internet"
+        ? `Audited outbound internet approved by ${job.network.approvedBy ?? "unknown"}.`
+        : `Network restricted to ${job.network.allowedHosts.join(", ")}.`
       : "Network disabled.",
   );
   decisions.push(
@@ -70,8 +83,8 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
     jobId: job.id,
     profile,
     image: IMAGE_BY_PROFILE[profile],
-    engine: job.enginePreference[0]!,
-    networkMode: networkApproved ? "allowlisted" : "none",
+    engine,
+    networkMode: networkApproved ? requestedNetworkMode : "none",
     allowedHosts: networkApproved ? job.network.allowedHosts : [],
     readOnlyRoot: true,
     nonRoot: true,

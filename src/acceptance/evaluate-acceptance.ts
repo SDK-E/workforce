@@ -10,7 +10,7 @@ export function evaluateAcceptance(
 ): AcceptanceResult {
   const reasons: string[] = [];
   if (processExitCode !== 0) {
-    reasons.push(`Process exit was ${processExitCode === null ? "unavailable" : processExitCode}`);
+    reasons.push(`Process exit was ${String(processExitCode ?? "unavailable")}`);
   }
   for (const output of requiredOutputs) {
     if (!observedOutputs.has(output)) reasons.push(`Missing required output: ${output}`);
