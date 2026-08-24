@@ -13,6 +13,11 @@ export class EmploymentRepository {
     private readonly database: WorkforceDatabase,
     private readonly companies: CompanyRepository,
     private readonly audit: AuditRepository,
+    private readonly onEmployeeCreated?: (
+      companyId: string,
+      blueprint: AgentBlueprint,
+      actorId: string,
+    ) => void,
   ) {}
 
   recordGap(input: Omit<GapFinding, "id" | "createdAt" | "resolvedAt">): GapFinding {
@@ -111,6 +116,7 @@ export class EmploymentRepository {
         rationale,
       });
     });
+    if (decision === "approved") this.onEmployeeCreated?.(companyId, proposal.blueprint, actorId);
     return this.requireProposal(companyId, proposalId);
   }
 

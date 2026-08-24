@@ -13,6 +13,8 @@ export class AttemptRepository {
     const now = new Date().toISOString();
     const record: AttemptRecord = {
       ...request,
+      instructionRevision: request.instructionRevision ?? null,
+      instructionDigest: request.instructionDigest ?? null,
       status: "queued",
       containerName: `workforce-${request.id}`,
       exitCode: null,
@@ -27,8 +29,9 @@ export class AttemptRepository {
         .prepare(
           `INSERT INTO attempts
            (id,company_id,task_id,employee_id,status,sandbox_json,command_json,container_name,
-            exit_code,failure_reason,queued_at,started_at,finished_at,updated_at,secret_names_json)
-           VALUES (?,?,?,?,?,?,?,?,NULL,NULL,?,NULL,NULL,?,?)`,
+            exit_code,failure_reason,queued_at,started_at,finished_at,updated_at,secret_names_json,
+            instruction_revision,instruction_digest)
+           VALUES (?,?,?,?,?,?,?,?,NULL,NULL,?,NULL,NULL,?,?,?,?)`,
         )
         .run(
           record.id,
@@ -42,6 +45,8 @@ export class AttemptRepository {
           record.queuedAt,
           record.updatedAt,
           JSON.stringify(record.secretNames),
+          record.instructionRevision,
+          record.instructionDigest,
         );
       this.audit.append("attempt.queued", "supervisor", record.companyId, {
         attemptId: record.id,
@@ -160,6 +165,9 @@ export class AttemptRepository {
       sandbox: parseJson(row.sandbox_json),
       command: parseJson(row.command_json),
       secretNames: parseJson(row.secret_names_json),
+      instructionRevision:
+        typeof row.instruction_revision === "number" ? row.instruction_revision : null,
+      instructionDigest: typeof row.instruction_digest === "string" ? row.instruction_digest : null,
       containerName: String(row.container_name),
       exitCode: typeof row.exit_code === "number" ? row.exit_code : null,
       failureReason: typeof row.failure_reason === "string" ? row.failure_reason : null,

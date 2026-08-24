@@ -18,9 +18,13 @@ export interface AttemptRequest {
   sandbox: SandboxSpec;
   command: string[];
   secretNames: string[];
+  instructionRevision?: number | null;
+  instructionDigest?: string | null;
 }
 
 export interface AttemptRecord extends AttemptRequest {
+  instructionRevision: number | null;
+  instructionDigest: string | null;
   status: AttemptStatus;
   containerName: string;
   exitCode: number | null;

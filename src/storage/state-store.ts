@@ -28,6 +28,13 @@ import { PerformanceRepository } from "../governance/performance-repository.js";
 import { AttemptRepository } from "../supervision/attempt-repository.js";
 import { ArtifactRepository } from "./artifact-repository.js";
 import { ExecutionEvidenceRepository } from "./execution-evidence-repository.js";
+import { ToolRepository } from "../registries/tool-repository.js";
+import { EnvironmentRepository } from "../registries/environment-repository.js";
+import { ModelRepository } from "../registries/model-repository.js";
+import { DefaultRegistries } from "../registries/default-registries.js";
+import { AgentProfileRepository } from "../employees/agent-profile-repository.js";
+import { DefaultAgentProfiles } from "../employees/default-agent-profiles.js";
+import { AttemptFactory } from "../supervision/attempt-factory.js";
 
 /** Composition facade used by the application while feature services are introduced. */
 export class StateStore {
@@ -46,6 +53,13 @@ export class StateStore {
   readonly attempts: AttemptRepository;
   readonly artifacts: ArtifactRepository;
   readonly executionEvidence: ExecutionEvidenceRepository;
+  readonly tools: ToolRepository;
+  readonly environments: EnvironmentRepository;
+  readonly models: ModelRepository;
+  readonly defaultRegistries: DefaultRegistries;
+  readonly agentProfiles: AgentProfileRepository;
+  readonly defaultAgentProfiles: DefaultAgentProfiles;
+  readonly attemptFactory: AttemptFactory;
 
   constructor(root?: string) {
     this.database = new WorkforceDatabase(root);
@@ -72,7 +86,17 @@ export class StateStore {
       this.companiesRepository,
       this.audit,
     );
-    this.employment = new EmploymentRepository(this.database, this.companiesRepository, this.audit);
+    this.agentProfiles = new AgentProfileRepository(this.database, this.audit);
+    this.defaultAgentProfiles = new DefaultAgentProfiles(this.agentProfiles);
+    this.attemptFactory = new AttemptFactory(this.agentProfiles);
+    this.employment = new EmploymentRepository(
+      this.database,
+      this.companiesRepository,
+      this.audit,
+      (companyId, blueprint, actorId) => {
+        this.defaultAgentProfiles.fromBlueprint(companyId, blueprint, actorId);
+      },
+    );
     this.meetings = new MeetingRepository(this.database, this.companiesRepository, this.audit);
     this.incidents = new IncidentRepository(this.database, this.companiesRepository, this.audit);
     this.performance = new PerformanceRepository(
@@ -83,6 +107,14 @@ export class StateStore {
     this.attempts = new AttemptRepository(this.database, this.audit);
     this.artifacts = new ArtifactRepository(this.database);
     this.executionEvidence = new ExecutionEvidenceRepository(this.database);
+    this.tools = new ToolRepository(this.database, this.companiesRepository, this.audit);
+    this.environments = new EnvironmentRepository(
+      this.database,
+      this.companiesRepository,
+      this.audit,
+    );
+    this.models = new ModelRepository(this.database, this.companiesRepository, this.audit);
+    this.defaultRegistries = new DefaultRegistries(this.tools, this.environments, this.models);
   }
 
   get root(): string {
@@ -96,6 +128,9 @@ export class StateStore {
   }
   initialize(): void {
     this.database.initialize();
+    for (const company of this.companies()) this.defaultRegistries.ensure(company.id);
+    for (const company of this.companies())
+      this.defaultAgentProfiles.ensure(company.id, this.employees(company.id));
   }
   close(): void {
     this.database.close();
@@ -104,7 +139,10 @@ export class StateStore {
     return this.database.transaction(operation);
   }
   createCompany(input: CreateCompanyInput): CompanyRecord {
-    return this.companiesRepository.create(input);
+    const company = this.companiesRepository.create(input);
+    this.defaultRegistries.ensure(company.id);
+    this.defaultAgentProfiles.ensure(company.id, this.employees(company.id));
+    return company;
   }
   updateCompany(input: UpdateCompanyInput, actorId = "human"): CompanyRecord {
     return this.companiesRepository.update(input, actorId);
