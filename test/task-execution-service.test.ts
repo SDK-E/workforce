@@ -9,9 +9,11 @@ import type { AttemptResult } from "../src/supervision/attempt-types.js";
 import type { DockerClient } from "../src/supervision/docker-client.js";
 import { DockerSupervisor } from "../src/supervision/docker-supervisor.js";
 import { TaskExecutionService } from "../src/tasks/task-execution-service.js";
+import { AttemptCapabilityResolver } from "../src/integrations/attempt-capability-resolver.js";
 
 class InstantDocker implements DockerClient {
   started: SandboxSpec[] = [];
+  runtimeEnvironment: Record<string, string> = {};
   available() {
     return Promise.resolve(true);
   }
@@ -21,8 +23,16 @@ class InstantDocker implements DockerClient {
   exportVolume() {
     return Promise.resolve();
   }
-  start(spec: SandboxSpec): Promise<AttemptResult> {
+  start(
+    spec: SandboxSpec,
+    _attemptId: string,
+    _command: string[],
+    secretEnvironment: Record<string, string> = {},
+    runtimeEnvironment: Record<string, string> = {},
+  ): Promise<AttemptResult> {
     this.started.push(spec);
+    void secretEnvironment;
+    this.runtimeEnvironment = runtimeEnvironment;
     return Promise.resolve({ exitCode: 0, stdout: "done", stderr: "", timedOut: false });
   }
   stop() {
@@ -59,6 +69,21 @@ test("approved task contracts queue verified inference-capable Docker execution"
       verificationReceiptId: "model-check-1",
       failureClass: null,
     });
+    store.mcpServers.save(
+      {
+        companyId: "acme",
+        id: "quality",
+        name: "Quality tools",
+        transport: "stdio",
+        endpoint: null,
+        command: ["quality-mcp"],
+        toolAllowlist: ["inspect"],
+        secretRequirements: [],
+        status: "active",
+        health: "healthy",
+      },
+      "arm",
+    );
     const task = store.createTask({
       id: "build-api",
       companyId: "acme",
@@ -67,6 +92,7 @@ test("approved task contracts queue verified inference-capable Docker execution"
       risk: "medium",
       dataSensitivity: "internal",
       capabilities: ["engineering", "language:typescript"],
+      tools: ["mcp:quality/inspect"],
       managerId: "ceo",
       assigneeId: "ceo",
     });
@@ -80,6 +106,7 @@ test("approved task contracts queue verified inference-capable Docker execution"
       store.tools,
       store.attemptFactory,
       supervisor,
+      new AttemptCapabilityResolver(store.mcpServers, store.projectIntegrations),
     );
 
     const attempt = await execution.start("acme", task.id, "human");
@@ -90,6 +117,7 @@ test("approved task contracts queue verified inference-capable Docker execution"
     assert.equal(store.tasksRepository.get("acme", task.id)?.status, "starting");
     assert.equal(store.attempts.get(attempt.id).status, "succeeded");
     assert.equal(docker.started.length, 1);
+    assert.match(docker.runtimeEnvironment.OPENCODE_CONFIG_CONTENT ?? "", /quality/);
   } finally {
     store.close();
     rmSync(root, { recursive: true, force: true });

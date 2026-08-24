@@ -10,6 +10,7 @@ import { resolveAttemptSecrets } from "./secrets/attempt-secret-provider.js";
 import { ArtifactPipeline } from "./acceptance/artifact-pipeline.js";
 import { TaskExecutionService } from "./tasks/task-execution-service.js";
 import { CeoOperatingLoop } from "./autonomy/ceo-operating-loop.js";
+import { AttemptCapabilityResolver } from "./integrations/attempt-capability-resolver.js";
 
 const store = new StateStore();
 store.initialize();
@@ -41,6 +42,7 @@ const taskExecution = new TaskExecutionService(
   store.tools,
   store.attemptFactory,
   supervisor,
+  new AttemptCapabilityResolver(store.mcpServers, store.projectIntegrations),
 );
 const operatingLoop = new CeoOperatingLoop(store, store.autonomy, taskExecution);
 const recovery = await supervisor.reconcile();

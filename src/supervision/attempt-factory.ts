@@ -14,6 +14,7 @@ export class AttemptFactory {
     sandbox: SandboxSpec;
     model: string;
     secretNames?: string[];
+    environment?: Record<string, string>;
   }): AttemptRequest {
     if (input.task.companyId.length === 0) throw new Error("Task company is required");
     const version = this.profiles.active(input.task.companyId, input.employeeId);
@@ -31,6 +32,7 @@ export class AttemptFactory {
         objective,
       }),
       secretNames: input.secretNames ?? [],
+      environment: input.environment ?? {},
       instructionRevision: version.revision,
       instructionDigest: this.profiles.digest(version),
     };

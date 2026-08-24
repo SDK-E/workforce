@@ -37,6 +37,9 @@ import { DefaultAgentProfiles } from "../employees/default-agent-profiles.js";
 import { AttemptFactory } from "../supervision/attempt-factory.js";
 import { AutomationRepository } from "../automations/automation-repository.js";
 import { AutonomyRepository } from "../autonomy/autonomy-repository.js";
+import { McpServerRepository } from "../integrations/mcp-server-repository.js";
+import { ProjectIntegrationRepository } from "../integrations/project-integration-repository.js";
+import { MailRepository } from "../integrations/mail-repository.js";
 
 /** Composition facade used by the application while feature services are introduced. */
 export class StateStore {
@@ -64,6 +67,9 @@ export class StateStore {
   readonly attemptFactory: AttemptFactory;
   readonly automations: AutomationRepository;
   readonly autonomy: AutonomyRepository;
+  readonly mcpServers: McpServerRepository;
+  readonly projectIntegrations: ProjectIntegrationRepository;
+  readonly mail: MailRepository;
 
   constructor(root?: string) {
     this.database = new WorkforceDatabase(root);
@@ -125,6 +131,9 @@ export class StateStore {
       this.audit,
     );
     this.autonomy = new AutonomyRepository(this.database, this.audit);
+    this.mcpServers = new McpServerRepository(this.database, this.companiesRepository, this.audit);
+    this.projectIntegrations = new ProjectIntegrationRepository(this.database, this.audit);
+    this.mail = new MailRepository(this.database, this.audit);
   }
 
   get root(): string {

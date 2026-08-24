@@ -113,7 +113,13 @@ export class DockerSupervisor {
       const secrets = this.secretProvider(attempt);
       if (Object.keys(secrets).some((name) => !attempt.secretNames.includes(name)))
         throw new Error("Secret provider returned an undeclared secret");
-      const result = await this.docker.start(attempt.sandbox, attempt.id, attempt.command, secrets);
+      const result = await this.docker.start(
+        attempt.sandbox,
+        attempt.id,
+        attempt.command,
+        secrets,
+        attempt.environment,
+      );
       await this.recordResult(attempt, result, secrets);
     } catch (error) {
       const reason = error instanceof Error ? error.message : "Unknown Docker failure";

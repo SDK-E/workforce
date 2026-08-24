@@ -41,6 +41,7 @@ export function dockerRunArguments(
   command: string[],
   egress?: EgressRuntimePolicy,
   secretNames: string[] = [],
+  environment: Record<string, string> = {},
 ): string[] {
   if (spec.rejectedCapabilities.length)
     throw new Error(
@@ -89,6 +90,12 @@ export function dockerRunArguments(
     if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(name))
       throw new Error(`Invalid secret environment name: ${name}`);
     args.push("--env", name);
+  }
+  for (const [name, value] of Object.entries(environment)) {
+    if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(name))
+      throw new Error(`Invalid attempt environment name: ${name}`);
+    if (secretNames.includes(name)) throw new Error(`Static environment shadows secret: ${name}`);
+    args.push("--env", `${name}=${value}`);
   }
   args.push(spec.image, ...command);
   return args;

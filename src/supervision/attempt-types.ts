@@ -18,11 +18,13 @@ export interface AttemptRequest {
   sandbox: SandboxSpec;
   command: string[];
   secretNames: string[];
+  environment?: Record<string, string>;
   instructionRevision?: number | null;
   instructionDigest?: string | null;
 }
 
 export interface AttemptRecord extends AttemptRequest {
+  environment: Record<string, string>;
   instructionRevision: number | null;
   instructionDigest: string | null;
   status: AttemptStatus;

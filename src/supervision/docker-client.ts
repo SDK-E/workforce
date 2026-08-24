@@ -12,6 +12,7 @@ export interface DockerClient {
     attemptId: string,
     command: string[],
     secretEnvironment?: Record<string, string>,
+    runtimeEnvironment?: Record<string, string>,
   ): Promise<AttemptResult>;
   stop(containerName: string): Promise<void>;
   managedContainers(): Promise<string[]>;
@@ -71,10 +72,18 @@ export class ExecaDockerClient implements DockerClient {
     attemptId: string,
     command: string[],
     secretEnvironment: Record<string, string> = {},
+    runtimeEnvironment: Record<string, string> = {},
   ): Promise<AttemptResult> {
     const result = await execa(
       "docker",
-      dockerRunArguments(spec, attemptId, command, this.egress, Object.keys(secretEnvironment)),
+      dockerRunArguments(
+        spec,
+        attemptId,
+        command,
+        this.egress,
+        Object.keys(secretEnvironment),
+        runtimeEnvironment,
+      ),
       {
         reject: false,
         timeout: spec.timeoutSeconds * 1_000,

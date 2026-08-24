@@ -7,6 +7,7 @@ import type { AttemptFactory } from "../supervision/attempt-factory.js";
 import type { AttemptRecord } from "../supervision/attempt-types.js";
 import type { DockerSupervisor } from "../supervision/docker-supervisor.js";
 import type { TaskRecord } from "./task-types.js";
+import type { AttemptCapabilityResolver } from "../integrations/attempt-capability-resolver.js";
 
 export class TaskExecutionService {
   constructor(
@@ -15,6 +16,7 @@ export class TaskExecutionService {
     private readonly tools: ToolRepository,
     private readonly attempts: AttemptFactory,
     private readonly supervisor: DockerSupervisor,
+    private readonly capabilityResolver?: AttemptCapabilityResolver,
   ) {}
 
   async start(companyId: string, taskId: string, actorId: string): Promise<AttemptRecord> {
@@ -32,13 +34,20 @@ export class TaskExecutionService {
     const sandbox = planSandbox(requirements);
     if (sandbox.rejectedCapabilities.length > 0)
       throw new Error(`Task capabilities rejected: ${sandbox.rejectedCapabilities.join(", ")}`);
-    const secretNames = this.resolveToolSecrets(task);
+    const capabilities = this.capabilityResolver?.resolve(task, sandbox.engine) ?? {
+      environment: {},
+      secretNames: [],
+    };
+    const secretNames = [
+      ...new Set([...this.resolveToolSecrets(task), ...capabilities.secretNames]),
+    ];
     const request = this.attempts.create({
       task,
       employeeId,
       sandbox,
       model: model.model,
       secretNames,
+      environment: capabilities.environment,
     });
     const attempt = this.supervisor.enqueue(request);
     this.tasks.transition(companyId, taskId, "START", actorId, `Queued attempt ${attempt.id}`);
@@ -69,7 +78,7 @@ export class TaskExecutionService {
   private resolveToolSecrets(task: TaskRecord): string[] {
     return [
       ...new Set(
-        task.tools.flatMap((id) => {
+        task.tools.filter(isBuiltInTool).flatMap((id) => {
           const tool = this.tools.get(task.companyId, id);
           if (!tool) throw new Error(`Unknown task tool: ${id}`);
           if (tool.health === "unavailable") throw new Error(`Task tool is unavailable: ${id}`);
@@ -116,6 +125,10 @@ export class TaskExecutionService {
       acceptanceCriteria: task.acceptanceCriteria,
     });
   }
+}
+
+function isBuiltInTool(id: string): boolean {
+  return !id.startsWith("mcp:") && !id.startsWith("integration:");
 }
 
 function preference(requested: string[], id: string, model: string): number {
