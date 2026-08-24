@@ -1,0 +1,24 @@
+{
+  "id": "example-engineering",
+  "title": "Implement a verified service",
+  "objective": "Implement the specified service and return validated source artifacts.",
+  "risk": "medium",
+  "dataSensitivity": "internal",
+  "capabilities": {
+    "filesystemWrite": true,
+    "shell": true,
+    "sourceControl": true,
+    "browser": false,
+    "publicInternet": false,
+    "packageInstall": false,
+    "buildTools": ["pnpm"],
+    "languages": ["typescript"]
+  },
+  "inputs": [{ "name": "source", "source": "/approved/input/source.tar", "access": "copy" }],
+  "outputs": [{ "path": "out/result.tar", "required": true, "validator": "artifact-manifest" }],
+  "network": { "allowedHosts": [], "reason": "" },
+  "resources": { "cpu": 2, "memoryMb": 2048, "pids": 256, "timeoutSeconds": 1800 },
+  "enginePreference": ["kilo", "opencode"],
+  "acceptanceCriteria": ["Required artifact exists", "Declared tests pass", "No unauthorized paths were accessed"]
+}
+

@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+test "$(id -u)" = "10001"
+test -d /work
+exec "$@"
+

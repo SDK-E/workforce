@@ -1,0 +1,30 @@
+{
+  "name": "@workforce/control-plane",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.21.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "tui": "tsx src/cli.tsx",
+    "doctor": "tsx src/doctor.ts",
+    "sandbox:plan": "tsx src/plan-cli.ts",
+    "arm:design": "tsx src/arm-cli.ts",
+    "images:build": "sh scripts/build-images.sh",
+    "sandbox:verify": "sh scripts/verify-sandbox.sh",
+    "start": "tsx src/cli.tsx"
+  },
+  "dependencies": {
+    "ink": "6.3.1",
+    "react": "19.1.1",
+    "zod": "4.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.3.0",
+    "@types/react": "19.1.12",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2"
+  }
+}
