@@ -27,6 +27,17 @@ Node.js 22.13–26 and pnpm 10–11 are supported and checked explicitly. Depend
 
 Use arrows or `j`/`k` to navigate, Enter to open, `/` or `p` for the command palette, `?` for contextual help, and `q` to quit. Docker status, active container capacity, pending decisions, and alerts remain visible in the top bar.
 
+## Source organization
+
+- `src/storage`: schema, persisted records, sanitization, and transactional state
+- `src/tui/components`: reusable application chrome and controls
+- `src/tui/views`: page-level workspaces
+- `src/tui/overlays`: command palette, help, and future modal flows
+- `src/acceptance`: independently testable completion policy
+- `src/supervision`: capacity and progress monitoring policies
+
+See [docs/coding-standards.md](docs/coding-standards.md). Formatting is enforced by `pnpm test`; use `pnpm format` to apply it.
+
 Docker Desktop or another compatible Docker daemon must be running before any agent attempt can start.
 
 ## Safety invariants

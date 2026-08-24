@@ -12,7 +12,9 @@
     "preinstall": "node scripts/check-node.mjs",
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
-    "test": "pnpm build && node --test dist/test/**/*.test.js",
+    "format": "prettier --write 'src/**/*.{ts,tsx}' 'test/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx}' 'test/**/*.ts'",
+    "test": "pnpm format:check && pnpm build && node --test dist/test/**/*.test.js",
     "dev": "tsx src/cli.tsx",
     "tui": "pnpm start",
     "doctor": "pnpm build && node dist/src/doctor.js",
@@ -31,6 +33,7 @@
   "devDependencies": {
     "@types/node": "24.3.0",
     "@types/react": "19.1.12",
+    "prettier": "3.6.2",
     "tsx": "4.20.5",
     "typescript": "5.9.2"
   }

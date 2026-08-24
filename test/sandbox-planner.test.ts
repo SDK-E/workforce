@@ -5,14 +5,27 @@ import { dockerRunArguments } from "../src/docker-runtime.js";
 import { planSandbox } from "../src/sandbox-planner.js";
 
 const base = {
-  id: "build-api", title: "Build API", objective: "Implement and test a local API",
-  risk: "medium", dataSensitivity: "internal",
-  capabilities: { filesystemWrite: true, shell: true, sourceControl: true, browser: false, publicInternet: false, packageInstall: true, buildTools: ["pnpm"], languages: ["typescript"] },
+  id: "build-api",
+  title: "Build API",
+  objective: "Implement and test a local API",
+  risk: "medium",
+  dataSensitivity: "internal",
+  capabilities: {
+    filesystemWrite: true,
+    shell: true,
+    sourceControl: true,
+    browser: false,
+    publicInternet: false,
+    packageInstall: true,
+    buildTools: ["pnpm"],
+    languages: ["typescript"],
+  },
   inputs: [{ name: "repository", source: "/approved/export.tar", access: "copy" }],
   outputs: [{ path: "dist/result.tar", required: true }],
   network: { allowedHosts: [], reason: "" },
   resources: { cpu: 2, memoryMb: 2048, pids: 256, timeoutSeconds: 1800 },
-  enginePreference: ["kilo"], acceptanceCriteria: ["Tests pass", "Artifact exists"]
+  enginePreference: ["kilo"],
+  acceptanceCriteria: ["Tests pass", "Artifact exists"],
 } as const;
 
 test("adapts an engineering sandbox from requirements", () => {
@@ -25,7 +38,12 @@ test("adapts an engineering sandbox from requirements", () => {
 });
 
 test("rejects restricted data with public internet", () => {
-  const job = JobRequirementsSchema.parse({ ...base, dataSensitivity: "restricted", capabilities: { ...base.capabilities, publicInternet: true }, network: { allowedHosts: ["example.com"], reason: "research" } });
+  const job = JobRequirementsSchema.parse({
+    ...base,
+    dataSensitivity: "restricted",
+    capabilities: { ...base.capabilities, publicInternet: true },
+    network: { allowedHosts: ["example.com"], reason: "research" },
+  });
   const spec = planSandbox(job);
   assert.equal(spec.networkMode, "none");
   assert.ok(spec.rejectedCapabilities.includes("publicInternet"));
@@ -42,8 +60,12 @@ test("Docker command is hardened and contains no host workspace bind", () => {
 });
 
 test("refuses direct allowlisted networking until egress proxy exists", () => {
-  const job = JobRequirementsSchema.parse({ ...base, dataSensitivity: "public", capabilities: { ...base.capabilities, publicInternet: true }, network: { allowedHosts: ["registry.npmjs.org"], reason: "packages" } });
+  const job = JobRequirementsSchema.parse({
+    ...base,
+    dataSensitivity: "public",
+    capabilities: { ...base.capabilities, publicInternet: true },
+    network: { allowedHosts: ["registry.npmjs.org"], reason: "packages" },
+  });
   const spec = planSandbox(job);
   assert.throws(() => dockerRunArguments(spec, "attempt-2", ["kilo", "run"]), /egress proxy/);
 });
-

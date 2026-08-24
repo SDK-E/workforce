@@ -1,3 +1,2 @@
-export interface CriterionResult{criterion:string;passed:boolean;evidenceIds:string[]}
-export interface AcceptanceResult{accepted:boolean;reasons:string[]}
-export function evaluateAcceptance(exit:number|null,required:string[],observed:Set<string>,criteria:CriterionResult[],reviewRequired=false,reviewApproved=false):AcceptanceResult{const reasons:string[]=[];if(exit!==0)reasons.push(`Process exit was ${exit===null?"unavailable":exit}`);for(const output of required)if(!observed.has(output))reasons.push(`Missing required output: ${output}`);for(const c of criteria)if(!c.passed||c.evidenceIds.length===0)reasons.push(`Criterion not evidenced: ${c.criterion}`);if(reviewRequired&&!reviewApproved)reasons.push("Independent review is required");return{accepted:reasons.length===0,reasons}}
+export { evaluateAcceptance } from "./acceptance/evaluate-acceptance.js";
+export type { AcceptanceResult, CriterionResult } from "./acceptance/types.js";

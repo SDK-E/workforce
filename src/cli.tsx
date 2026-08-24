@@ -1,26 +1,18 @@
-import React,{useMemo,useState}from"react";
-import{Box,Text,render,useInput,useStdout}from"ink";
-import{dockerStatus,type DockerStatus}from"./docker-runtime.js";
-import{StateStore,type CompanyRecord,sanitizeTerminal}from"./state.js";
-const sections=["Executive overview","CEO office","Companies","Organization","Departments","Teams","Offices & rooms","Employees","Agent Resources","Projects","Initiatives","Goals","Milestones","Tasks","Live work","Meetings","Conversations","Deliverables","Performance","Recognition","Warnings & incidents","Approvals","Critics & reviews","Tools","Environments","Models & engines","Docker & resources","Audit","Settings","Advanced diagnostics"];
-const short=(v:string,n:number)=>v.length>n?`${v.slice(0,Math.max(1,n-1))}…`:v;
-function Panel({title,children,width}:{title:string;children:React.ReactNode;width?:number|string}){return <Box width={width} borderStyle="round" borderColor="gray" flexDirection="column" paddingX={1}><Text bold>{title}</Text>{children}</Box>}
-function App({store,docker,initialCompany}:{store:StateStore;docker:DockerStatus;initialCompany:CompanyRecord}){
- const{stdout}=useStdout();const[selected,setSelected]=useState(0);const company=initialCompany;const[palette,setPalette]=useState(false);const[help,setHelp]=useState(false);const[search,setSearch]=useState("");const[toast,setToast]=useState("Ready — no agent work starts without an approved task");
- const width=stdout?.columns??100,height=stdout?.rows??30,compact=width<88;const employees=useMemo(()=>store.employees(company.id),[store,company.id]);const entities=store.entities(company.id);const pending=store.pendingApprovals(company.id);const eventRow=store.db.prepare("SELECT count(*) n FROM events WHERE company_id=?").get(company.id)as{n:number};
- useInput((input,key)=>{if(help){if(input==="?"||key.escape)setHelp(false);return}if(palette){if(key.escape){setPalette(false);setSearch("");return}if(key.return){const found=sections.findIndex(s=>s.toLowerCase().includes(search.toLowerCase()));if(found>=0){setSelected(found);setToast(`Opened ${sections[found]}`)}setPalette(false);setSearch("");return}if(key.backspace||key.delete)setSearch(s=>s.slice(0,-1));else if(input&&!key.ctrl&&!key.meta)setSearch(s=>sanitizeTerminal(s+input,60));return}if(input==="q")process.exit(0);if(input==="?")setHelp(true);else if(input==="p"||input==="/")setPalette(true);else if(key.upArrow||input==="k")setSelected(i=>(i-1+sections.length)%sections.length);else if(key.downArrow||input==="j")setSelected(i=>(i+1)%sections.length);else if(key.return)setToast(`Opened ${sections[selected]}`)});
- const active=employees.filter(e=>e.status==="active").length;
- return <Box width={width} height={height} flexDirection="column">
-  <Box paddingX={1} justifyContent="space-between" backgroundColor="blue"><Text bold> WORKFORCE  {short(company.displayName,22)}</Text><Text>Docker {docker.available?"● ready":"! blocked"}  Agents 0/2  Decisions {pending}  Alerts {docker.available?0:1}</Text></Box>
-  <Box paddingX={1}><Text dimColor>Home  ›  {sections[selected]}  │  Project: All  │  Search /</Text></Box>
-  <Box flexGrow={1} flexDirection="row"><Box width={compact?24:28} borderStyle="single" borderColor="gray" flexDirection="column" paddingX={1}>{sections.slice(0,Math.max(8,height-7)).map((item,i)=>i===selected?<Text key={item} inverse color="cyan">› {short(item,compact?18:22)}</Text>:<Text key={item}>  {short(item,compact?18:22)}</Text>)}</Box>
-   <Box flexGrow={1} flexDirection="column" paddingX={1}><Text bold>{sections[selected]}</Text><Text dimColor>{company.mission||"Define a mission in Companies to focus the workforce."}</Text>
-    <Box marginTop={1} gap={1} flexWrap="wrap"><Panel title="WORKFORCE" width={compact?24:28}><Text color="green">● {active} durable identities healthy</Text><Text>0 working · 0 blocked · 0 stale</Text></Panel><Panel title="EXECUTION" width={compact?24:30}><Text color={docker.available?"green":"yellow"}>{docker.available?"● Docker available":"! Docker unavailable"}</Text><Text>Host execution disabled</Text></Panel><Panel title="DECISIONS" width={compact?24:28}><Text>{pending} pending approvals</Text><Text>0 deliverables ready</Text></Panel></Box>
-    <Box marginTop={1} flexGrow={1} gap={1}><Panel title="PRIORITIES & PROGRESS" width="58%">{entities.length===0?<><Text dimColor>No active objectives or projects.</Text><Text>Use Companies and Projects to begin.</Text></>:entities.slice(0,6).map(e=><Text key={e.id}>[{e.status}] {e.kind}: {short(e.name,36)}</Text>)}</Panel>{!compact&&<Panel title="SYSTEM & RISK" width="42%"><Text>{docker.available?"No execution alerts":"Docker sleeping or unavailable"}</Text><Text>Audit chain: {store.verifyAuditChain()?"verified":"FAILED"}</Text><Text>Raw events: {eventRow.n}</Text><Text>Memory policy: 2 containers default</Text><Text>Network: deny by default</Text></Panel>}</Box>
-   </Box></Box>
-  <Box paddingX={1} justifyContent="space-between" backgroundColor="gray"><Text>{toast}</Text><Text>↑↓ Navigate  ↵ Open  / Palette  ? Help  q Quit</Text></Box>
-  {palette&&<Box position="absolute" marginTop={4} marginLeft={Math.max(2,Math.floor(width/4))} width={Math.max(36,Math.floor(width/2))} borderStyle="double" borderColor="cyan" flexDirection="column" paddingX={1}><Text bold>Command palette</Text><Text>› {search}<Text inverse> </Text></Text>{sections.filter(s=>s.toLowerCase().includes(search.toLowerCase())).slice(0,6).map(s=><Text key={s}>  {s}</Text>)}<Text dimColor>Type to filter · Enter to open · Esc to close</Text></Box>}
-  {help&&<Box position="absolute" marginTop={3} marginLeft={compact?4:Math.floor(width/4)} width={compact?Math.max(40,width-8):Math.floor(width/2)} borderStyle="double" borderColor="cyan" flexDirection="column" paddingX={2}><Text bold>Keyboard help</Text><Text>↑/k, ↓/j   Navigate</Text><Text>Enter       Open selected area</Text><Text>/ or p      Command palette / search</Text><Text>?           Toggle this help</Text><Text>q           Quit safely</Text><Text dimColor>Consequential actions always require confirmation.</Text></Box>}
- </Box>
-}
-const store=new StateStore();await store.initialize();let company=store.companies()[0];if(!company)company=store.createCompany({id:"default",name:"Default Company",mission:"Build a dependable company with verified outcomes."});render(<App store={store} docker={await dockerStatus()} initialCompany={company}/>);
+import React from "react";
+import { render } from "ink";
+import { dockerStatus } from "./docker-runtime.js";
+import { StateStore } from "./storage/state-store.js";
+import { WorkforceApp } from "./tui/workforce-app.js";
+
+const store = new StateStore();
+await store.initialize();
+
+const company =
+  store.companies()[0] ??
+  store.createCompany({
+    id: "default",
+    name: "Default Company",
+    mission: "Build a dependable company with verified outcomes.",
+  });
+
+render(<WorkforceApp store={store} docker={await dockerStatus()} initialCompany={company} />);
