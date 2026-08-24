@@ -4,17 +4,24 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.21.0",
+  "engines": {
+    "node": ">=22.13 <27",
+    "pnpm": ">=10 <12"
+  },
   "scripts": {
+    "preinstall": "node scripts/check-node.mjs",
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test test/**/*.test.ts",
-    "tui": "tsx src/cli.tsx",
-    "doctor": "tsx src/doctor.ts",
-    "sandbox:plan": "tsx src/plan-cli.ts",
-    "arm:design": "tsx src/arm-cli.ts",
+    "test": "pnpm build && node --test dist/test/**/*.test.js",
+    "dev": "tsx src/cli.tsx",
+    "tui": "pnpm start",
+    "doctor": "pnpm build && node dist/src/doctor.js",
+    "sandbox:plan": "pnpm build && node dist/src/plan-cli.js",
+    "arm:design": "pnpm build && node dist/src/arm-cli.js",
     "images:build": "sh scripts/build-images.sh",
     "sandbox:verify": "sh scripts/verify-sandbox.sh",
-    "start": "tsx src/cli.tsx"
+    "start": "node scripts/check-node.mjs && node dist/src/cli.js",
+    "package": "pnpm build && pnpm pack --ignore-scripts"
   },
   "dependencies": {
     "ink": "6.3.1",

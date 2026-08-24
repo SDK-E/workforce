@@ -68,12 +68,14 @@ export const SandboxSpecSchema = z.object({
 });
 export type SandboxSpec = z.infer<typeof SandboxSpecSchema>;
 
-export type EmploymentStatus = "probation" | "active" | "suspended" | "terminated";
+export type EmploymentStatus = "candidate" | "proposed" | "probation" | "active" | "coaching" | "restricted" | "suspended" | "reassigned" | "terminated" | "archived";
 export interface Employee {
   id: string;
   name: string;
   title: string;
+  role?: string;
   department: string;
+  team?: string | null;
   manager: string | null;
   status: EmploymentStatus;
   responsibilities: string[];
