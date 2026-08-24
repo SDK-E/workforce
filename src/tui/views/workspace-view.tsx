@@ -70,6 +70,8 @@ interface WorkspaceViewProps {
   models: ModelRecord[];
   agentProfiles: AgentProfile[];
   compact: boolean;
+  companies: CompanyRecord[];
+  onCompanySelect: (company: CompanyRecord) => void;
 }
 
 const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
@@ -81,7 +83,15 @@ const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
 };
 
 export function WorkspaceView(props: WorkspaceViewProps) {
-  if (props.section === "Companies") return <CompanyView company={props.company} />;
+  if (props.section === "Companies")
+    return (
+      <CompanyView
+        company={props.company}
+        companies={props.companies}
+        compact={props.compact}
+        onSelect={props.onCompanySelect}
+      />
+    );
   if (props.section === "Organization") return <OrganizationView units={props.organizationUnits} />;
   if (props.section === "Departments")
     return <OrganizationView units={props.organizationUnits} kind="department" />;

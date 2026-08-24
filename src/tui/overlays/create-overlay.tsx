@@ -7,8 +7,15 @@ import { OrganizationForm } from "./organization-form.js";
 import { StrategyForm } from "./strategy-form.js";
 import { TaskForm } from "./task-form.js";
 import { AgentProfileForm } from "./agent-profile-form.js";
+import { CompanyCreateForm } from "./company-create-form.js";
 
-export type CreateFormKind = "company" | "organization" | "strategy" | "task" | "agent-profile";
+export type CreateFormKind =
+  | "company-create"
+  | "company-edit"
+  | "organization"
+  | "strategy"
+  | "task"
+  | "agent-profile";
 
 export function CreateOverlay(props: {
   kind: CreateFormKind;
@@ -29,7 +36,19 @@ export function CreateOverlay(props: {
       props.onStatus(error instanceof Error ? error.message : "Mutation failed");
     }
   }
-  if (props.kind === "company")
+  if (props.kind === "company-create")
+    return (
+      <CompanyCreateForm
+        terminalWidth={props.terminalWidth}
+        onCancel={props.onClose}
+        onSubmit={(input) => {
+          finish(() => {
+            props.onCompanyChange(props.store.createCompany(input));
+          }, "Company created, isolated, and audited");
+        }}
+      />
+    );
+  if (props.kind === "company-edit")
     return (
       <CompanyForm
         company={props.company}
@@ -98,13 +117,19 @@ export function CreateOverlay(props: {
 }
 
 export function createFormForSection(section: string): CreateFormKind | null {
-  if (section === "Companies") return "company";
+  if (section === "Companies") return "company-create";
   if (["Organization", "Departments", "Teams", "Offices & rooms"].includes(section))
     return "organization";
   if (["Projects", "Objectives", "Initiatives", "Goals", "Milestones"].includes(section))
     return "strategy";
   if (section === "Employees") return "agent-profile";
   return section === "Tasks" ? "task" : null;
+}
+
+export function editFormForSection(section: string): CreateFormKind | null {
+  if (section === "Companies") return "company-edit";
+  if (section === "Employees") return "agent-profile";
+  return null;
 }
 
 function organizationKind(section: string): OrganizationUnitKind {

@@ -14,6 +14,7 @@ import { HelpOverlay } from "./overlays/help-overlay.js";
 import {
   CreateOverlay,
   createFormForSection,
+  editFormForSection,
   type CreateFormKind,
 } from "./overlays/create-overlay.js";
 import { ExecutiveOverview } from "./views/executive-overview.js";
@@ -49,6 +50,7 @@ function loadWorkspaceData(store: StateStore, companyId: string) {
     environments: store.environments.list(companyId),
     models: store.models.list(companyId),
     agentProfiles: store.agentProfiles.list(companyId),
+    companies: store.companies(),
   };
 }
 
@@ -84,6 +86,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
 
     if (input === "q") process.exit(0);
     if (input === "n") openCreateForm();
+    if (input === "e") setActiveForm(editFormForSection(selectedSection));
     if (input === "?") setHelpVisible(true);
     else if (input === "p" || input === "/") setPaletteVisible(true);
     else if (key.upArrow || input === "k") moveSelection(-1);
@@ -170,6 +173,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
             auditVerified={store.verifyAuditChain()}
             docker={docker}
             compact={compact}
+            onCompanySelect={setCompany}
             {...data}
           />
         )}
