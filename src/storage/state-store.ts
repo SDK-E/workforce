@@ -5,7 +5,6 @@ import { AuditRepository } from "./audit-repository.js";
 import { CompanyRepository } from "./company-repository.js";
 import { ConversationRepository } from "./conversation-repository.js";
 import { WorkforceDatabase } from "./database.js";
-import { EntityRepository } from "./entity-repository.js";
 import { TaskRepository } from "./task-repository.js";
 import { OrganizationRepository } from "./organization-repository.js";
 import { StrategyRepository } from "./strategy-repository.js";
@@ -23,7 +22,6 @@ import type { CreateTaskInput, TaskEvent, TaskRecord, TaskStatus } from "../task
 import type {
   CompanyRecord,
   CreateCompanyInput,
-  EntityRecord,
   MessageRecord,
   UpdateCompanyInput,
 } from "./records.js";
@@ -33,7 +31,6 @@ export class StateStore {
   readonly database: WorkforceDatabase;
   readonly audit: AuditRepository;
   readonly companiesRepository: CompanyRepository;
-  readonly entitiesRepository: EntityRepository;
   readonly conversationsRepository: ConversationRepository;
   readonly approvalsRepository: ApprovalRepository;
   readonly tasksRepository: TaskRepository;
@@ -44,11 +41,6 @@ export class StateStore {
     this.database = new WorkforceDatabase(root);
     this.audit = new AuditRepository(this.database);
     this.companiesRepository = new CompanyRepository(this.database, this.audit);
-    this.entitiesRepository = new EntityRepository(
-      this.database,
-      this.companiesRepository,
-      this.audit,
-    );
     this.conversationsRepository = new ConversationRepository(
       this.database,
       this.companiesRepository,
@@ -108,18 +100,6 @@ export class StateStore {
   bootstrapOrganization(id: string, name: string): Employee[] {
     if (!this.company(id)) this.createCompany({ id, name });
     return this.employees(id);
-  }
-  createEntity(
-    companyId: string,
-    kind: string,
-    name: string,
-    data: Record<string, unknown> = {},
-    parentId: string | null = null,
-  ): EntityRecord {
-    return this.entitiesRepository.create(companyId, kind, name, data, parentId);
-  }
-  entities(companyId: string, kind?: string, limit = 100): EntityRecord[] {
-    return this.entitiesRepository.list(companyId, kind, limit);
   }
   addMessage(
     companyId: string,

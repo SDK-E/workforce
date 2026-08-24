@@ -38,7 +38,6 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
   const compact = width < 88;
   const selectedSection = NAVIGATION_SECTIONS[selectedIndex] ?? NAVIGATION_SECTIONS[0];
   const employees = useMemo(() => store.employees(company.id), [store, company.id]);
-  const entities = store.entities(company.id);
   const pendingApprovals = store.pendingApprovals(company.id);
   const organizationUnits = store.organizationUnits(company.id);
   const strategyItems = store.strategyItems(company.id);
@@ -132,7 +131,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
             pendingApprovals={pendingApprovals}
             eventCount={store.eventCount(company.id)}
             auditVerified={store.verifyAuditChain()}
-            entities={entities}
+            strategyItems={strategyItems}
           />
         ) : (
           <WorkspaceView

@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-export const EngineSchema = z.enum(["kilo", "opencode"]);
-export type Engine = z.infer<typeof EngineSchema>;
+const EngineSchema = z.enum(["kilo", "opencode"]);
 
 export const JobRequirementsSchema = z.object({
   id: z.string().regex(/^[a-z][a-z0-9-]{2,63}$/),
@@ -80,7 +79,7 @@ export const SandboxSpecSchema = z.object({
 });
 export type SandboxSpec = z.infer<typeof SandboxSpecSchema>;
 
-export type EmploymentStatus =
+type EmploymentStatus =
   | "candidate"
   | "proposed"
   | "probation"

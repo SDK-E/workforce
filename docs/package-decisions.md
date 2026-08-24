@@ -7,8 +7,9 @@ Packages are preferred over custom infrastructure when maintained, compatible wi
 - **XState** models task, attempt, employment, and meeting lifecycles. See the [official repository](https://github.com/statelyai/xstate).
 - **Pino** provides low-overhead JSON logging and redaction. See [Pino](https://github.com/pinojs/pino) and its [untrusted logging guidance](https://github.com/pinojs/pino/blob/main/docs/help.md).
 - **Execa** wraps trusted Docker CLI calls without a shell and supports bounded execution and cleanup. See [Execa](https://github.com/sindresorhus/execa).
-- **ink-text-input** and **ink-select-input** provide maintained Ink input primitives. See [ink-text-input](https://github.com/vadimdemedes/ink-text-input).
+- **ink-text-input** provides the maintained Ink text-entry primitive. Additional controls are added only when their corresponding workflow is implemented. See [ink-text-input](https://github.com/vadimdemedes/ink-text-input).
 - **ink-testing-library** provides deterministic Ink rendering and keyboard tests.
+- **Knip** rejects unused files, exports, and dependencies in the normal test gate. See [Knip](https://knip.dev/).
 - **typescript-eslint** uses its official [strict typed-linting configuration](https://typescript-eslint.io/getting-started/typed-linting/).
 
 ## Evaluated but not adopted

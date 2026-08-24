@@ -8,6 +8,8 @@ import {
   TASKS_SCHEMA_VERSION,
   ORGANIZATION_SCHEMA,
   ORGANIZATION_SCHEMA_VERSION,
+  REMOVE_ENTITIES_SCHEMA,
+  REMOVE_ENTITIES_SCHEMA_VERSION,
 } from "./schema.js";
 
 export class WorkforceDatabase {
@@ -87,6 +89,29 @@ export class WorkforceDatabase {
       this.connection.exec(ORGANIZATION_SCHEMA);
       this.recordMigration(ORGANIZATION_SCHEMA_VERSION);
     }
+    const afterOrganization = this.currentVersion();
+    if (afterOrganization < REMOVE_ENTITIES_SCHEMA_VERSION) {
+      const entitiesTable = this.connection
+        .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'entities'")
+        .get();
+      if (entitiesTable) {
+        const legacy = this.connection.prepare("SELECT count(*) AS count FROM entities").get() as {
+          count: number;
+        };
+        if (legacy.count > 0) {
+          throw new Error("Refusing to remove non-empty legacy entities table");
+        }
+      }
+      this.connection.exec(REMOVE_ENTITIES_SCHEMA);
+      this.recordMigration(REMOVE_ENTITIES_SCHEMA_VERSION);
+    }
+  }
+
+  private currentVersion(): number {
+    const row = this.connection
+      .prepare("SELECT max(version) AS version FROM schema_migrations")
+      .get() as { version: number };
+    return row.version;
   }
 
   private recordMigration(version: number): void {

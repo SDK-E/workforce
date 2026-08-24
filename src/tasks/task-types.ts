@@ -1,31 +1,28 @@
-export const TASK_STATUSES = [
-  "draft",
-  "clarifying",
-  "awaiting-approval",
-  "ready",
-  "assigned",
-  "starting",
-  "investigating",
-  "planning",
-  "implementing",
-  "verifying",
-  "waiting-dependency",
-  "waiting-message",
-  "waiting-approval",
-  "blocked",
-  "paused",
-  "stale",
-  "recovering",
-  "retrying",
-  "review-required",
-  "completed",
-  "rejected",
-  "failed",
-  "cancelled",
-  "archived",
-] as const;
-
-export type TaskStatus = (typeof TASK_STATUSES)[number];
+export type TaskStatus =
+  | "draft"
+  | "clarifying"
+  | "awaiting-approval"
+  | "ready"
+  | "assigned"
+  | "starting"
+  | "investigating"
+  | "planning"
+  | "implementing"
+  | "verifying"
+  | "waiting-dependency"
+  | "waiting-message"
+  | "waiting-approval"
+  | "blocked"
+  | "paused"
+  | "stale"
+  | "recovering"
+  | "retrying"
+  | "review-required"
+  | "completed"
+  | "rejected"
+  | "failed"
+  | "cancelled"
+  | "archived";
 export type TaskEvent =
   | "REQUEST_CLARIFICATION"
   | "REQUEST_APPROVAL"

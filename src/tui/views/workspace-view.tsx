@@ -5,9 +5,9 @@ import type { TaskRecord } from "../../tasks/task-types.js";
 import { CompanyView } from "./company-view.js";
 import { ConversationView } from "./conversation-view.js";
 import { OrganizationView } from "./organization-view.js";
-import { SectionPlaceholder } from "./section-placeholder.js";
 import { StrategyView } from "./strategy-view.js";
 import { TaskView } from "./task-view.js";
+import { UnavailableView } from "./unavailable-view.js";
 
 interface WorkspaceViewProps {
   section: string;
@@ -39,5 +39,5 @@ export function WorkspaceView(props: WorkspaceViewProps) {
   if (["CEO office", "Conversations"].includes(props.section)) {
     return <ConversationView messages={props.messages} />;
   }
-  return <SectionPlaceholder section={props.section} mission={props.company.mission} />;
+  return <UnavailableView section={props.section} />;
 }

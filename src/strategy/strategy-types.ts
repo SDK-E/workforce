@@ -1,5 +1,5 @@
 export type StrategyItemKind = "objective" | "initiative" | "project" | "goal" | "milestone";
-export type StrategyStatus =
+type StrategyStatus =
   | "draft"
   | "active"
   | "at-risk"

@@ -36,22 +36,6 @@ CREATE TABLE IF NOT EXISTS employees (
   FOREIGN KEY (company_id, manager_id) REFERENCES employees(company_id, id)
 );
 
-CREATE TABLE IF NOT EXISTS entities (
-  id TEXT NOT NULL,
-  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
-  kind TEXT NOT NULL,
-  parent_id TEXT,
-  name TEXT NOT NULL,
-  status TEXT NOT NULL,
-  data_json TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
-  PRIMARY KEY (company_id, id),
-  FOREIGN KEY (company_id, parent_id) REFERENCES entities(company_id, id)
-);
-CREATE INDEX IF NOT EXISTS entities_company_kind
-  ON entities(company_id, kind, status);
-
 CREATE TABLE IF NOT EXISTS rooms (
   id TEXT NOT NULL,
   company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
@@ -208,3 +192,6 @@ CREATE TABLE strategy_items (
 );
 CREATE INDEX strategy_items_kind ON strategy_items(company_id, kind, status, updated_at DESC);
 `;
+
+export const REMOVE_ENTITIES_SCHEMA_VERSION = 4;
+export const REMOVE_ENTITIES_SCHEMA = "DROP TABLE IF EXISTS entities;";

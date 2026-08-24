@@ -18,6 +18,14 @@ test("company onboarding persists CEO and ARM and enforces isolation", () => {
   const { root, state } = store();
   try {
     state.initialize();
+    const entityTable = state.db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'entities'")
+      .get();
+    const migration = state.db
+      .prepare("SELECT max(version) AS version FROM schema_migrations")
+      .get() as { version: number };
+    assert.equal(entityTable, undefined);
+    assert.equal(migration.version, 4);
     state.createCompany({ id: "acme", name: "Acme", mission: "Ship safely" });
     state.createCompany({ id: "other", name: "Other" });
     assert.deepEqual(
@@ -27,13 +35,20 @@ test("company onboarding persists CEO and ARM and enforces isolation", () => {
         .sort(),
       ["arm", "ceo"],
     );
-    state.createEntity("acme", "project", "Apollo");
-    assert.equal(state.entities("other").length, 0);
+    state.createStrategyItem({
+      companyId: "acme",
+      kind: "objective",
+      name: "Apollo",
+      ownerId: "ceo",
+      managerId: "ceo",
+      successMeasures: ["Accepted release"],
+    });
+    assert.equal(state.strategyItems("other").length, 0);
     state.close();
     const reopened = new StateStore(root);
     reopened.initialize();
     assert.equal(reopened.company("acme")?.mission, "Ship safely");
-    assert.equal(reopened.entities("acme", "project")[0]?.name, "Apollo");
+    assert.equal(reopened.strategyItems("acme", "objective")[0]?.name, "Apollo");
     reopened.close();
   } finally {
     rmSync(root, { recursive: true, force: true });

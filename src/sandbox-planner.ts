@@ -1,4 +1,4 @@
-import type { JobRequirements, SandboxSpec } from "./domain.js";
+import { SandboxSpecSchema, type JobRequirements, type SandboxSpec } from "./domain.js";
 
 const IMAGE_BY_PROFILE = {
   document: "workforce-agent-document:0.1.0",
@@ -79,7 +79,7 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
     "Workspace uses a private Docker volume; host repositories are copied in as declared inputs.",
   );
 
-  return {
+  return SandboxSpecSchema.parse({
     jobId: job.id,
     profile,
     image: IMAGE_BY_PROFILE[profile],
@@ -104,5 +104,5 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
     tools: [...new Set(tools)].sort(),
     decisions,
     rejectedCapabilities: [...new Set(rejectedCapabilities)],
-  };
+  });
 }

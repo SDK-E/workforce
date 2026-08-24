@@ -3,7 +3,7 @@ import type { TaskEvent, TaskStatus } from "./task-types.js";
 
 const terminalTransitions = { ARCHIVE: "archived" } as const;
 
-export const taskMachine = createMachine({
+const taskMachine = createMachine({
   id: "task",
   initial: "draft",
   states: {

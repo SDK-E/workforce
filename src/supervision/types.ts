@@ -9,7 +9,7 @@ export interface CapacityDecision {
   pressure: "normal" | "elevated" | "critical";
   reason: string;
 }
-export type ProgressClock =
+type ProgressClock =
   | "heartbeat"
   | "engine"
   | "tool"

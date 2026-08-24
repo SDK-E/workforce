@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import type { DockerStatus } from "../../docker-runtime.js";
-import type { CompanyRecord, EntityRecord } from "../../storage/records.js";
+import type { CompanyRecord } from "../../storage/records.js";
+import type { StrategyItem } from "../../strategy/strategy-types.js";
 import { Panel } from "../components/panel.js";
 import { truncate } from "../navigation.js";
 
@@ -12,7 +13,7 @@ interface ExecutiveOverviewProps {
   pendingApprovals: number;
   eventCount: number;
   auditVerified: boolean;
-  entities: EntityRecord[];
+  strategyItems: StrategyItem[];
 }
 
 export function ExecutiveOverview(props: ExecutiveOverviewProps) {
@@ -42,15 +43,15 @@ export function ExecutiveOverview(props: ExecutiveOverviewProps) {
 
       <Box marginTop={1} flexGrow={1} gap={1}>
         <Panel title="PRIORITIES & PROGRESS" width="58%">
-          {props.entities.length === 0 ? (
+          {props.strategyItems.length === 0 ? (
             <>
               <Text dimColor>No active objectives or projects.</Text>
               <Text>Use Companies and Projects to begin.</Text>
             </>
           ) : (
-            props.entities.slice(0, 6).map((entity) => (
-              <Text key={entity.id}>
-                [{entity.status}] {entity.kind}: {truncate(entity.name, 36)}
+            props.strategyItems.slice(0, 6).map((item) => (
+              <Text key={item.id}>
+                [{item.status}] {item.kind}: {truncate(item.name, 36)}
               </Text>
             ))
           )}

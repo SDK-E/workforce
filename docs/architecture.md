@@ -13,10 +13,16 @@ The Agent Resources Manager must first turn a job into explicit requirements: ri
 Profiles are starting points, not copied employee workspaces:
 
 - Document: file output without shell or network.
-- Research: public network through a future allowlisting proxy.
-- Engineering: shell/build tools with no network by default.
-- Browser: Playwright plus approved egress.
+- Research: public network through the audited internal Tinyproxy network when approved.
+- Engineering: shell/build tools; approved registry, API, or web access uses audited egress.
+- Browser: Playwright plus approved audited egress.
 - Restricted review: no public network and no mutation beyond outputs.
+
+Direct agent bridge networking is forbidden. Network-disabled attempts use Docker's `none` network. Network-capable attempts join only an internal agent network and reach external services through the separately managed, logged proxy container.
+
+## Persistence boundaries
+
+Repositories are company-scoped and domain-specific. Organization units and strategy items are separate typed aggregates; the superseded generic entity table was removed by migration 4. Application views read through repositories and services rather than issuing SQLite statements.
 
 ## No host fallback
 
@@ -25,4 +31,3 @@ Docker unavailability is a blocked execution state. The control plane, TUI, CEO,
 ## Acceptance
 
 Container completion is only an attempt result. Independent control-plane validation checks required outputs, manifests, tests, policy violations, step exhaustion, permission failures, and acceptance criteria before a task can close.
-

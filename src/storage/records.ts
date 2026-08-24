@@ -32,18 +32,6 @@ export interface UpdateCompanyInput {
   budgetCents?: number;
 }
 
-export interface EntityRecord {
-  id: string;
-  companyId: string;
-  kind: string;
-  parentId: string | null;
-  name: string;
-  status: string;
-  data: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface MessageRecord {
   id: string;
   companyId: string;
