@@ -48,6 +48,24 @@ export type TaskEvent =
   | "CANCEL"
   | "ARCHIVE";
 
+interface TaskInputContract {
+  name: string;
+  source: string;
+  access: "read-only" | "copy";
+}
+
+interface TaskOutputContract {
+  path: string;
+  required: boolean;
+  validator?: string;
+}
+
+interface TaskModelPolicy {
+  enginePreference: ("kilo" | "opencode")[];
+  preferredModels: string[];
+  fallbackModels: string[];
+}
+
 export interface TaskRecord {
   id: string;
   companyId: string;
@@ -60,6 +78,12 @@ export interface TaskRecord {
   risk: "low" | "medium" | "high" | "critical";
   dataSensitivity: "public" | "internal" | "confidential" | "restricted";
   capabilities: string[];
+  inputs: TaskInputContract[];
+  outputs: TaskOutputContract[];
+  tools: string[];
+  modelPolicy: TaskModelPolicy;
+  escalationPath: string[];
+  completionEvidence: string[];
   networkPolicy: Record<string, unknown>;
   resourcePolicy: Record<string, unknown>;
   managerId: string;
@@ -82,6 +106,11 @@ export interface CreateTaskInput {
   risk: TaskRecord["risk"];
   dataSensitivity: TaskRecord["dataSensitivity"];
   capabilities?: string[];
+  inputs?: TaskInputContract[];
+  outputs?: TaskOutputContract[];
+  tools?: string[];
+  modelPolicy?: TaskModelPolicy;
+  escalationPath?: string[];
   networkPolicy?: Record<string, unknown>;
   resourcePolicy?: Record<string, unknown>;
   managerId: string;
@@ -99,6 +128,11 @@ export interface TaskRequirementVersion {
   nonGoals: string[];
   acceptanceCriteria: string[];
   capabilities: string[];
+  inputs: TaskInputContract[];
+  outputs: TaskOutputContract[];
+  tools: string[];
+  modelPolicy: TaskModelPolicy;
+  escalationPath: string[];
   networkPolicy: Record<string, unknown>;
   resourcePolicy: Record<string, unknown>;
   changedBy: string;
@@ -114,6 +148,11 @@ export interface UpdateTaskRequirementsInput {
   nonGoals: string[];
   acceptanceCriteria: string[];
   capabilities: string[];
+  inputs: TaskInputContract[];
+  outputs: TaskOutputContract[];
+  tools: string[];
+  modelPolicy: TaskModelPolicy;
+  escalationPath: string[];
   networkPolicy: Record<string, unknown>;
   resourcePolicy: Record<string, unknown>;
   changedBy: string;

@@ -31,7 +31,7 @@ const base = {
 test("adapts an engineering sandbox from requirements", () => {
   const spec = planSandbox(JobRequirementsSchema.parse(base));
   assert.equal(spec.profile, "engineering");
-  assert.equal(spec.networkMode, "none");
+  assert.equal(spec.networkMode, "inference-only");
   assert.ok(spec.tools.includes("shell"));
   assert.ok(spec.tools.includes("build:pnpm"));
   assert.equal(spec.workspace.type, "volume");
@@ -45,20 +45,24 @@ test("rejects restricted data with public internet", () => {
     network: { allowedHosts: ["example.com"], reason: "research" },
   });
   const spec = planSandbox(job);
-  assert.equal(spec.networkMode, "none");
+  assert.equal(spec.networkMode, "inference-only");
   assert.ok(spec.rejectedCapabilities.includes("publicInternet"));
 });
 
 test("Docker command is hardened and contains no host workspace bind", () => {
   const spec = planSandbox(JobRequirementsSchema.parse(base));
-  const args = dockerRunArguments(spec, "attempt-1", ["kilo", "run"]);
+  const egress = {
+    networkName: "workforce-egress-internal",
+    proxyUrl: "http://workforce-egress-proxy:3128",
+  };
+  const args = dockerRunArguments(spec, "attempt-1", ["kilo", "run"], egress);
   assert.ok(args.includes("--read-only"));
   assert.ok(args.includes("ALL"));
-  assert.ok(args.includes("none"));
+  assert.ok(args.includes("workforce-egress-internal"));
   assert.ok(args.some((arg) => arg.startsWith("type=volume")));
   assert.ok(!args.some((arg) => arg.includes(process.env.HOME ?? "/Users")));
-  assert.ok(!args.some((arg) => arg.startsWith("HTTP_PROXY=")));
-  const secretArgs = dockerRunArguments(spec, "attempt-secret", ["opencode"], undefined, [
+  assert.ok(args.includes("HTTP_PROXY=http://workforce-egress-proxy:3128"));
+  const secretArgs = dockerRunArguments(spec, "attempt-secret", ["opencode"], egress, [
     "GITHUB_TOKEN",
   ]);
   assert.ok(secretArgs.includes("GITHUB_TOKEN"));

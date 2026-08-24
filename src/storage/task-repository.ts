@@ -37,7 +37,17 @@ export class TaskRepository {
       risk: input.risk,
       dataSensitivity: input.dataSensitivity,
       capabilities: input.capabilities ?? [],
-      networkPolicy: input.networkPolicy ?? { mode: "none" },
+      inputs: input.inputs ?? [],
+      outputs: input.outputs ?? [{ path: "deliverable.md", required: true }],
+      tools: input.tools ?? [],
+      modelPolicy: input.modelPolicy ?? {
+        enginePreference: ["opencode", "kilo"],
+        preferredModels: [],
+        fallbackModels: [],
+      },
+      escalationPath: input.escalationPath ?? [input.managerId, "ceo"],
+      completionEvidence: [],
+      networkPolicy: input.networkPolicy ?? { mode: "inference-only" },
       resourcePolicy: input.resourcePolicy ?? {
         cpu: 1,
         memoryMb: 768,
@@ -149,8 +159,9 @@ export class TaskRepository {
       (id, company_id, project_id, parent_task_id, objective, non_goals_json,
        acceptance_criteria_json, status, risk, data_sensitivity, capabilities_json,
        network_policy_json, resource_policy_json, manager_id, assignee_id, reviewer_id,
-       created_at, updated_at, priority, due_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       created_at, updated_at, priority, due_at, inputs_json, outputs_json, tools_json,
+       model_policy_json, escalation_path_json, completion_evidence_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         task.id,
@@ -173,6 +184,12 @@ export class TaskRepository {
         task.updatedAt,
         task.priority,
         task.dueAt,
+        JSON.stringify(task.inputs),
+        JSON.stringify(task.outputs),
+        JSON.stringify(task.tools),
+        JSON.stringify(task.modelPolicy),
+        JSON.stringify(task.escalationPath),
+        JSON.stringify(task.completionEvidence),
       );
   }
 
@@ -189,6 +206,12 @@ export class TaskRepository {
       risk: String(row.risk) as TaskRecord["risk"],
       dataSensitivity: String(row.data_sensitivity) as TaskRecord["dataSensitivity"],
       capabilities: parseJson(row.capabilities_json),
+      inputs: parseJson(row.inputs_json),
+      outputs: parseJson(row.outputs_json),
+      tools: parseJson(row.tools_json),
+      modelPolicy: parseJson(row.model_policy_json),
+      escalationPath: parseJson(row.escalation_path_json),
+      completionEvidence: parseJson(row.completion_evidence_json),
       networkPolicy: parseJson(row.network_policy_json),
       resourcePolicy: parseJson(row.resource_policy_json),
       managerId: String(row.manager_id),

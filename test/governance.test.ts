@@ -30,7 +30,7 @@ const job = JobRequirementsSchema.parse({
   },
   inputs: [],
   outputs: [{ path: "dist/service.js", required: true }],
-  network: { mode: "none", allowedHosts: [], reason: "" },
+  network: { mode: "inference-only", allowedHosts: [], reason: "Remote model inference" },
   resources: { cpu: 2, memoryMb: 1024, pids: 128, timeoutSeconds: 1800 },
   enginePreference: ["opencode", "kilo"],
   acceptanceCriteria: ["Tests pass"],

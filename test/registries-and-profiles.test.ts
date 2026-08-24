@@ -11,7 +11,7 @@ const sandbox: SandboxSpec = {
   profile: "engineering",
   image: "workforce-agent-builder:0.1.0",
   engine: "opencode",
-  networkMode: "none",
+  networkMode: "inference-only",
   allowedHosts: [],
   readOnlyRoot: true,
   nonRoot: true,

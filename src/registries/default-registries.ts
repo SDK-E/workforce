@@ -17,7 +17,13 @@ export class DefaultRegistries {
 
   private seedTools(companyId: string): void {
     for (const [id, capabilities, risk, profiles, network] of [
-      ["shell", ["files", "build", "test"], "high", ["engineering", "restricted-review"], "none"],
+      [
+        "shell",
+        ["files", "build", "test"],
+        "high",
+        ["engineering", "restricted-review"],
+        "inference-only",
+      ],
       ["scoped-search", ["search"], "medium", ["research"], "search-only"],
       ["browser", ["browser"], "high", ["browser"], "audited-internet"],
       ["github-cli", ["git", "api"], "high", ["engineering"], "audited-internet"],
@@ -60,7 +66,7 @@ export class DefaultRegistries {
         runtime: { user: "10001:10001", rootFilesystem: "read-only" },
         buildToolchain: [],
         browser: id === "browser" ? { provider: "playwright", hostBrowser: false } : {},
-        networkPolicy: { default: "none", auditedProxyRequired: true },
+        networkPolicy: { default: "inference-only", auditedProxyRequired: true },
         inputContract: { mode: "copy", hostMounts: false },
         secretsPolicy: { scopedInjectionOnly: true },
         resourcePolicy: { cpu: 1, memoryMb: 1024, pids: 128 },

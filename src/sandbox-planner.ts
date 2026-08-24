@@ -35,7 +35,7 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
       "Critical-risk work is review-only until a human approves a lower-level execution task.",
     );
   }
-  const requestedNetworkMode = job.network.mode ?? "allowlisted";
+  const requestedNetworkMode = job.network.mode ?? "inference-only";
   if (
     c.publicInternet &&
     requestedNetworkMode === "allowlisted" &&
@@ -49,8 +49,9 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
     decisions.push("Broad audited internet requires an explicit approving authority.");
   }
 
-  const networkApproved =
+  const taskNetworkApproved =
     c.publicInternet &&
+    requestedNetworkMode !== "inference-only" &&
     (requestedNetworkMode === "audited-internet" || job.network.allowedHosts.length > 0) &&
     job.dataSensitivity !== "restricted" &&
     job.risk !== "critical";
@@ -69,11 +70,11 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
     `Selected ${profile} from explicit capability, risk, and sensitivity requirements.`,
   );
   decisions.push(
-    networkApproved
+    taskNetworkApproved
       ? requestedNetworkMode === "audited-internet"
         ? `Audited outbound internet approved by ${job.network.approvedBy ?? "unknown"}.`
         : `Network restricted to ${job.network.allowedHosts.join(", ")}.`
-      : "Network disabled.",
+      : "Outbound access is restricted to audited model inference endpoints.",
   );
   decisions.push(
     "Workspace uses a private Docker volume; host repositories are copied in as declared inputs.",
@@ -84,8 +85,8 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
     profile,
     image: IMAGE_BY_PROFILE[profile],
     engine,
-    networkMode: networkApproved ? requestedNetworkMode : "none",
-    allowedHosts: networkApproved ? job.network.allowedHosts : [],
+    networkMode: taskNetworkApproved ? requestedNetworkMode : "inference-only",
+    allowedHosts: taskNetworkApproved ? job.network.allowedHosts : [],
     readOnlyRoot: true,
     nonRoot: true,
     capDropAll: true,

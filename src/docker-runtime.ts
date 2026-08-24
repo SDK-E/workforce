@@ -46,12 +46,12 @@ export function dockerRunArguments(
     throw new Error(
       `Sandbox plan has rejected capabilities: ${spec.rejectedCapabilities.join(", ")}`,
     );
-  if (spec.networkMode !== "none" && !egress) {
+  if (!egress) {
     throw new Error(
       "Networked execution requires the workforce egress proxy; direct Docker networking is intentionally refused.",
     );
   }
-  const dockerNetwork = spec.networkMode === "none" ? "none" : egress?.networkName;
+  const dockerNetwork = egress.networkName;
   if (!dockerNetwork) throw new Error("An internal egress network is required");
   const args = [
     "run",
@@ -80,12 +80,10 @@ export function dockerRunArguments(
     "--mount",
     `type=volume,src=${spec.workspace.name},dst=/work`,
   ];
-  if (egress && spec.networkMode !== "none") {
-    args.push("--env", `HTTP_PROXY=${egress.proxyUrl}`);
-    args.push("--env", `HTTPS_PROXY=${egress.proxyUrl}`);
-    args.push("--env", "NO_PROXY=");
-    args.push("--label", `workforce.network-policy=${spec.networkMode}`);
-  }
+  args.push("--env", `HTTP_PROXY=${egress.proxyUrl}`);
+  args.push("--env", `HTTPS_PROXY=${egress.proxyUrl}`);
+  args.push("--env", "NO_PROXY=");
+  args.push("--label", `workforce.network-policy=${spec.networkMode}`);
   for (const tmpfs of spec.tmpfs) args.push("--tmpfs", tmpfs);
   for (const name of secretNames) {
     if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(name))

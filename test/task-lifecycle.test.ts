@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { StateStore } from "../src/storage/state-store.js";
+import type { UpdateTaskRequirementsInput } from "../src/tasks/task-types.js";
 
 test("task lifecycle is persisted, auditable, and evidence-gated", () => {
   const root = mkdtempSync(join(tmpdir(), "workforce-task-"));
@@ -115,14 +116,23 @@ test("requirements are versioned and active attempts require safe checkpoints", 
       secretNames: [],
     });
     store.attempts.acquire(attempt, "test-supervisor");
-    const update = {
+    const update: UpdateTaskRequirementsInput = {
       companyId: "acme",
       taskId: task.id,
       objective: "Revised objective",
       nonGoals: [],
       acceptanceCriteria: ["Revised gate"],
       capabilities: ["engineering"],
-      networkPolicy: { mode: "none" },
+      networkPolicy: { mode: "inference-only" },
+      inputs: [],
+      outputs: [{ path: "deliverable.md", required: true }],
+      tools: [],
+      modelPolicy: {
+        enginePreference: ["opencode"],
+        preferredModels: [],
+        fallbackModels: [],
+      },
+      escalationPath: ["manager", "ceo"],
       resourcePolicy: { memoryMb: 512 },
       changedBy: "ceo",
       changeReason: "New verified requirement",

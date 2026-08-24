@@ -23,6 +23,11 @@ export class TaskRequirementRepository {
       nonGoals: task.nonGoals,
       acceptanceCriteria: task.acceptanceCriteria,
       capabilities: task.capabilities,
+      inputs: task.inputs,
+      outputs: task.outputs,
+      tools: task.tools,
+      modelPolicy: task.modelPolicy,
+      escalationPath: task.escalationPath,
       networkPolicy: task.networkPolicy,
       resourcePolicy: task.resourcePolicy,
       changedBy: actorId,
@@ -60,6 +65,7 @@ export class TaskRequirementRepository {
       this.database.connection
         .prepare(
           `UPDATE tasks SET objective=?, non_goals_json=?, acceptance_criteria_json=?, capabilities_json=?,
+         inputs_json=?, outputs_json=?, tools_json=?, model_policy_json=?, escalation_path_json=?,
          network_policy_json=?, resource_policy_json=?, updated_at=? WHERE company_id=? AND id=?`,
         )
         .run(
@@ -67,6 +73,11 @@ export class TaskRequirementRepository {
           JSON.stringify(version.nonGoals),
           JSON.stringify(version.acceptanceCriteria),
           JSON.stringify(version.capabilities),
+          JSON.stringify(version.inputs),
+          JSON.stringify(version.outputs),
+          JSON.stringify(version.tools),
+          JSON.stringify(version.modelPolicy),
+          JSON.stringify(version.escalationPath),
           JSON.stringify(version.networkPolicy),
           JSON.stringify(version.resourcePolicy),
           version.createdAt,
@@ -102,7 +113,14 @@ export class TaskRequirementRepository {
 
   private insert(version: TaskRequirementVersion): void {
     this.database.connection
-      .prepare("INSERT INTO task_requirement_versions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+      .prepare(
+        `INSERT INTO task_requirement_versions
+        (company_id, task_id, version, objective, non_goals_json, acceptance_criteria_json,
+         capabilities_json, network_policy_json, resource_policy_json, changed_by, change_reason,
+         checkpoint_id, created_at, inputs_json, outputs_json, tools_json, model_policy_json,
+         escalation_path_json)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      )
       .run(
         version.companyId,
         version.taskId,
@@ -117,6 +135,11 @@ export class TaskRequirementRepository {
         version.changeReason,
         version.checkpointId,
         version.createdAt,
+        JSON.stringify(version.inputs),
+        JSON.stringify(version.outputs),
+        JSON.stringify(version.tools),
+        JSON.stringify(version.modelPolicy),
+        JSON.stringify(version.escalationPath),
       );
   }
 
@@ -129,6 +152,11 @@ export class TaskRequirementRepository {
       nonGoals: parseJson(row.non_goals_json),
       acceptanceCriteria: parseJson(row.acceptance_criteria_json),
       capabilities: parseJson(row.capabilities_json),
+      inputs: parseJson(row.inputs_json),
+      outputs: parseJson(row.outputs_json),
+      tools: parseJson(row.tools_json),
+      modelPolicy: parseJson(row.model_policy_json),
+      escalationPath: parseJson(row.escalation_path_json),
       networkPolicy: parseJson(row.network_policy_json),
       resourcePolicy: parseJson(row.resource_policy_json),
       changedBy: String(row.changed_by),

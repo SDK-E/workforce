@@ -54,7 +54,7 @@ export function designAgentForJob(job: JobRequirements, manager = "arm"): AgentB
       .filter((output) => output.required)
       .map((output) => output.path)
       .join(", ")}.`,
-    `Network policy: ${sandbox.networkMode === "none" ? "no network" : `allowlisted hosts only: ${sandbox.allowedHosts.join(", ")}`}.`,
+    `Network policy: ${sandbox.networkMode === "inference-only" ? "audited model inference endpoints only" : `audited ${sandbox.networkMode}${sandbox.allowedHosts.length ? ` for ${sandbox.allowedHosts.join(", ")}` : ""}`}.`,
     "Stop and escalate rather than bypassing a denied capability or trust boundary.",
   ];
   const probationCriteria = [
