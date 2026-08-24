@@ -38,6 +38,9 @@ function loadWorkspaceData(store: StateStore, companyId: string) {
     incidents: store.incidents.listIncidents(companyId),
     correctiveActions: store.incidents.listCorrective(companyId),
     claims: store.performance.listClaims(companyId),
+    attempts: store.attempts.list(companyId),
+    artifacts: store.artifacts.listCompany(companyId),
+    events: store.events(companyId, 200),
   };
 }
 
@@ -152,20 +155,9 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
           <WorkspaceView
             section={selectedSection}
             company={company}
-            organizationUnits={data.organizationUnits}
-            strategyItems={data.strategyItems}
-            tasks={data.tasks}
-            messages={data.messages}
-            rooms={data.rooms}
-            threads={data.threads}
-            employees={data.employees}
-            hiringProposals={data.hiringProposals}
-            approvals={data.approvals}
-            meetings={data.meetings}
-            performanceRecords={data.performanceRecords}
-            incidents={data.incidents}
-            correctiveActions={data.correctiveActions}
-            claims={data.claims}
+            auditVerified={store.verifyAuditChain()}
+            docker={docker}
+            {...data}
           />
         )}
       </Box>

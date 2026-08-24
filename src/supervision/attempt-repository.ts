@@ -66,6 +66,13 @@ export class AttemptRepository {
     return rows.map((row) => this.map(row));
   }
 
+  list(companyId: string, limit = 100): AttemptRecord[] {
+    const rows = this.database.connection
+      .prepare("SELECT * FROM attempts WHERE company_id=? ORDER BY queued_at DESC LIMIT ?")
+      .all(companyId, limit) as Record<string, unknown>[];
+    return rows.map((row) => this.map(row));
+  }
+
   get(id: string): AttemptRecord {
     const row = this.database.connection.prepare("SELECT * FROM attempts WHERE id=?").get(id) as
       | Record<string, unknown>

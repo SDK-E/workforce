@@ -68,6 +68,14 @@ export class ArtifactRepository {
     ).map((row) => this.mapArtifact(row));
   }
 
+  listCompany(companyId: string, limit = 100): ArtifactRecord[] {
+    return (
+      this.database.connection
+        .prepare("SELECT * FROM artifacts WHERE company_id=? ORDER BY created_at DESC LIMIT ?")
+        .all(companyId, limit) as Record<string, unknown>[]
+    ).map((row) => this.mapArtifact(row));
+  }
+
   receipts(attemptId: string): ValidatorReceipt[] {
     return (
       this.database.connection

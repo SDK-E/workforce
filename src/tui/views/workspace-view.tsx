@@ -16,6 +16,10 @@ import type {
   IncidentRecord,
 } from "../../governance/incident-repository.js";
 import type { ClaimRecord, PerformanceRecord } from "../../governance/performance-repository.js";
+import type { AttemptRecord } from "../../supervision/attempt-types.js";
+import type { ArtifactRecord } from "../../acceptance/artifact-types.js";
+import type { WorkforceEvent } from "../../domain.js";
+import type { DockerStatus } from "../../docker-runtime.js";
 import { AgentResourcesView } from "./agent-resources-view.js";
 import { ApprovalView } from "./approval-view.js";
 import { CompanyView } from "./company-view.js";
@@ -23,12 +27,15 @@ import { ConversationView } from "./conversation-view.js";
 import { OrganizationView } from "./organization-view.js";
 import { StrategyView } from "./strategy-view.js";
 import { TaskView } from "./task-view.js";
-import { UnavailableView } from "./unavailable-view.js";
 import { EmployeeView } from "./employee-view.js";
 import { MeetingView } from "./meeting-view.js";
 import { PerformanceView } from "./performance-view.js";
 import { IncidentView } from "./incident-view.js";
 import { ClaimView } from "./claim-view.js";
+import { DeliverableView, LiveWorkView } from "./execution-view.js";
+import { RuntimeView } from "./runtime-view.js";
+import { AuditView, DiagnosticsView } from "./audit-view.js";
+import { SettingsView } from "./settings-view.js";
 
 interface WorkspaceViewProps {
   section: string;
@@ -47,6 +54,11 @@ interface WorkspaceViewProps {
   incidents: IncidentRecord[];
   correctiveActions: CorrectiveActionRecord[];
   claims: ClaimRecord[];
+  attempts: AttemptRecord[];
+  artifacts: ArtifactRecord[];
+  events: WorkforceEvent[];
+  auditVerified: boolean;
+  docker: DockerStatus;
 }
 
 const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
@@ -59,9 +71,13 @@ const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
 
 export function WorkspaceView(props: WorkspaceViewProps) {
   if (props.section === "Companies") return <CompanyView company={props.company} />;
-  if (["Organization", "Departments", "Teams", "Offices & rooms"].includes(props.section)) {
-    return <OrganizationView units={props.organizationUnits} />;
-  }
+  if (props.section === "Organization") return <OrganizationView units={props.organizationUnits} />;
+  if (props.section === "Departments")
+    return <OrganizationView units={props.organizationUnits} kind="department" />;
+  if (props.section === "Teams")
+    return <OrganizationView units={props.organizationUnits} kind="team" />;
+  if (props.section === "Offices & rooms")
+    return <OrganizationView units={props.organizationUnits} kind={["office", "room"]} />;
   const strategyKind = STRATEGY_SECTIONS[props.section];
   if (strategyKind) {
     return <StrategyView title={props.section} kind={strategyKind} items={props.strategyItems} />;
@@ -84,5 +100,12 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       <ConversationView messages={props.messages} rooms={props.rooms} threads={props.threads} />
     );
   }
-  return <UnavailableView section={props.section} />;
+  if (props.section === "Live work") return <LiveWorkView attempts={props.attempts} />;
+  if (props.section === "Deliverables") return <DeliverableView artifacts={props.artifacts} />;
+  if (["Tools", "Environments", "Models & engines", "Docker & resources"].includes(props.section))
+    return <RuntimeView section={props.section} docker={props.docker} />;
+  if (props.section === "Audit")
+    return <AuditView events={props.events} verified={props.auditVerified} />;
+  if (props.section === "Settings") return <SettingsView company={props.company} />;
+  return <DiagnosticsView events={props.events} />;
 }
