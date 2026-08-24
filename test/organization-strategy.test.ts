@@ -19,7 +19,7 @@ test("organization and strategy hierarchies enforce company-scoped parents", () 
       name: "Engineering",
       managerId: "ceo",
     });
-    store.createOrganizationUnit({
+    const team = store.createOrganizationUnit({
       id: "platform",
       companyId: "acme",
       kind: "team",
@@ -29,6 +29,25 @@ test("organization and strategy hierarchies enforce company-scoped parents", () 
     });
     assert.equal(store.organizationUnits("acme", "team").length, 1);
     assert.equal(store.organizationUnits("other").length, 0);
+    assert.equal(
+      store.organizationRepository.update({
+        companyId: "acme",
+        unitId: team.id,
+        name: "Platform Engineering",
+      }).name,
+      "Platform Engineering",
+    );
+    assert.equal(store.organizationRepository.archive("acme", team.id).status, "archived");
+    assert.equal(store.organizationRepository.restore("acme", team.id).status, "active");
+    assert.throws(
+      () =>
+        store.organizationRepository.update({
+          companyId: "acme",
+          unitId: team.id,
+          parentId: "missing",
+        }),
+      /same company/,
+    );
 
     const objective = store.createStrategyItem({
       id: "reliable-growth",
@@ -49,6 +68,17 @@ test("organization and strategy hierarchies enforce company-scoped parents", () 
       managerId: "ceo",
       successMeasures: ["Acceptance scenario passes"],
     });
+    assert.equal(
+      store.strategyRepository.update({
+        companyId: "acme",
+        itemId: initiative.id,
+        name: "Workforce OS product",
+        successMeasures: ["All acceptance gates pass"],
+      }).name,
+      "Workforce OS product",
+    );
+    assert.equal(store.strategyRepository.archive("acme", initiative.id).status, "archived");
+    assert.equal(store.strategyRepository.restore("acme", initiative.id).status, "draft");
     assert.throws(
       () =>
         store.createStrategyItem({

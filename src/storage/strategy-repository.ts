@@ -3,6 +3,7 @@ import type {
   CreateStrategyItemInput,
   StrategyItem,
   StrategyItemKind,
+  UpdateStrategyItemInput,
 } from "../strategy/strategy-types.js";
 import type { AuditRepository } from "./audit-repository.js";
 import type { CompanyRepository } from "./company-repository.js";
@@ -102,6 +103,81 @@ export class StrategyRepository {
             .all(companyId)
     ) as Record<string, unknown>[];
     return rows.map((row) => this.map(row));
+  }
+
+  update(input: UpdateStrategyItemInput, actorId = "human"): StrategyItem {
+    const current = this.get(input.companyId, input.itemId);
+    if (!current) throw new Error(`Unknown strategy item: ${input.itemId}`);
+    const updated: StrategyItem = {
+      ...current,
+      name: sanitizeTerminal(input.name ?? current.name, 300),
+      parentId: input.parentId === undefined ? current.parentId : input.parentId,
+      ownerId: input.ownerId ?? current.ownerId,
+      managerId: input.managerId ?? current.managerId,
+      requirements: input.requirements ?? current.requirements,
+      constraints: input.constraints ?? current.constraints,
+      successMeasures: input.successMeasures ?? current.successMeasures,
+      dependencies: input.dependencies ?? current.dependencies,
+      risks: input.risks ?? current.risks,
+      targetAt: input.targetAt === undefined ? current.targetAt : input.targetAt,
+      updatedAt: new Date().toISOString(),
+    };
+    if (!updated.name || updated.successMeasures.length === 0)
+      throw new Error("Strategy items require a name and measurable success criteria");
+    this.validateParent(updated.companyId, updated.kind, updated.parentId);
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare(
+          `UPDATE strategy_items SET parent_id=?,name=?,owner_id=?,manager_id=?,requirements_json=?,
+           constraints_json=?,success_measures_json=?,dependencies_json=?,risks_json=?,target_at=?,updated_at=?
+           WHERE company_id=? AND id=?`,
+        )
+        .run(
+          updated.parentId,
+          updated.name,
+          updated.ownerId,
+          updated.managerId,
+          JSON.stringify(updated.requirements),
+          JSON.stringify(updated.constraints),
+          JSON.stringify(updated.successMeasures),
+          JSON.stringify(updated.dependencies),
+          JSON.stringify(updated.risks),
+          updated.targetAt,
+          updated.updatedAt,
+          updated.companyId,
+          updated.id,
+        );
+      this.audit.append("strategy-item.updated", actorId, updated.companyId, {
+        itemId: updated.id,
+      });
+    });
+    return updated;
+  }
+
+  archive(companyId: string, itemId: string, actorId = "human"): StrategyItem {
+    return this.setStatus(companyId, itemId, "archived", actorId);
+  }
+
+  restore(companyId: string, itemId: string, actorId = "human"): StrategyItem {
+    return this.setStatus(companyId, itemId, "draft", actorId);
+  }
+
+  private setStatus(
+    companyId: string,
+    itemId: string,
+    status: StrategyItem["status"],
+    actorId: string,
+  ): StrategyItem {
+    const current = this.get(companyId, itemId);
+    if (!current) throw new Error(`Unknown strategy item: ${itemId}`);
+    const now = new Date().toISOString();
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare("UPDATE strategy_items SET status=?,updated_at=? WHERE company_id=? AND id=?")
+        .run(status, now, companyId, itemId);
+      this.audit.append(`strategy-item.${status}`, actorId, companyId, { itemId });
+    });
+    return { ...current, status, updatedAt: now };
   }
 
   private validateParent(companyId: string, kind: StrategyItemKind, parentId: string | null): void {

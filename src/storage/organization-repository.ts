@@ -3,6 +3,7 @@ import type {
   CreateOrganizationUnitInput,
   OrganizationUnit,
   OrganizationUnitKind,
+  UpdateOrganizationUnitInput,
 } from "../organizations/organization-types.js";
 import type { AuditRepository } from "./audit-repository.js";
 import type { CompanyRepository } from "./company-repository.js";
@@ -33,6 +34,7 @@ export class OrganizationRepository {
       updatedAt: now,
     };
     if (!unit.name) throw new Error("Organization unit name is required");
+    this.validateParent(unit.companyId, unit.id, unit.parentId);
     this.database.transaction(() => {
       this.database.connection
         .prepare("INSERT INTO organization_units VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
@@ -69,7 +71,85 @@ export class OrganizationRepository {
             .prepare("SELECT * FROM organization_units WHERE company_id = ? ORDER BY kind, name")
             .all(companyId)
     ) as Record<string, unknown>[];
-    return rows.map((row) => ({
+    return rows.map((row) => this.map(row));
+  }
+
+  get(companyId: string, unitId: string): OrganizationUnit | undefined {
+    const row = this.database.connection
+      .prepare("SELECT * FROM organization_units WHERE company_id=? AND id=?")
+      .get(companyId, unitId) as Record<string, unknown> | undefined;
+    return row ? this.map(row) : undefined;
+  }
+
+  update(input: UpdateOrganizationUnitInput, actorId = "human"): OrganizationUnit {
+    const current = this.get(input.companyId, input.unitId);
+    if (!current) throw new Error(`Unknown organization unit: ${input.unitId}`);
+    const updated = {
+      ...current,
+      name: sanitizeTerminal(input.name ?? current.name, 200),
+      parentId: input.parentId === undefined ? current.parentId : input.parentId,
+      managerId: input.managerId === undefined ? current.managerId : input.managerId,
+      data: input.data ?? current.data,
+      updatedAt: new Date().toISOString(),
+    };
+    if (!updated.name) throw new Error("Organization unit name is required");
+    this.validateParent(updated.companyId, updated.id, updated.parentId);
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare(
+          `UPDATE organization_units SET name=?,parent_id=?,manager_id=?,data_json=?,updated_at=?
+           WHERE company_id=? AND id=?`,
+        )
+        .run(
+          updated.name,
+          updated.parentId,
+          updated.managerId,
+          JSON.stringify(updated.data),
+          updated.updatedAt,
+          updated.companyId,
+          updated.id,
+        );
+      this.audit.append("organization-unit.updated", actorId, updated.companyId, {
+        unitId: updated.id,
+      });
+    });
+    return updated;
+  }
+
+  archive(companyId: string, unitId: string, actorId = "human"): OrganizationUnit {
+    return this.setStatus(companyId, unitId, "archived", actorId);
+  }
+
+  restore(companyId: string, unitId: string, actorId = "human"): OrganizationUnit {
+    return this.setStatus(companyId, unitId, "active", actorId);
+  }
+
+  private setStatus(
+    companyId: string,
+    unitId: string,
+    status: OrganizationUnit["status"],
+    actorId: string,
+  ): OrganizationUnit {
+    const current = this.get(companyId, unitId);
+    if (!current) throw new Error(`Unknown organization unit: ${unitId}`);
+    const now = new Date().toISOString();
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare("UPDATE organization_units SET status=?,updated_at=? WHERE company_id=? AND id=?")
+        .run(status, now, companyId, unitId);
+      this.audit.append(`organization-unit.${status}`, actorId, companyId, { unitId });
+    });
+    return { ...current, status, updatedAt: now };
+  }
+
+  private validateParent(companyId: string, unitId: string, parentId: string | null): void {
+    if (parentId === unitId) throw new Error("Organization unit cannot parent itself");
+    if (parentId && !this.get(companyId, parentId))
+      throw new Error("Organization parent must belong to the same company");
+  }
+
+  private map(row: Record<string, unknown>): OrganizationUnit {
+    return {
       id: String(row.id),
       companyId: String(row.company_id),
       kind: String(row.kind) as OrganizationUnitKind,
@@ -80,6 +160,6 @@ export class OrganizationRepository {
       data: parseJson(row.data_json),
       createdAt: String(row.created_at),
       updatedAt: String(row.updated_at),
-    }));
+    };
   }
 }

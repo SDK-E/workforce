@@ -43,3 +43,18 @@ export interface CreateStrategyItemInput {
   risks?: string[];
   targetAt?: string | null;
 }
+
+export interface UpdateStrategyItemInput {
+  companyId: string;
+  itemId: string;
+  name?: string;
+  parentId?: string | null;
+  ownerId?: string;
+  managerId?: string;
+  requirements?: string[];
+  constraints?: string[];
+  successMeasures?: string[];
+  dependencies?: string[];
+  risks?: string[];
+  targetAt?: string | null;
+}

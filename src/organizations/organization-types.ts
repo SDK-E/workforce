@@ -22,3 +22,12 @@ export interface CreateOrganizationUnitInput {
   managerId?: string | null;
   data?: Record<string, unknown>;
 }
+
+export interface UpdateOrganizationUnitInput {
+  companyId: string;
+  unitId: string;
+  name?: string;
+  parentId?: string | null;
+  managerId?: string | null;
+  data?: Record<string, unknown>;
+}
