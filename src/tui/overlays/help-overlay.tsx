@@ -23,6 +23,8 @@ export function HelpOverlay({ compact, terminalWidth }: HelpOverlayProps) {
         <Text>↑/k, ↓/j Navigate</Text>
         <Text>←/→ Change page or detail panel</Text>
         <Text>n New record where available</Text>
+        <Text>e Edit or decide where available</Text>
+        <Text>! Global emergency stop</Text>
         <Text>/ or p Command palette / search</Text>
         <Text>? Toggle this help</Text>
         <Text>q Quit safely</Text>

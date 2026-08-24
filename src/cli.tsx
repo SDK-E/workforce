@@ -46,4 +46,11 @@ await supervisor.tick();
 logger.info({ companyId: company.id, dockerAvailable: docker.available }, "control plane started");
 logger.info(recovery, "supervisor reconciliation completed");
 
-render(<WorkforceApp store={store} docker={docker} initialCompany={company} />);
+render(
+  <WorkforceApp
+    store={store}
+    docker={docker}
+    initialCompany={company}
+    onEmergencyStop={() => supervisor.emergencyStop("human")}
+  />,
+);

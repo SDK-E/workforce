@@ -9,21 +9,20 @@ import { Sidebar } from "./components/sidebar.js";
 import { StatusBar } from "./components/status-bar.js";
 import { TopBar } from "./components/top-bar.js";
 import { NAVIGATION_SECTIONS } from "./navigation.js";
-import { CommandPalette } from "./overlays/command-palette.js";
-import { HelpOverlay } from "./overlays/help-overlay.js";
 import {
-  CreateOverlay,
   createFormForSection,
   editFormForSection,
   type CreateFormKind,
 } from "./overlays/create-overlay.js";
 import { ExecutiveOverview } from "./views/executive-overview.js";
 import { WorkspaceView } from "./views/workspace-view.js";
+import { WorkforceOverlays } from "./overlays/workforce-overlays.js";
 
 interface WorkforceAppProps {
   store: StateStore;
   docker: DockerStatus;
   initialCompany: CompanyRecord;
+  onEmergencyStop: () => Promise<void>;
 }
 
 function loadWorkspaceData(store: StateStore, companyId: string) {
@@ -54,7 +53,12 @@ function loadWorkspaceData(store: StateStore, companyId: string) {
   };
 }
 
-export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProps) {
+export function WorkforceApp({
+  store,
+  docker,
+  initialCompany,
+  onEmergencyStop,
+}: WorkforceAppProps) {
   const { stdout } = useStdout();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [paletteVisible, setPaletteVisible] = useState(false);
@@ -65,6 +69,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
   );
   const [company, setCompany] = useState(initialCompany);
   const [activeForm, setActiveForm] = useState<CreateFormKind | null>(null);
+  const [emergencyVisible, setEmergencyVisible] = useState(false);
 
   const width = stdout.columns;
   const height = stdout.rows;
@@ -73,6 +78,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
   const data = loadWorkspaceData(store, company.id);
 
   useInput((input, key) => {
+    if (emergencyVisible) return;
     if (activeForm) return;
     if (helpVisible) {
       if (input === "?" || key.escape) setHelpVisible(false);
@@ -85,8 +91,9 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
     }
 
     if (input === "q") process.exit(0);
-    if (input === "n") openCreateForm();
+    if (input === "n") setActiveForm(createFormForSection(selectedSection));
     if (input === "e") setActiveForm(editFormForSection(selectedSection));
+    if (input === "!") setEmergencyVisible(true);
     if (input === "?") setHelpVisible(true);
     else if (input === "p" || input === "/") setPaletteVisible(true);
     else if (key.upArrow || input === "k") moveSelection(-1);
@@ -95,13 +102,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
   });
 
   function moveSelection(offset: number): void {
-    setSelectedIndex(
-      (current) => (current + offset + NAVIGATION_SECTIONS.length) % NAVIGATION_SECTIONS.length,
-    );
-  }
-
-  function openCreateForm(): void {
-    setActiveForm(createFormForSection(selectedSection));
+    setSelectedIndex((current) => moveNavigation(current, offset));
   }
 
   function handlePaletteInput(
@@ -180,22 +181,31 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
       </Box>
 
       <StatusBar message={statusMessage} />
-      {paletteVisible && <CommandPalette query={searchQuery} terminalWidth={width} />}
-      {helpVisible && <HelpOverlay compact={compact} terminalWidth={width} />}
-      {activeForm && (
-        <CreateOverlay
-          kind={activeForm}
-          section={selectedSection}
-          company={company}
-          store={store}
-          terminalWidth={width}
-          onCompanyChange={setCompany}
-          onClose={() => {
-            setActiveForm(null);
-          }}
-          onStatus={setStatusMessage}
-        />
-      )}
+      <WorkforceOverlays
+        paletteVisible={paletteVisible}
+        helpVisible={helpVisible}
+        emergencyVisible={emergencyVisible}
+        activeForm={activeForm}
+        query={searchQuery}
+        compact={compact}
+        terminalWidth={width}
+        section={selectedSection}
+        company={company}
+        store={store}
+        onCompanyChange={setCompany}
+        onCloseForm={() => {
+          setActiveForm(null);
+        }}
+        onCloseEmergency={() => {
+          setEmergencyVisible(false);
+        }}
+        onStatus={setStatusMessage}
+        onEmergencyStop={onEmergencyStop}
+      />
     </Box>
   );
+}
+
+function moveNavigation(current: number, offset: number): number {
+  return (current + offset + NAVIGATION_SECTIONS.length) % NAVIGATION_SECTIONS.length;
 }
