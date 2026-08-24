@@ -9,6 +9,7 @@ import { EncryptedSecretStore } from "./secrets/encrypted-secret-store.js";
 import { resolveAttemptSecrets } from "./secrets/attempt-secret-provider.js";
 import { ArtifactPipeline } from "./acceptance/artifact-pipeline.js";
 import { TaskExecutionService } from "./tasks/task-execution-service.js";
+import { CeoOperatingLoop } from "./autonomy/ceo-operating-loop.js";
 
 const store = new StateStore();
 store.initialize();
@@ -41,8 +42,15 @@ const taskExecution = new TaskExecutionService(
   store.attemptFactory,
   supervisor,
 );
+const operatingLoop = new CeoOperatingLoop(store, store.autonomy, taskExecution);
 const recovery = await supervisor.reconcile();
 await supervisor.tick();
+await operatingLoop.tick();
+setInterval(() => {
+  void operatingLoop.tick().catch((error: unknown) => {
+    logger.error({ error }, "CEO operating cycle failed");
+  });
+}, 10_000);
 logger.info({ dockerAvailable: docker.available }, "control plane started");
 logger.info(recovery, "supervisor reconciliation completed");
 

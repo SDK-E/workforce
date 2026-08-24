@@ -59,4 +59,11 @@ export class ExecutionEvidenceRepository {
       );
     return id;
   }
+
+  activityCount(companyId: string): number {
+    const row = this.database.connection
+      .prepare("SELECT COUNT(*) AS count FROM normalized_activities WHERE company_id=?")
+      .get(companyId) as { count: number };
+    return row.count;
+  }
 }

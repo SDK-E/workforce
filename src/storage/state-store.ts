@@ -36,6 +36,7 @@ import { AgentProfileRepository } from "../employees/agent-profile-repository.js
 import { DefaultAgentProfiles } from "../employees/default-agent-profiles.js";
 import { AttemptFactory } from "../supervision/attempt-factory.js";
 import { AutomationRepository } from "../automations/automation-repository.js";
+import { AutonomyRepository } from "../autonomy/autonomy-repository.js";
 
 /** Composition facade used by the application while feature services are introduced. */
 export class StateStore {
@@ -62,6 +63,7 @@ export class StateStore {
   readonly defaultAgentProfiles: DefaultAgentProfiles;
   readonly attemptFactory: AttemptFactory;
   readonly automations: AutomationRepository;
+  readonly autonomy: AutonomyRepository;
 
   constructor(root?: string) {
     this.database = new WorkforceDatabase(root);
@@ -122,6 +124,7 @@ export class StateStore {
       this.companiesRepository,
       this.audit,
     );
+    this.autonomy = new AutonomyRepository(this.database, this.audit);
   }
 
   get root(): string {
@@ -135,6 +138,7 @@ export class StateStore {
   }
   initialize(): void {
     this.database.initialize();
+    for (const company of this.companies()) this.autonomy.ensure(company.id);
     for (const company of this.companies()) this.defaultRegistries.ensure(company.id);
     for (const company of this.companies())
       this.defaultAgentProfiles.ensure(company.id, this.employees(company.id));
@@ -147,6 +151,7 @@ export class StateStore {
   }
   createCompany(input: CreateCompanyInput): CompanyRecord {
     const company = this.companiesRepository.create(input);
+    this.autonomy.ensure(company.id);
     this.defaultRegistries.ensure(company.id);
     this.defaultAgentProfiles.ensure(company.id, this.employees(company.id));
     return company;
