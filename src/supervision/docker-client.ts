@@ -6,6 +6,7 @@ import type { AttemptResult } from "./attempt-types.js";
 export interface DockerClient {
   available(): Promise<boolean>;
   createVolume(name: string): Promise<void>;
+  exportVolume(volumeName: string, image: string, archivePath: string): Promise<void>;
   start(
     spec: SandboxSpec,
     attemptId: string,
@@ -35,6 +36,34 @@ export class ExecaDockerClient implements DockerClient {
       { reject: false, timeout: 10_000 },
     );
     if (result.exitCode !== 0) throw new Error(`Docker volume creation failed: ${result.stderr}`);
+  }
+
+  async exportVolume(volumeName: string, image: string, archivePath: string): Promise<void> {
+    const result = await execa(
+      "docker",
+      [
+        "run",
+        "--rm",
+        "--network",
+        "none",
+        "--read-only",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--mount",
+        `type=volume,src=${volumeName},dst=/work,readonly`,
+        image,
+        "tar",
+        "-C",
+        "/work",
+        "-cf",
+        "-",
+        ".",
+      ],
+      { reject: false, timeout: 60_000, stdout: { file: archivePath } },
+    );
+    if (result.exitCode !== 0) throw new Error(`Artifact export failed: ${result.stderr}`);
   }
 
   async start(

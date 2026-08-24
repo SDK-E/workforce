@@ -21,6 +21,9 @@ class FakeDockerClient implements DockerClient {
   createVolume() {
     return Promise.resolve();
   }
+  exportVolume() {
+    return Promise.resolve();
+  }
   async start(_spec: SandboxSpec, attemptId: string): Promise<AttemptResult> {
     this.starts.push(attemptId);
     return await new Promise((resolve) => this.pending.set(attemptId, resolve));
@@ -38,8 +41,8 @@ class FakeDockerClient implements DockerClient {
     this.containers = this.containers.filter((name) => name !== containerName);
     return Promise.resolve();
   }
-  complete(id: string, exitCode = 0) {
-    this.pending.get(id)?.({ exitCode, stdout: "bounded output", stderr: "", timedOut: false });
+  complete(id: string, exitCode = 0, stdout = "bounded output") {
+    this.pending.get(id)?.({ exitCode, stdout, stderr: "", timedOut: false });
     this.pending.delete(id);
   }
 }
@@ -115,6 +118,47 @@ test("supervisor runs two attempts, queues the third, refills capacity, and clea
     const recovery = await supervisor.reconcile();
     assert.deepEqual(recovery.removedOrphans, ["workforce-orphan"]);
     assert.deepEqual(docker.containers, []);
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("supervisor redacts injected secrets before persisting container output", async () => {
+  const root = mkdtempSync(join(tmpdir(), "workforce-redaction-"));
+  const store = new StateStore(root);
+  try {
+    store.initialize();
+    store.createCompany({ id: "acme", name: "Acme" });
+    const docker = new FakeDockerClient();
+    const supervisor = new DockerSupervisor(
+      store.attempts,
+      docker,
+      store.audit,
+      undefined,
+      (running) => ({ totalMemoryMb: 16_000, availableMemoryMb: 8_000, running }),
+      () => ({ TOKEN: "top-secret" }),
+      undefined,
+      store.executionEvidence,
+    );
+    supervisor.enqueue({
+      id: "redacted",
+      companyId: "acme",
+      taskId: "task",
+      employeeId: "worker",
+      sandbox,
+      command: ["opencode", "run", "--model", "openai/gpt-5", "Complete task"],
+      secretNames: ["TOKEN"],
+    });
+    await supervisor.tick();
+    await until(() => docker.starts.length === 1);
+    docker.complete("redacted", 0, "token=top-secret");
+    await supervisor.waitForIdle();
+    const persisted = store.db
+      .prepare("SELECT payload_json FROM raw_attempt_events WHERE attempt_id=?")
+      .get("redacted") as { payload_json: string };
+    assert.doesNotMatch(persisted.payload_json, /top-secret/);
+    assert.match(persisted.payload_json, /\[REDACTED\]/);
   } finally {
     store.close();
     rmSync(root, { recursive: true, force: true });

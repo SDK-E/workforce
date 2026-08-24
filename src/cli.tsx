@@ -7,6 +7,7 @@ import { ExecaDockerClient } from "./supervision/docker-client.js";
 import { DockerSupervisor } from "./supervision/docker-supervisor.js";
 import { EncryptedSecretStore } from "./secrets/encrypted-secret-store.js";
 import { resolveAttemptSecrets } from "./secrets/attempt-secret-provider.js";
+import { ArtifactPipeline } from "./acceptance/artifact-pipeline.js";
 
 const store = new StateStore();
 store.initialize();
@@ -25,16 +26,20 @@ const secrets = new EncryptedSecretStore(store.root, (event, data) => {
   store.append(event, "secret-store", data.companyId, { ...data });
 });
 secrets.initialize();
+const dockerClient = new ExecaDockerClient({
+  networkName: "workforce-egress-internal",
+  proxyUrl: "http://workforce-egress-proxy:3128",
+});
+const artifactPipeline = new ArtifactPipeline(store.root, store.artifacts, dockerClient);
 const supervisor = new DockerSupervisor(
   store.attempts,
-  new ExecaDockerClient({
-    networkName: "workforce-egress-internal",
-    proxyUrl: "http://workforce-egress-proxy:3128",
-  }),
+  dockerClient,
   store.audit,
   undefined,
   undefined,
   (attempt) => resolveAttemptSecrets(secrets, attempt),
+  artifactPipeline,
+  store.executionEvidence,
 );
 const recovery = await supervisor.reconcile();
 await supervisor.tick();

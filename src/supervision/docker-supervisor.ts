@@ -7,6 +7,12 @@ import { CapacityController } from "./capacity-controller.js";
 import type { DockerClient } from "./docker-client.js";
 import type { ResourceSnapshot } from "./types.js";
 import { engineAdapter } from "../engines/engine-adapter.js";
+import type { ArtifactRecord } from "../acceptance/artifact-types.js";
+import type { ExecutionEvidenceRepository } from "../storage/execution-evidence-repository.js";
+
+export interface AttemptFinalizer {
+  finalize(attempt: AttemptRecord, secrets: Record<string, string>): Promise<ArtifactRecord[]>;
+}
 
 export class DockerSupervisor {
   readonly ownerId = randomUUID();
@@ -30,6 +36,8 @@ export class DockerSupervisor {
         throw new Error("Attempt secrets require an authorized provider");
       return {};
     },
+    private readonly finalizer?: AttemptFinalizer,
+    private readonly evidence?: ExecutionEvidenceRepository,
   ) {}
 
   enqueue(request: AttemptRequest): AttemptRecord {
@@ -106,7 +114,7 @@ export class DockerSupervisor {
       if (Object.keys(secrets).some((name) => !attempt.secretNames.includes(name)))
         throw new Error("Secret provider returned an undeclared secret");
       const result = await this.docker.start(attempt.sandbox, attempt.id, attempt.command, secrets);
-      this.recordResult(attempt, result);
+      await this.recordResult(attempt, result, secrets);
     } catch (error) {
       const reason = error instanceof Error ? error.message : "Unknown Docker failure";
       this.attempts.setStatus(attempt.id, "infrastructure-blocked", { reason });
@@ -114,20 +122,58 @@ export class DockerSupervisor {
     }
   }
 
-  private recordResult(attempt: AttemptRecord, result: AttemptResult): void {
+  private async recordResult(
+    attempt: AttemptRecord,
+    result: AttemptResult,
+    secrets: Record<string, string>,
+  ): Promise<void> {
+    const safeResult = redactResult(result, Object.values(secrets));
+    this.evidence?.rawEvent(attempt.id, "container", {
+      exitCode: safeResult.exitCode,
+      timedOut: safeResult.timedOut,
+      stdout: safeResult.stdout,
+      stderr: safeResult.stderr,
+    });
     this.attempts.event(attempt.id, "container.output", {
-      stdout: result.stdout,
-      stderr: result.stderr,
+      stdout: safeResult.stdout,
+      stderr: safeResult.stderr,
     });
     if (result.timedOut)
       this.attempts.setStatus(attempt.id, "timed-out", {
         exitCode: result.exitCode,
         reason: "Attempt timeout",
       });
-    else
-      this.attempts.setStatus(attempt.id, result.exitCode === 0 ? "succeeded" : "failed", {
+    else if (result.exitCode !== 0)
+      this.attempts.setStatus(attempt.id, "failed", {
         exitCode: result.exitCode,
-        ...(result.exitCode === 0 ? {} : { reason: "Container exited non-zero" }),
+        reason: "Container exited non-zero",
       });
+    else {
+      let artifacts: ArtifactRecord[];
+      try {
+        artifacts = this.finalizer ? await this.finalizer.finalize(attempt, secrets) : [];
+      } catch (error) {
+        this.attempts.setStatus(attempt.id, "failed", {
+          exitCode: result.exitCode,
+          reason: error instanceof Error ? error.message : "Artifact validation failed",
+        });
+        return;
+      }
+      this.evidence?.activity({
+        companyId: attempt.companyId,
+        taskId: attempt.taskId,
+        attemptId: attempt.id,
+        kind: "attempt.completed",
+        summary: `Attempt completed with ${artifacts.length} validated artifacts`,
+        evidenceIds: artifacts.map(({ id }) => id),
+      });
+      this.attempts.setStatus(attempt.id, "succeeded", { exitCode: result.exitCode });
+    }
   }
+}
+
+function redactResult(result: AttemptResult, secrets: string[]): AttemptResult {
+  const redact = (value: string): string =>
+    secrets.filter(Boolean).reduce((safe, secret) => safe.replaceAll(secret, "[REDACTED]"), value);
+  return { ...result, stdout: redact(result.stdout), stderr: redact(result.stderr) };
 }

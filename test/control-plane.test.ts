@@ -78,6 +78,28 @@ test("process success alone never completes acceptance", () => {
   assert.equal(result.accepted, false);
   assert.equal(result.reasons.length, 2);
 });
+test("acceptance gates reject failed validators and unresolved critical findings", () => {
+  const result = evaluateAcceptance(
+    0,
+    ["out/report.md"],
+    new Set(["out/report.md"]),
+    [{ criterion: "reviewed", passed: true, evidenceIds: ["evidence-1"] }],
+    false,
+    false,
+    {
+      manifestValidated: true,
+      validatorReceipts: [{ validator: "security", status: "failed" }],
+      unresolvedCriticalFindings: ["credential exposure"],
+      permissionDenied: false,
+      executionExhausted: false,
+    },
+  );
+  assert.equal(result.accepted, false);
+  assert.deepEqual(result.reasons, [
+    "Validator security reported failed",
+    "Unresolved critical finding: credential exposure",
+  ]);
+});
 test("capacity reduces under pressure and stall clocks are distinct", () => {
   const controller = new CapacityController(2);
   assert.equal(

@@ -26,6 +26,8 @@ import { MeetingRepository } from "../governance/meeting-repository.js";
 import { IncidentRepository } from "../governance/incident-repository.js";
 import { PerformanceRepository } from "../governance/performance-repository.js";
 import { AttemptRepository } from "../supervision/attempt-repository.js";
+import { ArtifactRepository } from "./artifact-repository.js";
+import { ExecutionEvidenceRepository } from "./execution-evidence-repository.js";
 
 /** Composition facade used by the application while feature services are introduced. */
 export class StateStore {
@@ -42,6 +44,8 @@ export class StateStore {
   readonly incidents: IncidentRepository;
   readonly performance: PerformanceRepository;
   readonly attempts: AttemptRepository;
+  readonly artifacts: ArtifactRepository;
+  readonly executionEvidence: ExecutionEvidenceRepository;
 
   constructor(root?: string) {
     this.database = new WorkforceDatabase(root);
@@ -77,6 +81,8 @@ export class StateStore {
       this.audit,
     );
     this.attempts = new AttemptRepository(this.database, this.audit);
+    this.artifacts = new ArtifactRepository(this.database);
+    this.executionEvidence = new ExecutionEvidenceRepository(this.database);
   }
 
   get root(): string {

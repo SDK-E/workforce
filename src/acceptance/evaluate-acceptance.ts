@@ -1,4 +1,4 @@
-import type { AcceptanceResult, CriterionResult } from "./types.js";
+import type { AcceptanceGateEvidence, AcceptanceResult, CriterionResult } from "./types.js";
 
 export function evaluateAcceptance(
   processExitCode: number | null,
@@ -7,6 +7,7 @@ export function evaluateAcceptance(
   criteria: CriterionResult[],
   independentReviewRequired = false,
   independentReviewApproved = false,
+  gateEvidence?: AcceptanceGateEvidence,
 ): AcceptanceResult {
   const reasons: string[] = [];
   if (processExitCode !== 0) {
@@ -22,6 +23,17 @@ export function evaluateAcceptance(
   }
   if (independentReviewRequired && !independentReviewApproved) {
     reasons.push("Independent review is required");
+  }
+  if (gateEvidence) {
+    if (!gateEvidence.manifestValidated) reasons.push("Artifact manifest was not validated");
+    for (const receipt of gateEvidence.validatorReceipts) {
+      if (receipt.status !== "passed")
+        reasons.push(`Validator ${receipt.validator} reported ${receipt.status}`);
+    }
+    for (const finding of gateEvidence.unresolvedCriticalFindings)
+      reasons.push(`Unresolved critical finding: ${finding}`);
+    if (gateEvidence.permissionDenied) reasons.push("Required execution permission was denied");
+    if (gateEvidence.executionExhausted) reasons.push("Execution budget was exhausted");
   }
   return { accepted: reasons.length === 0, reasons };
 }
