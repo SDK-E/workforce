@@ -7,8 +7,26 @@ import { ConversationRepository } from "./conversation-repository.js";
 import { WorkforceDatabase } from "./database.js";
 import { EntityRepository } from "./entity-repository.js";
 import { TaskRepository } from "./task-repository.js";
+import { OrganizationRepository } from "./organization-repository.js";
+import { StrategyRepository } from "./strategy-repository.js";
+import type {
+  CreateOrganizationUnitInput,
+  OrganizationUnit,
+  OrganizationUnitKind,
+} from "../organizations/organization-types.js";
+import type {
+  CreateStrategyItemInput,
+  StrategyItem,
+  StrategyItemKind,
+} from "../strategy/strategy-types.js";
 import type { CreateTaskInput, TaskEvent, TaskRecord, TaskStatus } from "../tasks/task-types.js";
-import type { CompanyRecord, CreateCompanyInput, EntityRecord, MessageRecord } from "./records.js";
+import type {
+  CompanyRecord,
+  CreateCompanyInput,
+  EntityRecord,
+  MessageRecord,
+  UpdateCompanyInput,
+} from "./records.js";
 
 /** Composition facade used by the application while feature services are introduced. */
 export class StateStore {
@@ -19,6 +37,8 @@ export class StateStore {
   readonly conversationsRepository: ConversationRepository;
   readonly approvalsRepository: ApprovalRepository;
   readonly tasksRepository: TaskRepository;
+  readonly organizationRepository: OrganizationRepository;
+  readonly strategyRepository: StrategyRepository;
 
   constructor(root?: string) {
     this.database = new WorkforceDatabase(root);
@@ -40,6 +60,16 @@ export class StateStore {
       this.audit,
     );
     this.tasksRepository = new TaskRepository(this.database, this.companiesRepository, this.audit);
+    this.organizationRepository = new OrganizationRepository(
+      this.database,
+      this.companiesRepository,
+      this.audit,
+    );
+    this.strategyRepository = new StrategyRepository(
+      this.database,
+      this.companiesRepository,
+      this.audit,
+    );
   }
 
   get root(): string {
@@ -62,6 +92,9 @@ export class StateStore {
   }
   createCompany(input: CreateCompanyInput): CompanyRecord {
     return this.companiesRepository.create(input);
+  }
+  updateCompany(input: UpdateCompanyInput, actorId = "human"): CompanyRecord {
+    return this.companiesRepository.update(input, actorId);
   }
   company(id: string): CompanyRecord | undefined {
     return this.companiesRepository.get(id);
@@ -133,6 +166,18 @@ export class StateStore {
       rationale,
       acceptanceApproved,
     );
+  }
+  createOrganizationUnit(input: CreateOrganizationUnitInput): OrganizationUnit {
+    return this.organizationRepository.create(input);
+  }
+  organizationUnits(companyId: string, kind?: OrganizationUnitKind): OrganizationUnit[] {
+    return this.organizationRepository.list(companyId, kind);
+  }
+  createStrategyItem(input: CreateStrategyItemInput): StrategyItem {
+    return this.strategyRepository.create(input);
+  }
+  strategyItems(companyId: string, kind?: StrategyItemKind): StrategyItem[] {
+    return this.strategyRepository.list(companyId, kind);
   }
   eventCount(companyId: string): number {
     return this.audit.count(companyId);

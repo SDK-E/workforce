@@ -9,6 +9,7 @@ export const NAVIGATION_SECTIONS = [
   "Employees",
   "Agent Resources",
   "Projects",
+  "Objectives",
   "Initiatives",
   "Goals",
   "Milestones",

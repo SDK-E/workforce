@@ -40,7 +40,7 @@ export default tseslint.config(
     rules: { "no-console": "off" }
   },
   {
-    files: ["test/**/*.ts"],
+    files: ["test/**/*.{ts,tsx}"],
     rules: { "@typescript-eslint/no-floating-promises": "off" }
   },
   {

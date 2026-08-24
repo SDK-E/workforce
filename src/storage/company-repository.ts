@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Employee } from "../domain.js";
 import type { AuditRepository } from "./audit-repository.js";
 import type { WorkforceDatabase } from "./database.js";
-import type { CompanyRecord, CreateCompanyInput } from "./records.js";
+import type { CompanyRecord, CreateCompanyInput, UpdateCompanyInput } from "./records.js";
 import { parseJson } from "./serialization.js";
 import { sanitizeTerminal } from "./sanitize-terminal.js";
 
@@ -35,6 +35,43 @@ export class CompanyRepository {
       | Record<string, unknown>
       | undefined;
     return row ? this.map(row) : undefined;
+  }
+
+  update(input: UpdateCompanyInput, actorId = "human"): CompanyRecord {
+    const current = this.require(input.companyId);
+    const updated: CompanyRecord = {
+      ...current,
+      name: sanitizeTerminal(input.name ?? current.name, 200),
+      displayName: sanitizeTerminal(input.displayName ?? current.displayName, 200),
+      mission: sanitizeTerminal(input.mission ?? current.mission),
+      vision: sanitizeTerminal(input.vision ?? current.vision),
+      values: (input.values ?? current.values).map((value) => sanitizeTerminal(value, 200)),
+      policies: input.policies ?? current.policies,
+      budgetCents: input.budgetCents ?? current.budgetCents,
+    };
+    if (!updated.name || updated.budgetCents < 0) throw new Error("Company update is invalid");
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare(
+          `UPDATE companies SET name = ?, display_name = ?,
+        mission = ?, vision = ?, values_json = ?, policies_json = ?, budget_cents = ?
+        WHERE id = ?`,
+        )
+        .run(
+          updated.name,
+          updated.displayName,
+          updated.mission,
+          updated.vision,
+          JSON.stringify(updated.values),
+          JSON.stringify(updated.policies),
+          updated.budgetCents,
+          updated.id,
+        );
+      this.audit.append("company.updated", actorId, updated.id, {
+        fields: Object.keys(input).filter((key) => key !== "companyId"),
+      });
+    });
+    return updated;
   }
 
   list(): CompanyRecord[] {

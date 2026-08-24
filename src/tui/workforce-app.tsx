@@ -11,8 +11,9 @@ import { TopBar } from "./components/top-bar.js";
 import { NAVIGATION_SECTIONS } from "./navigation.js";
 import { CommandPalette } from "./overlays/command-palette.js";
 import { HelpOverlay } from "./overlays/help-overlay.js";
+import { CompanyForm } from "./overlays/company-form.js";
 import { ExecutiveOverview } from "./views/executive-overview.js";
-import { SectionPlaceholder } from "./views/section-placeholder.js";
+import { WorkspaceView } from "./views/workspace-view.js";
 
 interface WorkforceAppProps {
   store: StateStore;
@@ -29,16 +30,23 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
   const [statusMessage, setStatusMessage] = useState(
     "Ready — no agent work starts without an approved task",
   );
+  const [company, setCompany] = useState(initialCompany);
+  const [companyFormVisible, setCompanyFormVisible] = useState(false);
 
   const width = stdout.columns;
   const height = stdout.rows;
   const compact = width < 88;
   const selectedSection = NAVIGATION_SECTIONS[selectedIndex] ?? NAVIGATION_SECTIONS[0];
-  const employees = useMemo(() => store.employees(initialCompany.id), [store, initialCompany.id]);
-  const entities = store.entities(initialCompany.id);
-  const pendingApprovals = store.pendingApprovals(initialCompany.id);
+  const employees = useMemo(() => store.employees(company.id), [store, company.id]);
+  const entities = store.entities(company.id);
+  const pendingApprovals = store.pendingApprovals(company.id);
+  const organizationUnits = store.organizationUnits(company.id);
+  const strategyItems = store.strategyItems(company.id);
+  const tasks = store.tasks(company.id);
+  const messages = store.messages(company.id, "ceo-office");
 
   useInput((input, key) => {
+    if (companyFormVisible) return;
     if (helpVisible) {
       if (input === "?" || key.escape) setHelpVisible(false);
       return;
@@ -50,6 +58,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
     }
 
     if (input === "q") process.exit(0);
+    if (input === "n" && selectedSection === "Companies") setCompanyFormVisible(true);
     if (input === "?") setHelpVisible(true);
     else if (input === "p" || input === "/") setPaletteVisible(true);
     else if (key.upArrow || input === "k") moveSelection(-1);
@@ -106,7 +115,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
   return (
     <Box width={width} height={height} flexDirection="column">
       <TopBar
-        companyName={initialCompany.displayName}
+        companyName={company.displayName}
         docker={docker}
         pendingApprovals={pendingApprovals}
       />
@@ -116,23 +125,44 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
         <Sidebar compact={compact} height={height} selectedIndex={selectedIndex} />
         {selectedIndex === 0 ? (
           <ExecutiveOverview
-            company={initialCompany}
+            company={company}
             docker={docker}
             compact={compact}
             activeEmployees={employees.filter(({ status }) => status === "active").length}
             pendingApprovals={pendingApprovals}
-            eventCount={store.eventCount(initialCompany.id)}
+            eventCount={store.eventCount(company.id)}
             auditVerified={store.verifyAuditChain()}
             entities={entities}
           />
         ) : (
-          <SectionPlaceholder section={selectedSection} mission={initialCompany.mission} />
+          <WorkspaceView
+            section={selectedSection}
+            company={company}
+            organizationUnits={organizationUnits}
+            strategyItems={strategyItems}
+            tasks={tasks}
+            messages={messages}
+          />
         )}
       </Box>
 
       <StatusBar message={statusMessage} />
       {paletteVisible && <CommandPalette query={searchQuery} terminalWidth={width} />}
       {helpVisible && <HelpOverlay compact={compact} terminalWidth={width} />}
+      {companyFormVisible && (
+        <CompanyForm
+          company={company}
+          terminalWidth={width}
+          onCancel={() => {
+            setCompanyFormVisible(false);
+          }}
+          onSubmit={(input) => {
+            setCompany(store.updateCompany(input));
+            setCompanyFormVisible(false);
+            setStatusMessage("Company configuration saved and audited");
+          }}
+        />
+      )}
     </Box>
   );
 }

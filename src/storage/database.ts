@@ -6,6 +6,8 @@ import {
   INITIAL_SCHEMA,
   TASKS_SCHEMA,
   TASKS_SCHEMA_VERSION,
+  ORGANIZATION_SCHEMA,
+  ORGANIZATION_SCHEMA_VERSION,
 } from "./schema.js";
 
 export class WorkforceDatabase {
@@ -77,6 +79,13 @@ export class WorkforceDatabase {
     if (row.version < TASKS_SCHEMA_VERSION) {
       this.connection.exec(TASKS_SCHEMA);
       this.recordMigration(TASKS_SCHEMA_VERSION);
+    }
+    const afterTasks = this.connection
+      .prepare("SELECT max(version) AS version FROM schema_migrations")
+      .get() as { version: number };
+    if (afterTasks.version < ORGANIZATION_SCHEMA_VERSION) {
+      this.connection.exec(ORGANIZATION_SCHEMA);
+      this.recordMigration(ORGANIZATION_SCHEMA_VERSION);
     }
   }
 

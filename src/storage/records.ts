@@ -21,6 +21,17 @@ export interface CreateCompanyInput {
   budgetCents?: number;
 }
 
+export interface UpdateCompanyInput {
+  companyId: string;
+  name?: string;
+  displayName?: string;
+  mission?: string;
+  vision?: string;
+  values?: string[];
+  policies?: Record<string, unknown>;
+  budgetCents?: number;
+}
+
 export interface EntityRecord {
   id: string;
   companyId: string;

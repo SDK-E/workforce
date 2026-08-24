@@ -9,6 +9,7 @@ interface SidebarProps {
 
 export function Sidebar({ compact, height, selectedIndex }: SidebarProps) {
   const width = compact ? 24 : 28;
+  const labelWidth = compact ? 18 : 22;
   const visibleItems = NAVIGATION_SECTIONS.slice(0, Math.max(8, height - 7));
 
   return (
@@ -16,10 +17,10 @@ export function Sidebar({ compact, height, selectedIndex }: SidebarProps) {
       {visibleItems.map((item, index) =>
         index === selectedIndex ? (
           <Text key={item} inverse color="cyan">
-            › {truncate(item, compact ? 18 : 22)}
+            › {truncate(item, labelWidth).padEnd(labelWidth)}
           </Text>
         ) : (
-          <Text key={item}> {truncate(item, compact ? 18 : 22)}</Text>
+          <Text key={item}> {truncate(item, labelWidth).padEnd(labelWidth)}</Text>
         ),
       )}
     </Box>
