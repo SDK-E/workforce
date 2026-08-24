@@ -27,15 +27,17 @@ interface WorkforceAppProps {
 }
 
 function loadWorkspaceData(store: StateStore, companyId: string) {
+  const rooms = store.conversations.roomList(companyId);
+  const primaryRoom = rooms[0];
   return {
     employees: store.employees(companyId),
     pendingApprovals: store.pendingApprovals(companyId),
     organizationUnits: store.organizationUnits(companyId),
     strategyItems: store.strategyItems(companyId),
     tasks: store.tasks(companyId),
-    messages: store.messages(companyId, "ceo-office"),
-    rooms: store.conversations.roomList(companyId),
-    threads: store.conversations.threads.list(companyId, "ceo-office"),
+    messages: primaryRoom ? store.messages(companyId, primaryRoom.id) : [],
+    rooms,
+    threads: primaryRoom ? store.conversations.threads.list(companyId, primaryRoom.id) : [],
     hiringProposals: store.employment.proposalList(companyId),
     approvals: store.approvalsRepository.list(companyId),
     meetings: store.meetings.list(companyId),

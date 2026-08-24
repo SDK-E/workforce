@@ -2,7 +2,7 @@ import { render } from "ink";
 import { dockerStatus } from "./docker-runtime.js";
 import { createControlPlaneLogger } from "./observability/control-plane-logger.js";
 import { StateStore } from "./storage/state-store.js";
-import { WorkforceApp } from "./tui/workforce-app.js";
+import { WorkforceRoot } from "./tui/workforce-root.js";
 import { ExecaDockerClient } from "./supervision/docker-client.js";
 import { DockerSupervisor } from "./supervision/docker-supervisor.js";
 import { EncryptedSecretStore } from "./secrets/encrypted-secret-store.js";
@@ -12,14 +12,6 @@ import { TaskExecutionService } from "./tasks/task-execution-service.js";
 
 const store = new StateStore();
 store.initialize();
-
-const company =
-  store.companies()[0] ??
-  store.createCompany({
-    id: "default",
-    name: "Default Company",
-    mission: "Build a dependable company with verified outcomes.",
-  });
 
 const docker = await dockerStatus();
 const logger = createControlPlaneLogger(store.root);
@@ -51,14 +43,13 @@ const taskExecution = new TaskExecutionService(
 );
 const recovery = await supervisor.reconcile();
 await supervisor.tick();
-logger.info({ companyId: company.id, dockerAvailable: docker.available }, "control plane started");
+logger.info({ dockerAvailable: docker.available }, "control plane started");
 logger.info(recovery, "supervisor reconciliation completed");
 
 render(
-  <WorkforceApp
+  <WorkforceRoot
     store={store}
     docker={docker}
-    initialCompany={company}
     onEmergencyStop={() => supervisor.emergencyStop("human")}
     onStartTask={async (companyId, taskId) => {
       await taskExecution.start(companyId, taskId, "human");
