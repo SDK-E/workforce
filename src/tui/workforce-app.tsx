@@ -11,7 +11,11 @@ import { TopBar } from "./components/top-bar.js";
 import { NAVIGATION_SECTIONS } from "./navigation.js";
 import { CommandPalette } from "./overlays/command-palette.js";
 import { HelpOverlay } from "./overlays/help-overlay.js";
-import { CompanyForm } from "./overlays/company-form.js";
+import {
+  CreateOverlay,
+  createFormForSection,
+  type CreateFormKind,
+} from "./overlays/create-overlay.js";
 import { ExecutiveOverview } from "./views/executive-overview.js";
 import { WorkspaceView } from "./views/workspace-view.js";
 
@@ -54,7 +58,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
     "Ready — no agent work starts without an approved task",
   );
   const [company, setCompany] = useState(initialCompany);
-  const [companyFormVisible, setCompanyFormVisible] = useState(false);
+  const [activeForm, setActiveForm] = useState<CreateFormKind | null>(null);
 
   const width = stdout.columns;
   const height = stdout.rows;
@@ -63,7 +67,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
   const data = loadWorkspaceData(store, company.id);
 
   useInput((input, key) => {
-    if (companyFormVisible) return;
+    if (activeForm) return;
     if (helpVisible) {
       if (input === "?" || key.escape) setHelpVisible(false);
       return;
@@ -75,7 +79,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
     }
 
     if (input === "q") process.exit(0);
-    if (input === "n" && selectedSection === "Companies") setCompanyFormVisible(true);
+    if (input === "n") openCreateForm();
     if (input === "?") setHelpVisible(true);
     else if (input === "p" || input === "/") setPaletteVisible(true);
     else if (key.upArrow || input === "k") moveSelection(-1);
@@ -87,6 +91,10 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
     setSelectedIndex(
       (current) => (current + offset + NAVIGATION_SECTIONS.length) % NAVIGATION_SECTIONS.length,
     );
+  }
+
+  function openCreateForm(): void {
+    setActiveForm(createFormForSection(selectedSection));
   }
 
   function handlePaletteInput(
@@ -165,18 +173,18 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
       <StatusBar message={statusMessage} />
       {paletteVisible && <CommandPalette query={searchQuery} terminalWidth={width} />}
       {helpVisible && <HelpOverlay compact={compact} terminalWidth={width} />}
-      {companyFormVisible && (
-        <CompanyForm
+      {activeForm && (
+        <CreateOverlay
+          kind={activeForm}
+          section={selectedSection}
           company={company}
+          store={store}
           terminalWidth={width}
-          onCancel={() => {
-            setCompanyFormVisible(false);
+          onCompanyChange={setCompany}
+          onClose={() => {
+            setActiveForm(null);
           }}
-          onSubmit={(input) => {
-            setCompany(store.updateCompany(input));
-            setCompanyFormVisible(false);
-            setStatusMessage("Company configuration saved and audited");
-          }}
+          onStatus={setStatusMessage}
         />
       )}
     </Box>

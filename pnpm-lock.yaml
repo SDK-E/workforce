@@ -14,6 +14,9 @@ importers:
       ink:
         specifier: 6.3.1
         version: 6.3.1(@types/react@19.1.12)(react@19.1.1)
+      ink-select-input:
+        specifier: 6.2.0
+        version: 6.2.0(ink@6.3.1(@types/react@19.1.12)(react@19.1.1))(react@19.1.1)
       ink-text-input:
         specifier: 6.0.0
         version: 6.0.0(ink@6.3.1(@types/react@19.1.12)(react@19.1.1))(react@19.1.1)
@@ -869,6 +872,13 @@ packages:
     resolution: {integrity: sha512-m6FAo/spmsW2Ab2fU35JTYwtOKa2yAwXSwgjSv1TJzh4Mh7mC3lzAOVLBprb72XsTrgkEIsl7YrFNAiDiRhIGg==}
     engines: {node: '>=12'}
 
+  ink-select-input@6.2.0:
+    resolution: {integrity: sha512-304fZXxkpYxJ9si5lxRCaX01GNlmPBgOZumXXRnPYbHW/iI31cgQynqk2tRypGLOF1cMIwPUzL2LSm6q4I5rQQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      ink: '>=5.0.0'
+      react: '>=18.0.0'
+
   ink-testing-library@4.0.0:
     resolution: {integrity: sha512-yF92kj3pmBvk7oKbSq5vEALO//o7Z9Ck/OaLNlkzXNeYdwfpxMQkSowGTFUCS5MSu9bWfSZMewGpp7bFc66D7Q==}
     engines: {node: '>=18'}
@@ -1178,6 +1188,10 @@ packages:
   tinyglobby@0.2.17:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
     engines: {node: '>=12.0.0'}
+
+  to-rotated@1.0.0:
+    resolution: {integrity: sha512-KsEID8AfgUy+pxVRLsWp0VzCa69wxzUDZnzGbyIST/bcgcrMvTYoFBX/QORH4YApoD89EDuUovx4BTdpOn319Q==}
+    engines: {node: '>=18'}
 
   ts-api-utils@2.5.0:
     resolution: {integrity: sha512-OJ/ibxhPlqrMM0UiNHJ/0CKQkoKF243/AEmplt3qpRgkW8VG7IfOS41h7V8TjITqdByHzrjcS/2si+y4lIh8NA==}
@@ -1953,6 +1967,13 @@ snapshots:
 
   indent-string@5.0.0: {}
 
+  ink-select-input@6.2.0(ink@6.3.1(@types/react@19.1.12)(react@19.1.1))(react@19.1.1):
+    dependencies:
+      figures: 6.1.0
+      ink: 6.3.1(@types/react@19.1.12)(react@19.1.1)
+      react: 19.1.1
+      to-rotated: 1.0.0
+
   ink-testing-library@4.0.0(@types/react@19.1.12):
     optionalDependencies:
       '@types/react': 19.1.12
@@ -2282,6 +2303,8 @@ snapshots:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.5)
       picomatch: 4.0.5
+
+  to-rotated@1.0.0: {}
 
   ts-api-utils@2.5.0(typescript@5.9.2):
     dependencies:

@@ -6,6 +6,8 @@ import type { CompanyRecord } from "../src/storage/records.js";
 import { CompanyForm } from "../src/tui/overlays/company-form.js";
 import { TaskView } from "../src/tui/views/task-view.js";
 import { ConversationView } from "../src/tui/views/conversation-view.js";
+import { TaskForm } from "../src/tui/overlays/task-form.js";
+import type { CreateTaskInput } from "../src/tasks/task-types.js";
 
 const company: CompanyRecord = {
   id: "acme",
@@ -121,5 +123,36 @@ test("conversation view exposes rooms, threads, pins, and message state", () => 
   const frame = view.lastFrame() ?? "";
   assert.match(frame, /1 rooms · 1 CEO-office threads/);
   assert.match(frame, /◆ arm: Evidence attached \(edited\)/);
+  view.unmount();
+});
+
+test("task form uses maintained controls and confirms before submitting", async () => {
+  let submitted: CreateTaskInput | undefined;
+  const view = render(
+    <Box width={100} height={30}>
+      <TaskForm
+        companyId="acme"
+        terminalWidth={100}
+        onCancel={noop}
+        onSubmit={(input) => {
+          submitted = input;
+        }}
+      />
+    </Box>,
+  );
+  for (const input of ["Verify release", "\r", "Tests pass", "\r", "2"]) {
+    view.stdin.write(input);
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 20);
+    });
+  }
+  assert.match(view.lastFrame() ?? "", /Confirm/);
+  view.stdin.write("\r");
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 20);
+  });
+  assert.equal(submitted?.objective, "Verify release");
+  assert.deepEqual(submitted.acceptanceCriteria, ["Tests pass"]);
+  assert.equal(submitted.risk, "medium");
   view.unmount();
 });
