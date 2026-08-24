@@ -4,11 +4,13 @@ import { CommandPalette } from "./command-palette.js";
 import { CreateOverlay, type CreateFormKind } from "./create-overlay.js";
 import { EmergencyStopDialog } from "./emergency-stop-dialog.js";
 import { HelpOverlay } from "./help-overlay.js";
+import { ConfirmationDialog } from "./confirmation-dialog.js";
 
 export function WorkforceOverlays(props: {
   paletteVisible: boolean;
   helpVisible: boolean;
   emergencyVisible: boolean;
+  executionTask: { id: string; objective: string } | null;
   activeForm: CreateFormKind | null;
   query: string;
   compact: boolean;
@@ -21,6 +23,8 @@ export function WorkforceOverlays(props: {
   onCloseEmergency: () => void;
   onStatus: (message: string) => void;
   onEmergencyStop: () => Promise<void>;
+  onConfirmExecution: () => void;
+  onCancelExecution: () => void;
 }) {
   return (
     <>
@@ -47,6 +51,15 @@ export function WorkforceOverlays(props: {
           onStop={props.onEmergencyStop}
           onClose={props.onCloseEmergency}
           onStatus={props.onStatus}
+        />
+      )}
+      {props.executionTask && (
+        <ConfirmationDialog
+          title="Start agent execution"
+          message={`Queue an audited Docker attempt for “${props.executionTask.objective}”?`}
+          confirmLabel="queue attempt"
+          onConfirm={props.onConfirmExecution}
+          onCancel={props.onCancelExecution}
         />
       )}
     </>

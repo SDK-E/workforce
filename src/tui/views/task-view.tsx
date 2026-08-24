@@ -16,7 +16,9 @@ export function TaskView({ tasks }: { tasks: TaskRecord[] }) {
           </Text>
         ))
       )}
-      <Text dimColor>Press n to create a task with independently verifiable criteria.</Text>
+      <Text dimColor>
+        n create · e edit · r run first ready/assigned task (confirmation required)
+      </Text>
     </Box>
   );
 }

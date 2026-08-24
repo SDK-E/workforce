@@ -66,6 +66,13 @@ export class ToolRepository {
     >[];
     return rows.map(mapTool);
   }
+
+  get(companyId: string, id: string): ToolRecord | undefined {
+    const row = this.database.connection
+      .prepare("SELECT * FROM tools WHERE company_id=? AND id=?")
+      .get(companyId, id) as Record<string, unknown> | undefined;
+    return row ? mapTool(row) : undefined;
+  }
 }
 
 function mapTool(row: Record<string, unknown>): ToolRecord {

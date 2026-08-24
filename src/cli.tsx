@@ -8,6 +8,7 @@ import { DockerSupervisor } from "./supervision/docker-supervisor.js";
 import { EncryptedSecretStore } from "./secrets/encrypted-secret-store.js";
 import { resolveAttemptSecrets } from "./secrets/attempt-secret-provider.js";
 import { ArtifactPipeline } from "./acceptance/artifact-pipeline.js";
+import { TaskExecutionService } from "./tasks/task-execution-service.js";
 
 const store = new StateStore();
 store.initialize();
@@ -41,6 +42,13 @@ const supervisor = new DockerSupervisor(
   artifactPipeline,
   store.executionEvidence,
 );
+const taskExecution = new TaskExecutionService(
+  store.tasksRepository,
+  store.models,
+  store.tools,
+  store.attemptFactory,
+  supervisor,
+);
 const recovery = await supervisor.reconcile();
 await supervisor.tick();
 logger.info({ companyId: company.id, dockerAvailable: docker.available }, "control plane started");
@@ -52,5 +60,8 @@ render(
     docker={docker}
     initialCompany={company}
     onEmergencyStop={() => supervisor.emergencyStop("human")}
+    onStartTask={async (companyId, taskId) => {
+      await taskExecution.start(companyId, taskId, "human");
+    }}
   />,
 );

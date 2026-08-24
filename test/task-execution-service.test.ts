@@ -1,0 +1,97 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
+import type { SandboxSpec } from "../src/domain.js";
+import { StateStore } from "../src/storage/state-store.js";
+import type { AttemptResult } from "../src/supervision/attempt-types.js";
+import type { DockerClient } from "../src/supervision/docker-client.js";
+import { DockerSupervisor } from "../src/supervision/docker-supervisor.js";
+import { TaskExecutionService } from "../src/tasks/task-execution-service.js";
+
+class InstantDocker implements DockerClient {
+  started: SandboxSpec[] = [];
+  available() {
+    return Promise.resolve(true);
+  }
+  createVolume() {
+    return Promise.resolve();
+  }
+  exportVolume() {
+    return Promise.resolve();
+  }
+  start(spec: SandboxSpec): Promise<AttemptResult> {
+    this.started.push(spec);
+    return Promise.resolve({ exitCode: 0, stdout: "done", stderr: "", timedOut: false });
+  }
+  stop() {
+    return Promise.resolve();
+  }
+  managedContainers() {
+    return Promise.resolve([]);
+  }
+  removeContainer() {
+    return Promise.resolve();
+  }
+}
+
+test("approved task contracts queue verified inference-capable Docker execution", async () => {
+  const root = mkdtempSync(join(tmpdir(), "workforce-task-execution-"));
+  const store = new StateStore(root);
+  try {
+    store.initialize();
+    store.createCompany({ id: "acme", name: "Acme" });
+    store.models.save({
+      companyId: "acme",
+      id: "production-model",
+      engine: "opencode",
+      model: "openai/gpt-5",
+      provider: "openai",
+      capabilities: ["engineering"],
+      supportedRoles: ["general"],
+      contextLimit: 128_000,
+      freePreferred: false,
+      localModel: false,
+      priority: 100,
+      health: "healthy",
+      verifiedAt: new Date().toISOString(),
+      verificationReceiptId: "model-check-1",
+      failureClass: null,
+    });
+    const task = store.createTask({
+      id: "build-api",
+      companyId: "acme",
+      objective: "Build and test the API",
+      acceptanceCriteria: ["Tests pass"],
+      risk: "medium",
+      dataSensitivity: "internal",
+      capabilities: ["engineering", "language:typescript"],
+      managerId: "ceo",
+      assigneeId: "ceo",
+    });
+    store.transitionTask("acme", task.id, "REQUEST_APPROVAL", "ceo", "Ready for approval");
+    store.transitionTask("acme", task.id, "APPROVE", "human", "Approved");
+    const docker = new InstantDocker();
+    const supervisor = new DockerSupervisor(store.attempts, docker, store.audit);
+    const execution = new TaskExecutionService(
+      store.tasksRepository,
+      store.models,
+      store.tools,
+      store.attemptFactory,
+      supervisor,
+    );
+
+    const attempt = await execution.start("acme", task.id, "human");
+    await supervisor.waitForIdle();
+
+    assert.equal(attempt.sandbox.networkMode, "inference-only");
+    assert.equal(attempt.sandbox.profile, "engineering");
+    assert.equal(store.tasksRepository.get("acme", task.id)?.status, "starting");
+    assert.equal(store.attempts.get(attempt.id).status, "succeeded");
+    assert.equal(docker.started.length, 1);
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});

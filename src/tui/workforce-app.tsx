@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { Box, useInput, useStdout } from "ink";
 import type { DockerStatus } from "../docker-runtime.js";
 import type { CompanyRecord } from "../storage/records.js";
@@ -23,6 +23,7 @@ interface WorkforceAppProps {
   docker: DockerStatus;
   initialCompany: CompanyRecord;
   onEmergencyStop: () => Promise<void>;
+  onStartTask: (companyId: string, taskId: string) => Promise<void>;
 }
 
 function loadWorkspaceData(store: StateStore, companyId: string) {
@@ -58,6 +59,7 @@ export function WorkforceApp({
   docker,
   initialCompany,
   onEmergencyStop,
+  onStartTask,
 }: WorkforceAppProps) {
   const { stdout } = useStdout();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -70,6 +72,7 @@ export function WorkforceApp({
   const [company, setCompany] = useState(initialCompany);
   const [activeForm, setActiveForm] = useState<CreateFormKind | null>(null);
   const [emergencyVisible, setEmergencyVisible] = useState(false);
+  const [executionTaskId, setExecutionTaskId] = useState<string | null>(null);
 
   const width = stdout.columns;
   const height = stdout.rows;
@@ -79,6 +82,7 @@ export function WorkforceApp({
 
   useInput((input, key) => {
     if (emergencyVisible) return;
+    if (executionTaskId) return;
     if (activeForm) return;
     if (helpVisible) {
       if (input === "?" || key.escape) setHelpVisible(false);
@@ -94,6 +98,11 @@ export function WorkforceApp({
     if (input === "n") setActiveForm(createFormForSection(selectedSection));
     if (input === "e") setActiveForm(editFormForSection(selectedSection));
     if (input === "!") setEmergencyVisible(true);
+    if (input === "r" && selectedSection === "Tasks") {
+      const task = data.tasks.find(({ status }) => status === "ready" || status === "assigned");
+      if (task) setExecutionTaskId(task.id);
+      else setStatusMessage("No ready or assigned task is available to run");
+    }
     if (input === "?") setHelpVisible(true);
     else if (input === "p" || input === "/") setPaletteVisible(true);
     else if (key.upArrow || input === "k") moveSelection(-1);
@@ -105,39 +114,13 @@ export function WorkforceApp({
     setSelectedIndex((current) => moveNavigation(current, offset));
   }
 
-  function handlePaletteInput(
-    input: string,
-    key: {
-      escape: boolean;
-      return: boolean;
-      backspace: boolean;
-      delete: boolean;
-      ctrl: boolean;
-      meta: boolean;
-    },
-  ): void {
-    if (key.escape) {
-      closePalette();
-      return;
-    }
-
-    if (key.return) {
-      const match = NAVIGATION_SECTIONS.findIndex((section) =>
-        section.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-      if (match >= 0) {
-        setSelectedIndex(match);
-        setStatusMessage(`Opened ${NAVIGATION_SECTIONS[match]}`);
-      }
-      closePalette();
-      return;
-    }
-
-    if (key.backspace || key.delete) {
-      setSearchQuery((current) => current.slice(0, -1));
-    } else if (input && !key.ctrl && !key.meta) {
-      setSearchQuery((current) => sanitizeTerminal(current + input, 60));
-    }
+  function handlePaletteInput(input: string, key: PaletteKey): void {
+    processPaletteInput(input, key, searchQuery, {
+      close: closePalette,
+      select: setSelectedIndex,
+      status: setStatusMessage,
+      query: setSearchQuery,
+    });
   }
 
   function closePalette(): void {
@@ -154,37 +137,24 @@ export function WorkforceApp({
       />
       <Breadcrumbs section={selectedSection} />
 
-      <Box flexGrow={1} flexDirection="row">
-        <Sidebar compact={compact} height={height} selectedIndex={selectedIndex} />
-        {selectedIndex === 0 ? (
-          <ExecutiveOverview
-            company={company}
-            docker={docker}
-            compact={compact}
-            activeEmployees={data.employees.filter(({ status }) => status === "active").length}
-            pendingApprovals={data.pendingApprovals}
-            eventCount={store.eventCount(company.id)}
-            auditVerified={store.verifyAuditChain()}
-            strategyItems={data.strategyItems}
-          />
-        ) : (
-          <WorkspaceView
-            section={selectedSection}
-            company={company}
-            auditVerified={store.verifyAuditChain()}
-            docker={docker}
-            compact={compact}
-            onCompanySelect={setCompany}
-            {...data}
-          />
-        )}
-      </Box>
+      <WorkforceContent
+        selectedIndex={selectedIndex}
+        section={selectedSection}
+        store={store}
+        company={company}
+        docker={docker}
+        compact={compact}
+        height={height}
+        data={data}
+        onCompanySelect={setCompany}
+      />
 
       <StatusBar message={statusMessage} />
       <WorkforceOverlays
         paletteVisible={paletteVisible}
         helpVisible={helpVisible}
         emergencyVisible={emergencyVisible}
+        executionTask={data.tasks.find(({ id }) => id === executionTaskId) ?? null}
         activeForm={activeForm}
         query={searchQuery}
         compact={compact}
@@ -201,7 +171,103 @@ export function WorkforceApp({
         }}
         onStatus={setStatusMessage}
         onEmergencyStop={onEmergencyStop}
+        onCancelExecution={() => {
+          setExecutionTaskId(null);
+        }}
+        onConfirmExecution={() => {
+          const taskId = executionTaskId;
+          setExecutionTaskId(null);
+          if (!taskId) return;
+          setStatusMessage("Validating and queueing agent execution…");
+          void onStartTask(company.id, taskId)
+            .then(() => {
+              setStatusMessage("Agent attempt queued through Docker supervisor");
+            })
+            .catch((error: unknown) => {
+              setStatusMessage(error instanceof Error ? error.message : "Task execution failed");
+            });
+        }}
       />
+    </Box>
+  );
+}
+
+interface PaletteKey {
+  escape: boolean;
+  return: boolean;
+  backspace: boolean;
+  delete: boolean;
+  ctrl: boolean;
+  meta: boolean;
+}
+
+function processPaletteInput(
+  input: string,
+  key: PaletteKey,
+  searchQuery: string,
+  actions: {
+    close: () => void;
+    select: (index: number) => void;
+    status: (message: string) => void;
+    query: Dispatch<SetStateAction<string>>;
+  },
+): void {
+  if (key.escape) {
+    actions.close();
+    return;
+  }
+  if (key.return) {
+    const match = NAVIGATION_SECTIONS.findIndex((section) =>
+      section.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+    if (match >= 0) {
+      actions.select(match);
+      actions.status(`Opened ${NAVIGATION_SECTIONS[match]}`);
+    }
+    actions.close();
+  } else if (key.backspace || key.delete) {
+    actions.query((current) => current.slice(0, -1));
+  } else if (input && !key.ctrl && !key.meta) {
+    actions.query((current) => sanitizeTerminal(current + input, 60));
+  }
+}
+
+function WorkforceContent(props: {
+  selectedIndex: number;
+  section: string;
+  store: StateStore;
+  company: CompanyRecord;
+  docker: DockerStatus;
+  compact: boolean;
+  height: number;
+  data: ReturnType<typeof loadWorkspaceData>;
+  onCompanySelect: (company: CompanyRecord) => void;
+}) {
+  return (
+    <Box flexGrow={1} flexDirection="row">
+      <Sidebar compact={props.compact} height={props.height} selectedIndex={props.selectedIndex} />
+      {props.selectedIndex === 0 ? (
+        <ExecutiveOverview
+          company={props.company}
+          docker={props.docker}
+          compact={props.compact}
+          activeEmployees={props.data.employees.filter(({ status }) => status === "active").length}
+          pendingApprovals={props.data.pendingApprovals}
+          eventCount={props.store.eventCount(props.company.id)}
+          auditVerified={props.store.verifyAuditChain()}
+          strategyItems={props.data.strategyItems}
+        />
+      ) : (
+        <WorkspaceView
+          section={props.section}
+          company={props.company}
+          auditVerified={props.store.verifyAuditChain()}
+          docker={props.docker}
+          compact={props.compact}
+          onCompanySelect={props.onCompanySelect}
+          {...props.data}
+        />
+      )}
     </Box>
   );
 }
