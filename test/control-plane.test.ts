@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { evaluateAcceptance } from "../src/acceptance/evaluate-acceptance.js";
 import { sanitizeTerminal } from "../src/storage/sanitize-terminal.js";
 import { StateStore } from "../src/storage/state-store.js";
+import { loadMigrations } from "../src/storage/migration-loader.js";
 import { CapacityController } from "../src/supervision/capacity-controller.js";
 import { diagnoseStall } from "../src/supervision/diagnose-stall.js";
 
@@ -25,7 +26,7 @@ test("company onboarding persists CEO and ARM and enforces isolation", () => {
       .prepare("SELECT max(version) AS version FROM schema_migrations")
       .get() as { version: number };
     assert.equal(entityTable, undefined);
-    assert.equal(migration.version, 6);
+    assert.equal(migration.version, loadMigrations().at(-1)?.version);
     state.createCompany({ id: "acme", name: "Acme", mission: "Ship safely" });
     state.createCompany({ id: "other", name: "Other" });
     assert.deepEqual(

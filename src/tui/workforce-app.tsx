@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Box, useInput, useStdout } from "ink";
 import type { DockerStatus } from "../docker-runtime.js";
 import type { CompanyRecord } from "../storage/records.js";
@@ -21,6 +21,21 @@ interface WorkforceAppProps {
   initialCompany: CompanyRecord;
 }
 
+function loadWorkspaceData(store: StateStore, companyId: string) {
+  return {
+    employees: store.employees(companyId),
+    pendingApprovals: store.pendingApprovals(companyId),
+    organizationUnits: store.organizationUnits(companyId),
+    strategyItems: store.strategyItems(companyId),
+    tasks: store.tasks(companyId),
+    messages: store.messages(companyId, "ceo-office"),
+    rooms: store.conversations.roomList(companyId),
+    threads: store.conversations.threads.list(companyId, "ceo-office"),
+    hiringProposals: store.employment.proposalList(companyId),
+    approvals: store.approvalsRepository.list(companyId),
+  };
+}
+
 export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProps) {
   const { stdout } = useStdout();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -37,14 +52,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
   const height = stdout.rows;
   const compact = width < 88;
   const selectedSection = NAVIGATION_SECTIONS[selectedIndex] ?? NAVIGATION_SECTIONS[0];
-  const employees = useMemo(() => store.employees(company.id), [store, company.id]);
-  const pendingApprovals = store.pendingApprovals(company.id);
-  const organizationUnits = store.organizationUnits(company.id);
-  const strategyItems = store.strategyItems(company.id);
-  const tasks = store.tasks(company.id);
-  const messages = store.messages(company.id, "ceo-office");
-  const rooms = store.conversations.roomList(company.id);
-  const threads = store.conversations.threads.list(company.id, "ceo-office");
+  const data = loadWorkspaceData(store, company.id);
 
   useInput((input, key) => {
     if (companyFormVisible) return;
@@ -118,7 +126,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
       <TopBar
         companyName={company.displayName}
         docker={docker}
-        pendingApprovals={pendingApprovals}
+        pendingApprovals={data.pendingApprovals}
       />
       <Breadcrumbs section={selectedSection} />
 
@@ -129,22 +137,25 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
             company={company}
             docker={docker}
             compact={compact}
-            activeEmployees={employees.filter(({ status }) => status === "active").length}
-            pendingApprovals={pendingApprovals}
+            activeEmployees={data.employees.filter(({ status }) => status === "active").length}
+            pendingApprovals={data.pendingApprovals}
             eventCount={store.eventCount(company.id)}
             auditVerified={store.verifyAuditChain()}
-            strategyItems={strategyItems}
+            strategyItems={data.strategyItems}
           />
         ) : (
           <WorkspaceView
             section={selectedSection}
             company={company}
-            organizationUnits={organizationUnits}
-            strategyItems={strategyItems}
-            tasks={tasks}
-            messages={messages}
-            rooms={rooms}
-            threads={threads}
+            organizationUnits={data.organizationUnits}
+            strategyItems={data.strategyItems}
+            tasks={data.tasks}
+            messages={data.messages}
+            rooms={data.rooms}
+            threads={data.threads}
+            employees={data.employees}
+            hiringProposals={data.hiringProposals}
+            approvals={data.approvals}
           />
         )}
       </Box>
