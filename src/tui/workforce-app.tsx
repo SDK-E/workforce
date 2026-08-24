@@ -33,6 +33,11 @@ function loadWorkspaceData(store: StateStore, companyId: string) {
     threads: store.conversations.threads.list(companyId, "ceo-office"),
     hiringProposals: store.employment.proposalList(companyId),
     approvals: store.approvalsRepository.list(companyId),
+    meetings: store.meetings.list(companyId),
+    performanceRecords: store.performance.listPerformance(companyId),
+    incidents: store.incidents.listIncidents(companyId),
+    correctiveActions: store.incidents.listCorrective(companyId),
+    claims: store.performance.listClaims(companyId),
   };
 }
 
@@ -156,6 +161,11 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
             employees={data.employees}
             hiringProposals={data.hiringProposals}
             approvals={data.approvals}
+            meetings={data.meetings}
+            performanceRecords={data.performanceRecords}
+            incidents={data.incidents}
+            correctiveActions={data.correctiveActions}
+            claims={data.claims}
           />
         )}
       </Box>

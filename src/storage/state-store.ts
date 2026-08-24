@@ -22,6 +22,9 @@ import type { CreateTaskInput, TaskEvent, TaskRecord, TaskStatus } from "../task
 import type { CompanyRecord, CreateCompanyInput, UpdateCompanyInput } from "./records.js";
 import type { MessageRecord } from "../conversations/conversation-types.js";
 import { EmploymentRepository } from "../governance/employment-repository.js";
+import { MeetingRepository } from "../governance/meeting-repository.js";
+import { IncidentRepository } from "../governance/incident-repository.js";
+import { PerformanceRepository } from "../governance/performance-repository.js";
 
 /** Composition facade used by the application while feature services are introduced. */
 export class StateStore {
@@ -34,6 +37,9 @@ export class StateStore {
   readonly organizationRepository: OrganizationRepository;
   readonly strategyRepository: StrategyRepository;
   readonly employment: EmploymentRepository;
+  readonly meetings: MeetingRepository;
+  readonly incidents: IncidentRepository;
+  readonly performance: PerformanceRepository;
 
   constructor(root?: string) {
     this.database = new WorkforceDatabase(root);
@@ -61,6 +67,13 @@ export class StateStore {
       this.audit,
     );
     this.employment = new EmploymentRepository(this.database, this.companiesRepository, this.audit);
+    this.meetings = new MeetingRepository(this.database, this.companiesRepository, this.audit);
+    this.incidents = new IncidentRepository(this.database, this.companiesRepository, this.audit);
+    this.performance = new PerformanceRepository(
+      this.database,
+      this.companiesRepository,
+      this.audit,
+    );
   }
 
   get root(): string {

@@ -8,6 +8,8 @@ import { JobRequirementsSchema } from "../src/domain.js";
 import { nextApprovalStatus } from "../src/governance/approval-machine.js";
 import { nextEmploymentStatus } from "../src/governance/employment-machine.js";
 import { analyzeWorkforceGap } from "../src/governance/gap-analysis.js";
+import { nextMeetingStatus } from "../src/governance/meeting-machine.js";
+import { nextCorrectiveStatus, nextIncidentStatus } from "../src/governance/incident-machines.js";
 import { StateStore } from "../src/storage/state-store.js";
 
 const job = JobRequirementsSchema.parse({
@@ -42,6 +44,10 @@ test("XState governance machines reject invalid decisions and cover employment r
   assert.equal(nextEmploymentStatus("suspended", "TERMINATE"), "terminated");
   assert.equal(nextEmploymentStatus("terminated", "REINSTATE"), "probation");
   assert.throws(() => nextEmploymentStatus("active", "REINSTATE"), /cannot handle/);
+  assert.equal(nextMeetingStatus("planned", "START"), "active");
+  assert.equal(nextIncidentStatus("reported", "TRIAGE"), "triaged");
+  assert.equal(nextCorrectiveStatus("issued", "CHALLENGE"), "challenged");
+  assert.throws(() => nextMeetingStatus("planned", "ADJOURN"), /cannot handle/);
 });
 
 test("gap analysis precedes probationary hiring and offboarding preserves history", () => {
@@ -100,6 +106,81 @@ test("gap analysis precedes probationary hiring and offboarding preserves histor
     assert.throws(
       () => store.approvalsRepository.decide("acme", approvalId, "REJECT", "ceo", "late"),
       /cannot handle/,
+    );
+    const meeting = store.meetings.create({
+      companyId: "acme",
+      title: "Delivery review",
+      organizerId: "ceo",
+      participantIds: ["arm", employeeId],
+      agenda: ["Review evidence"],
+      scheduledAt: new Date().toISOString(),
+    });
+    store.meetings.transition("acme", meeting.id, "START", "ceo");
+    store.meetings.addActionItem({
+      companyId: "acme",
+      meetingId: meeting.id,
+      ownerId: "arm",
+      description: "Verify remediation",
+      actorId: "ceo",
+    });
+    assert.equal(
+      store.meetings.transition("acme", meeting.id, "ADJOURN", "ceo", "Evidence reviewed").status,
+      "adjourned",
+    );
+    const incident = store.incidents.report({
+      companyId: "acme",
+      title: "Policy deviation",
+      severity: "high",
+      reporterId: "arm",
+      summary: "Observed unapproved behavior",
+      evidenceIds: ["evidence-1"],
+    });
+    store.incidents.transition("acme", incident.id, "TRIAGE", "arm");
+    const corrective = store.incidents.draftCorrective({
+      companyId: "acme",
+      employeeId,
+      incidentId: incident.id,
+      kind: "warning",
+      rationale: "Evidence-backed correction",
+      evidenceIds: ["evidence-1"],
+      issuedBy: "arm",
+    });
+    assert.equal(
+      store.incidents.transitionCorrective("acme", corrective.id, "ISSUE", "arm").status,
+      "issued",
+    );
+    const recognition = store.performance.record({
+      companyId: "acme",
+      employeeId,
+      kind: "recognition",
+      summary: "Reproducible delivery",
+      evidenceIds: ["evidence-2"],
+      authorId: "arm",
+    });
+    assert.equal(recognition.kind, "recognition");
+    const firstClaim = store.performance.assertClaim({
+      companyId: "acme",
+      subjectId: employeeId,
+      predicate: "delivery-quality",
+      value: "high",
+      evidenceIds: ["evidence-2"],
+      confidence: 0.9,
+      authorId: "arm",
+    });
+    const contradiction = store.performance.assertClaim({
+      companyId: "acme",
+      subjectId: employeeId,
+      predicate: "delivery-quality",
+      value: "low",
+      evidenceIds: ["evidence-3"],
+      confidence: 0.8,
+      authorId: "ceo",
+    });
+    assert.equal(firstClaim.status, "asserted");
+    assert.equal(contradiction.status, "disputed");
+    assert.equal(
+      store.performance.activeClaims("acme", employeeId, "delivery-quality")[1]?.status,
+      "disputed",
     );
   } finally {
     store.close();
