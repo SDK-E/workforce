@@ -58,6 +58,11 @@ test("Docker command is hardened and contains no host workspace bind", () => {
   assert.ok(args.some((arg) => arg.startsWith("type=volume")));
   assert.ok(!args.some((arg) => arg.includes(process.env.HOME ?? "/Users")));
   assert.ok(!args.some((arg) => arg.startsWith("HTTP_PROXY=")));
+  const secretArgs = dockerRunArguments(spec, "attempt-secret", ["opencode"], undefined, [
+    "GITHUB_TOKEN",
+  ]);
+  assert.ok(secretArgs.includes("GITHUB_TOKEN"));
+  assert.ok(!secretArgs.some((arg) => arg.includes("github-secret-value")));
 });
 
 test("refuses direct allowlisted networking until egress proxy exists", () => {

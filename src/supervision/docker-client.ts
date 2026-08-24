@@ -6,7 +6,12 @@ import type { AttemptResult } from "./attempt-types.js";
 export interface DockerClient {
   available(): Promise<boolean>;
   createVolume(name: string): Promise<void>;
-  start(spec: SandboxSpec, attemptId: string, command: string[]): Promise<AttemptResult>;
+  start(
+    spec: SandboxSpec,
+    attemptId: string,
+    command: string[],
+    secretEnvironment?: Record<string, string>,
+  ): Promise<AttemptResult>;
   stop(containerName: string): Promise<void>;
   managedContainers(): Promise<string[]>;
   removeContainer(containerName: string): Promise<void>;
@@ -32,14 +37,20 @@ export class ExecaDockerClient implements DockerClient {
     if (result.exitCode !== 0) throw new Error(`Docker volume creation failed: ${result.stderr}`);
   }
 
-  async start(spec: SandboxSpec, attemptId: string, command: string[]): Promise<AttemptResult> {
+  async start(
+    spec: SandboxSpec,
+    attemptId: string,
+    command: string[],
+    secretEnvironment: Record<string, string> = {},
+  ): Promise<AttemptResult> {
     const result = await execa(
       "docker",
-      dockerRunArguments(spec, attemptId, command, this.egress),
+      dockerRunArguments(spec, attemptId, command, this.egress, Object.keys(secretEnvironment)),
       {
         reject: false,
         timeout: spec.timeoutSeconds * 1_000,
         maxBuffer: 1_048_576,
+        env: { ...process.env, ...secretEnvironment },
       },
     );
     return {

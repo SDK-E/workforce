@@ -17,6 +17,7 @@ export interface AttemptRequest {
   employeeId: string;
   sandbox: SandboxSpec;
   command: string[];
+  secretNames: string[];
 }
 
 export interface AttemptRecord extends AttemptRequest {

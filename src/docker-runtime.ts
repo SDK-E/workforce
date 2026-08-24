@@ -40,6 +40,7 @@ export function dockerRunArguments(
   attemptId: string,
   command: string[],
   egress?: EgressRuntimePolicy,
+  secretNames: string[] = [],
 ): string[] {
   if (spec.rejectedCapabilities.length)
     throw new Error(
@@ -86,6 +87,11 @@ export function dockerRunArguments(
     args.push("--label", `workforce.network-policy=${spec.networkMode}`);
   }
   for (const tmpfs of spec.tmpfs) args.push("--tmpfs", tmpfs);
+  for (const name of secretNames) {
+    if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(name))
+      throw new Error(`Invalid secret environment name: ${name}`);
+    args.push("--env", name);
+  }
   args.push(spec.image, ...command);
   return args;
 }

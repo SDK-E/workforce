@@ -40,6 +40,8 @@ The Execa Docker adapter invokes only control-plane-authored Docker argument arr
 
 Production profiles are separately built for document, research, engineering, browser, and restricted-review work. The build gate inspects every profile and the Tinyproxy image; the currently verified browser image is the largest at 488,159,650 bytes, below the 500 MiB limit.
 
+Kilo and OpenCode have separate command adapters. The supervisor rejects commands that were not produced in the selected adapter's non-interactive `run --model provider/model objective` shape. Image verification executes both pinned engines with networking disabled and validates their reported versions. Circuit-breaker policy selects a compatible fallback after repeated model failures and reopens a provider only after cooldown.
+
 ## Acceptance
 
 Container completion is only an attempt result. Independent control-plane validation checks required outputs, manifests, tests, policy violations, step exhaustion, permission failures, and acceptance criteria before a task can close.

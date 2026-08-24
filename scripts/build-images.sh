@@ -17,4 +17,5 @@ docker build -f docker/profiles/reviewer.Dockerfile --build-arg BASE_IMAGE=workf
 docker build -f docker/profiles/document.Dockerfile --build-arg BASE_IMAGE=workforce-agent-base:0.1.0 -t workforce-agent-document:0.1.0 .
 docker build -f docker/profiles/research.Dockerfile --build-arg BASE_IMAGE=workforce-agent-base:0.1.0 -t workforce-agent-research:0.1.0 .
 docker build -f docker/profiles/browser.Dockerfile --build-arg BASE_IMAGE=workforce-agent-base:0.1.0 -t workforce-agent-browser:0.1.0 .
+KILO_VERSION="$kilo_version" OPENCODE_VERSION="$opencode_version" sh scripts/verify-engines.sh
 sh scripts/verify-image-sizes.sh

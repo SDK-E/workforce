@@ -75,7 +75,7 @@ Every runtime container uses:
 
 Input repositories are exported or copied into the private volume. Agents never edit a host checkout directly. Outputs are exported to the control-plane artifact store after termination and validated there.
 
-Secrets are references in the control plane, never task text or image layers. Future secret injection must be ephemeral, least-privilege, scoped to one attempt, redacted, and absent from exported artifacts.
+Secrets are references in the control plane, never task text or image layers. The encrypted Workforce secret store enforces company, employee, and task scope. Authorized attempts receive declared values through the Docker client process environment using name-only `--env` arguments; values never appear in Docker command arguments, task records, or host mounts. GitHub credentials are imported from trusted `gh auth token` output and Vercel tokens are accepted only over protected stdin/TUI input.
 
 ## Supervisor
 
@@ -171,4 +171,3 @@ A release requires:
 - Collaboration checkpoint tests.
 - TUI end-to-end operator scenario.
 - Security review with no unresolved critical or high findings.
-

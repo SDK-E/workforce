@@ -96,7 +96,8 @@ test("supervisor runs two attempts, queues the third, refills capacity, and clea
         taskId: `task-${id}`,
         employeeId: id,
         sandbox: { ...sandbox, workspace: { type: "volume", name: `volume-${id}` } },
-        command: ["opencode", "run"],
+        command: ["opencode", "run", "--model", "openai/gpt-5", "Complete task"],
+        secretNames: [],
       });
     await supervisor.tick();
     await until(() => docker.starts.length === 2);
@@ -135,7 +136,8 @@ test("Docker unavailability blocks queued execution without host fallback", asyn
       taskId: "task",
       employeeId: "worker",
       sandbox,
-      command: ["opencode"],
+      command: ["opencode", "run", "--model", "openai/gpt-5", "Complete task"],
+      secretNames: [],
     });
     await supervisor.tick();
     assert.equal(store.attempts.get("blocked").status, "infrastructure-blocked");

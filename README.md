@@ -20,6 +20,8 @@ The local control plane uses transactional SQLite state with foreign keys, WAL d
 - `pnpm images:build`
 - `pnpm sandbox:verify`
 - `pnpm sandbox:plan -- requirements/job.json`
+- `pnpm secrets:import -- github <company> [employee] [task]`
+- `printf '%s' "$VERCEL_TOKEN" | pnpm secrets:import -- vercel <company> [employee] [task]`
 - `pnpm tui` (production alias)
 
 Node.js 22.13–26 and pnpm 10–11 are supported and checked explicitly. Dependency install scripts are denied unless individually allowlisted. The lockfile pins the dependency graph.

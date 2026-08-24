@@ -24,7 +24,12 @@ export class AttemptRepository {
     };
     this.database.transaction(() => {
       this.database.connection
-        .prepare("INSERT INTO attempts VALUES (?,?,?,?,?,?,?,?,NULL,NULL,?,NULL,NULL,?)")
+        .prepare(
+          `INSERT INTO attempts
+           (id,company_id,task_id,employee_id,status,sandbox_json,command_json,container_name,
+            exit_code,failure_reason,queued_at,started_at,finished_at,updated_at,secret_names_json)
+           VALUES (?,?,?,?,?,?,?,?,NULL,NULL,?,NULL,NULL,?,?)`,
+        )
         .run(
           record.id,
           record.companyId,
@@ -36,6 +41,7 @@ export class AttemptRepository {
           record.containerName,
           record.queuedAt,
           record.updatedAt,
+          JSON.stringify(record.secretNames),
         );
       this.audit.append("attempt.queued", "supervisor", record.companyId, {
         attemptId: record.id,
@@ -146,6 +152,7 @@ export class AttemptRepository {
       status: String(row.status) as AttemptStatus,
       sandbox: parseJson(row.sandbox_json),
       command: parseJson(row.command_json),
+      secretNames: parseJson(row.secret_names_json),
       containerName: String(row.container_name),
       exitCode: typeof row.exit_code === "number" ? row.exit_code : null,
       failureReason: typeof row.failure_reason === "string" ? row.failure_reason : null,
