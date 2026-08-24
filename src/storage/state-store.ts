@@ -35,6 +35,7 @@ import { DefaultRegistries } from "../registries/default-registries.js";
 import { AgentProfileRepository } from "../employees/agent-profile-repository.js";
 import { DefaultAgentProfiles } from "../employees/default-agent-profiles.js";
 import { AttemptFactory } from "../supervision/attempt-factory.js";
+import { AutomationRepository } from "../automations/automation-repository.js";
 
 /** Composition facade used by the application while feature services are introduced. */
 export class StateStore {
@@ -60,6 +61,7 @@ export class StateStore {
   readonly agentProfiles: AgentProfileRepository;
   readonly defaultAgentProfiles: DefaultAgentProfiles;
   readonly attemptFactory: AttemptFactory;
+  readonly automations: AutomationRepository;
 
   constructor(root?: string) {
     this.database = new WorkforceDatabase(root);
@@ -115,6 +117,11 @@ export class StateStore {
     );
     this.models = new ModelRepository(this.database, this.companiesRepository, this.audit);
     this.defaultRegistries = new DefaultRegistries(this.tools, this.environments, this.models);
+    this.automations = new AutomationRepository(
+      this.database,
+      this.companiesRepository,
+      this.audit,
+    );
   }
 
   get root(): string {
