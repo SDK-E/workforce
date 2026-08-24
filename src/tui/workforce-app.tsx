@@ -43,6 +43,8 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
   const strategyItems = store.strategyItems(company.id);
   const tasks = store.tasks(company.id);
   const messages = store.messages(company.id, "ceo-office");
+  const rooms = store.conversations.roomList(company.id);
+  const threads = store.conversations.threads.list(company.id, "ceo-office");
 
   useInput((input, key) => {
     if (companyFormVisible) return;
@@ -141,6 +143,8 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
             strategyItems={strategyItems}
             tasks={tasks}
             messages={messages}
+            rooms={rooms}
+            threads={threads}
           />
         )}
       </Box>

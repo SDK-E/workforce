@@ -5,6 +5,7 @@ import { Box } from "ink";
 import type { CompanyRecord } from "../src/storage/records.js";
 import { CompanyForm } from "../src/tui/overlays/company-form.js";
 import { TaskView } from "../src/tui/views/task-view.js";
+import { ConversationView } from "../src/tui/views/conversation-view.js";
 
 const company: CompanyRecord = {
   id: "acme",
@@ -66,5 +67,57 @@ test("task view renders status, risk, assignee, and objective", () => {
   assert.match(frame, /\[verifying\] Verify the release/);
   assert.match(frame, /high risk/);
   assert.match(frame, /engineer-1/);
+  view.unmount();
+});
+
+test("conversation view exposes rooms, threads, pins, and message state", () => {
+  const view = render(
+    <ConversationView
+      rooms={[
+        {
+          id: "room-1",
+          companyId: "acme",
+          name: "Engineering",
+          kind: "team",
+          retentionDays: 90,
+          announcement: "Ship safely",
+          status: "active",
+          createdAt: company.createdAt,
+          updatedAt: company.createdAt,
+        },
+      ]}
+      threads={[
+        {
+          id: "thread-1",
+          companyId: "acme",
+          roomId: "room-1",
+          title: "Release",
+          createdBy: "ceo",
+          status: "open",
+          createdAt: company.createdAt,
+          updatedAt: company.createdAt,
+        },
+      ]}
+      messages={[
+        {
+          id: "message-1",
+          companyId: "acme",
+          roomId: "room-1",
+          threadId: "thread-1",
+          authorId: "arm",
+          body: "Evidence attached",
+          pinned: true,
+          status: "edited",
+          createdAt: company.createdAt,
+          updatedAt: company.createdAt,
+          redactedBy: null,
+          redactionReason: null,
+        },
+      ]}
+    />,
+  );
+  const frame = view.lastFrame() ?? "";
+  assert.match(frame, /1 rooms · 1 CEO-office threads/);
+  assert.match(frame, /◆ arm: Evidence attached \(edited\)/);
   view.unmount();
 });

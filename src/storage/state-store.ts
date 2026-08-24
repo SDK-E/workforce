@@ -3,7 +3,7 @@ import type { Employee, WorkforceEvent } from "../domain.js";
 import { ApprovalRepository } from "./approval-repository.js";
 import { AuditRepository } from "./audit-repository.js";
 import { CompanyRepository } from "./company-repository.js";
-import { ConversationRepository } from "./conversation-repository.js";
+import { ConversationService } from "../conversations/conversation-service.js";
 import { WorkforceDatabase } from "./database.js";
 import { TaskRepository } from "./task-repository.js";
 import { OrganizationRepository } from "./organization-repository.js";
@@ -27,7 +27,7 @@ export class StateStore {
   readonly database: WorkforceDatabase;
   readonly audit: AuditRepository;
   readonly companiesRepository: CompanyRepository;
-  readonly conversationsRepository: ConversationRepository;
+  readonly conversations: ConversationService;
   readonly approvalsRepository: ApprovalRepository;
   readonly tasksRepository: TaskRepository;
   readonly organizationRepository: OrganizationRepository;
@@ -37,7 +37,7 @@ export class StateStore {
     this.database = new WorkforceDatabase(root);
     this.audit = new AuditRepository(this.database);
     this.companiesRepository = new CompanyRepository(this.database, this.audit);
-    this.conversationsRepository = new ConversationRepository(
+    this.conversations = new ConversationService(
       this.database,
       this.companiesRepository,
       this.audit,
@@ -104,10 +104,10 @@ export class StateStore {
     body: string,
     threadId: string | null = null,
   ): MessageRecord {
-    return this.conversationsRepository.addMessage(companyId, roomId, authorId, body, threadId);
+    return this.conversations.addMessage(companyId, roomId, authorId, body, threadId);
   }
   messages(companyId: string, roomId: string, limit = 100): MessageRecord[] {
-    return this.conversationsRepository.messages(companyId, roomId, limit);
+    return this.conversations.messagePage(companyId, roomId, "", limit).items;
   }
   requestApproval(
     companyId: string,

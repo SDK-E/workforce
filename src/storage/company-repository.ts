@@ -159,12 +159,17 @@ export class CompanyRepository {
 
   private insertRooms(companyId: string, createdAt: string): void {
     const insert = this.database.connection.prepare("INSERT INTO rooms VALUES (?, ?, ?, ?, ?)");
+    const insertSettings = this.database.connection.prepare(
+      "INSERT INTO room_settings VALUES (?, ?, NULL, '', 'active', ?)",
+    );
     for (const [id, name, kind] of [
       ["ceo-office", "CEO Office", "private-office"],
       ["arm-office", "ARM Office", "private-office"],
       ["company-lobby", "Company Lobby", "company"],
-    ] as const)
+    ] as const) {
       insert.run(id, companyId, name, kind, createdAt);
+      insertSettings.run(companyId, id, createdAt);
+    }
   }
 
   private durableEmployees(hiredAt: string): Employee[] {

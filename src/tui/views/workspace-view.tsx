@@ -1,4 +1,8 @@
-import type { MessageRecord } from "../../conversations/conversation-types.js";
+import type {
+  ConversationThread,
+  MessageRecord,
+  RoomRecord,
+} from "../../conversations/conversation-types.js";
 import type { CompanyRecord } from "../../storage/records.js";
 import type { OrganizationUnit } from "../../organizations/organization-types.js";
 import type { StrategyItem, StrategyItemKind } from "../../strategy/strategy-types.js";
@@ -17,6 +21,8 @@ interface WorkspaceViewProps {
   strategyItems: StrategyItem[];
   tasks: TaskRecord[];
   messages: MessageRecord[];
+  rooms: RoomRecord[];
+  threads: ConversationThread[];
 }
 
 const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
@@ -38,7 +44,9 @@ export function WorkspaceView(props: WorkspaceViewProps) {
   }
   if (props.section === "Tasks") return <TaskView tasks={props.tasks} />;
   if (["CEO office", "Conversations"].includes(props.section)) {
-    return <ConversationView messages={props.messages} />;
+    return (
+      <ConversationView messages={props.messages} rooms={props.rooms} threads={props.threads} />
+    );
   }
   return <UnavailableView section={props.section} />;
 }
