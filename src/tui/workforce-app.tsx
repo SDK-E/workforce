@@ -45,6 +45,10 @@ function loadWorkspaceData(store: StateStore, companyId: string) {
     attempts: store.attempts.list(companyId),
     artifacts: store.artifacts.listCompany(companyId),
     events: store.events(companyId, 200),
+    tools: store.tools.list(companyId),
+    environments: store.environments.list(companyId),
+    models: store.models.list(companyId),
+    agentProfiles: store.agentProfiles.list(companyId),
   };
 }
 
@@ -165,6 +169,7 @@ export function WorkforceApp({ store, docker, initialCompany }: WorkforceAppProp
             company={company}
             auditVerified={store.verifyAuditChain()}
             docker={docker}
+            compact={compact}
             {...data}
           />
         )}

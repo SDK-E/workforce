@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
-import { Box } from "ink";
+import { Box, Text } from "ink";
 import type { CompanyRecord } from "../src/storage/records.js";
 import { CompanyForm } from "../src/tui/overlays/company-form.js";
 import { TaskView } from "../src/tui/views/task-view.js";
 import { ConversationView } from "../src/tui/views/conversation-view.js";
 import { TaskForm } from "../src/tui/overlays/task-form.js";
 import type { CreateTaskInput } from "../src/tasks/task-types.js";
+import { ModalBackdrop } from "../src/tui/components/modal-backdrop.js";
 
 const company: CompanyRecord = {
   id: "acme",
@@ -154,5 +155,22 @@ test("task form uses maintained controls and confirms before submitting", async 
   assert.equal(submitted?.objective, "Verify release");
   assert.deepEqual(submitted.acceptanceCriteria, ["Tests pass"]);
   assert.equal(submitted.risk, "medium");
+  view.unmount();
+});
+
+test("modal backdrop repaints the full terminal instead of exposing underlying content", () => {
+  const view = render(
+    <Box width={80} height={20}>
+      <Text>CONTENT BEHIND MODAL</Text>
+      <ModalBackdrop width={40}>
+        <Box borderStyle="double">
+          <Text>Readable modal</Text>
+        </Box>
+      </ModalBackdrop>
+    </Box>,
+  );
+  const frame = view.lastFrame() ?? "";
+  assert.match(frame, /Readable modal/);
+  assert.doesNotMatch(frame, /CONTENT BEHIND MODAL/);
   view.unmount();
 });

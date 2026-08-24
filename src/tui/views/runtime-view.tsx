@@ -1,31 +1,52 @@
 import { Box, Text } from "ink";
 import type { DockerStatus } from "../../docker-runtime.js";
+import type {
+  EnvironmentRecord,
+  ModelRecord,
+  ToolRecord,
+} from "../../registries/registry-types.js";
 
-const PROFILES = ["document", "research", "engineering", "browser", "restricted-review"];
-const TOOLS = ["scoped search", "shell", "GitHub CLI", "Vercel CLI", "browser"];
+interface RuntimeViewProps {
+  section: string;
+  docker: DockerStatus;
+  tools: ToolRecord[];
+  environments: EnvironmentRecord[];
+  models: ModelRecord[];
+}
 
-export function RuntimeView({ section, docker }: { section: string; docker: DockerStatus }) {
-  const rows =
-    section === "Tools"
-      ? TOOLS
-      : section === "Environments"
-        ? PROFILES.map((profile) => `${profile} · private named volume · read-only root`)
-        : section === "Models & engines"
-          ? ["Kilo · verified adapter", "OpenCode · verified adapter", "circuit-breaker failover"]
-          : [
-              `Docker ${docker.available ? `available · ${docker.version ?? "version unknown"}` : "blocked"}`,
-              "two active containers by default · memory-pressure reduction enabled",
-              "host execution disabled · managed orphan cleanup enabled",
-            ];
+export function RuntimeView(props: RuntimeViewProps) {
+  const rows = rowsForSection(props);
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
-      <Text bold>{section}</Text>
+      <Text bold>{props.section}</Text>
+      {rows.length === 0 && <Text>No company-scoped registry records.</Text>}
       {rows.map((row) => (
         <Text key={row}>• {row}</Text>
       ))}
-      {section === "Tools" && (
+      {props.section === "Tools" && (
         <Text dimColor>Capabilities are granted per approved sandbox plan.</Text>
       )}
     </Box>
   );
+}
+
+function rowsForSection(props: RuntimeViewProps): string[] {
+  if (props.section === "Tools")
+    return props.tools.map(
+      (tool) =>
+        `${tool.id}@${tool.version} · ${tool.health} · ${tool.risk} risk · ${tool.capabilities.join(", ")}`,
+    );
+  if (props.section === "Environments")
+    return props.environments.map(
+      (environment) => `${environment.id} · ${environment.health} · ${environment.sandboxImage}`,
+    );
+  if (props.section === "Models & engines")
+    return props.models.map(
+      (model) => `${model.engine} · ${model.model} · ${model.health} · priority ${model.priority}`,
+    );
+  return [
+    `Docker ${props.docker.available ? `available · ${props.docker.version ?? "version unknown"}` : "blocked"}`,
+    "two active containers by default · memory-pressure reduction enabled",
+    "host execution disabled · managed orphan cleanup enabled",
+  ];
 }

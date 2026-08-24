@@ -1,4 +1,5 @@
 import { Box, Text } from "ink";
+import { ModalBackdrop } from "../components/modal-backdrop.js";
 
 interface HelpOverlayProps {
   compact: boolean;
@@ -7,23 +8,26 @@ interface HelpOverlayProps {
 
 export function HelpOverlay({ compact, terminalWidth }: HelpOverlayProps) {
   return (
-    <Box
-      position="absolute"
-      marginTop={3}
-      marginLeft={compact ? 4 : Math.floor(terminalWidth / 4)}
+    <ModalBackdrop
       width={compact ? Math.max(40, terminalWidth - 8) : Math.floor(terminalWidth / 2)}
-      borderStyle="double"
-      borderColor="cyan"
-      flexDirection="column"
-      paddingX={2}
     >
-      <Text bold>Keyboard help</Text>
-      <Text>↑/k, ↓/j Navigate</Text>
-      <Text>Enter Open selected area</Text>
-      <Text>/ or p Command palette / search</Text>
-      <Text>? Toggle this help</Text>
-      <Text>q Quit safely</Text>
-      <Text dimColor>Consequential actions always require confirmation.</Text>
-    </Box>
+      <Box
+        width="100%"
+        backgroundColor="black"
+        borderStyle="double"
+        borderColor="cyan"
+        flexDirection="column"
+        paddingX={2}
+      >
+        <Text bold>Keyboard help</Text>
+        <Text>↑/k, ↓/j Navigate</Text>
+        <Text>←/→ Change page or detail panel</Text>
+        <Text>n New record where available</Text>
+        <Text>/ or p Command palette / search</Text>
+        <Text>? Toggle this help</Text>
+        <Text>q Quit safely</Text>
+        <Text dimColor>Consequential actions always require confirmation.</Text>
+      </Box>
+    </ModalBackdrop>
   );
 }

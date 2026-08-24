@@ -1,9 +1,11 @@
-import { Box, Text } from "ink";
+import { useState } from "react";
+import { Box, Text, useInput } from "ink";
 import type { DockerStatus } from "../../docker-runtime.js";
 import type { CompanyRecord } from "../../storage/records.js";
 import type { StrategyItem } from "../../strategy/strategy-types.js";
 import { Panel } from "../components/panel.js";
 import { truncate } from "../navigation.js";
+import { SectionTabs } from "../components/section-tabs.js";
 
 interface ExecutiveOverviewProps {
   company: CompanyRecord;
@@ -17,6 +19,12 @@ interface ExecutiveOverviewProps {
 }
 
 export function ExecutiveOverview(props: ExecutiveOverviewProps) {
+  const tabs = ["Priorities", "System & risk", "Decisions"];
+  const [selectedTab, setSelectedTab] = useState(0);
+  useInput((_input, key) => {
+    if (key.leftArrow) setSelectedTab((current) => (current + tabs.length - 1) % tabs.length);
+    if (key.rightArrow) setSelectedTab((current) => (current + 1) % tabs.length);
+  });
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>Executive overview</Text>
@@ -41,24 +49,28 @@ export function ExecutiveOverview(props: ExecutiveOverviewProps) {
         </Panel>
       </Box>
 
-      <Box marginTop={1} flexGrow={1} gap={1}>
-        <Panel title="PRIORITIES & PROGRESS" width="58%">
-          {props.strategyItems.length === 0 ? (
-            <>
-              <Text dimColor>No active objectives or projects.</Text>
-              <Text>Use Companies and Projects to begin.</Text>
-            </>
-          ) : (
-            props.strategyItems.slice(0, 6).map((item) => (
-              <Text key={item.id}>
-                [{item.status}] {item.kind}: {truncate(item.name, 36)}
-              </Text>
-            ))
-          )}
-        </Panel>
-
-        {!props.compact && (
-          <Panel title="SYSTEM & RISK" width="42%">
+      <Box marginTop={1} flexDirection="column">
+        <SectionTabs labels={tabs} selected={selectedTab} />
+      </Box>
+      <Box marginTop={1} flexGrow={1}>
+        {selectedTab === 0 && (
+          <Panel title="PRIORITIES & PROGRESS" width="100%">
+            {props.strategyItems.length === 0 ? (
+              <>
+                <Text dimColor>No active objectives or projects.</Text>
+                <Text>Use Companies and Projects to begin.</Text>
+              </>
+            ) : (
+              props.strategyItems.slice(0, 6).map((item) => (
+                <Text key={item.id}>
+                  [{item.status}] {item.kind}: {truncate(item.name, 36)}
+                </Text>
+              ))
+            )}
+          </Panel>
+        )}
+        {selectedTab === 1 && (
+          <Panel title="SYSTEM & RISK" width="100%">
             <Text>
               {props.docker.available ? "No execution alerts" : "Docker sleeping or unavailable"}
             </Text>
@@ -66,6 +78,13 @@ export function ExecutiveOverview(props: ExecutiveOverviewProps) {
             <Text>Raw events: {props.eventCount}</Text>
             <Text>Memory policy: 2 containers default</Text>
             <Text>Network: deny by default</Text>
+          </Panel>
+        )}
+        {selectedTab === 2 && (
+          <Panel title="DECISIONS & DELIVERABLES" width="100%">
+            <Text>{props.pendingApprovals} decisions require review</Text>
+            <Text>Open Approvals to inspect rationale and evidence.</Text>
+            <Text dimColor>Accepted deliverables appear only after deterministic validation.</Text>
           </Panel>
         )}
       </Box>

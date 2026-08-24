@@ -36,6 +36,12 @@ import { DeliverableView, LiveWorkView } from "./execution-view.js";
 import { RuntimeView } from "./runtime-view.js";
 import { AuditView, DiagnosticsView } from "./audit-view.js";
 import { SettingsView } from "./settings-view.js";
+import type {
+  EnvironmentRecord,
+  ModelRecord,
+  ToolRecord,
+} from "../../registries/registry-types.js";
+import type { AgentProfile } from "../../employees/agent-profile-types.js";
 
 interface WorkspaceViewProps {
   section: string;
@@ -59,6 +65,11 @@ interface WorkspaceViewProps {
   events: WorkforceEvent[];
   auditVerified: boolean;
   docker: DockerStatus;
+  tools: ToolRecord[];
+  environments: EnvironmentRecord[];
+  models: ModelRecord[];
+  agentProfiles: AgentProfile[];
+  compact: boolean;
 }
 
 const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
@@ -83,7 +94,14 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     return <StrategyView title={props.section} kind={strategyKind} items={props.strategyItems} />;
   }
   if (props.section === "Tasks") return <TaskView tasks={props.tasks} />;
-  if (props.section === "Employees") return <EmployeeView employees={props.employees} />;
+  if (props.section === "Employees")
+    return (
+      <EmployeeView
+        employees={props.employees}
+        profiles={props.agentProfiles}
+        compact={props.compact}
+      />
+    );
   if (props.section === "Agent Resources")
     return <AgentResourcesView proposals={props.hiringProposals} />;
   if (props.section === "Approvals") return <ApprovalView approvals={props.approvals} />;
@@ -103,7 +121,15 @@ export function WorkspaceView(props: WorkspaceViewProps) {
   if (props.section === "Live work") return <LiveWorkView attempts={props.attempts} />;
   if (props.section === "Deliverables") return <DeliverableView artifacts={props.artifacts} />;
   if (["Tools", "Environments", "Models & engines", "Docker & resources"].includes(props.section))
-    return <RuntimeView section={props.section} docker={props.docker} />;
+    return (
+      <RuntimeView
+        section={props.section}
+        docker={props.docker}
+        tools={props.tools}
+        environments={props.environments}
+        models={props.models}
+      />
+    );
   if (props.section === "Audit")
     return <AuditView events={props.events} verified={props.auditVerified} />;
   if (props.section === "Settings") return <SettingsView company={props.company} />;

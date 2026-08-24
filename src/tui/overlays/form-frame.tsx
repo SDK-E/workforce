@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Box, Text } from "ink";
+import { ModalBackdrop } from "../components/modal-backdrop.js";
 
 export function FormFrame({
   title,
@@ -13,19 +14,19 @@ export function FormFrame({
   footer: string;
 }) {
   return (
-    <Box
-      position="absolute"
-      marginTop={4}
-      marginLeft={Math.max(2, Math.floor(terminalWidth / 5))}
-      width={Math.max(44, Math.floor((terminalWidth * 3) / 5))}
-      borderStyle="double"
-      borderColor="cyan"
-      flexDirection="column"
-      paddingX={2}
-    >
-      <Text bold>{title}</Text>
-      {children}
-      <Text dimColor>{footer}</Text>
-    </Box>
+    <ModalBackdrop width={Math.max(44, Math.floor((terminalWidth * 3) / 5))}>
+      <Box
+        width="100%"
+        backgroundColor="black"
+        borderStyle="double"
+        borderColor="cyan"
+        flexDirection="column"
+        paddingX={2}
+      >
+        <Text bold>{title}</Text>
+        {children}
+        <Text dimColor>{footer}</Text>
+      </Box>
+    </ModalBackdrop>
   );
 }

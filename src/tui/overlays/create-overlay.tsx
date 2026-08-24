@@ -6,8 +6,9 @@ import { CompanyForm } from "./company-form.js";
 import { OrganizationForm } from "./organization-form.js";
 import { StrategyForm } from "./strategy-form.js";
 import { TaskForm } from "./task-form.js";
+import { AgentProfileForm } from "./agent-profile-form.js";
 
-export type CreateFormKind = "company" | "organization" | "strategy" | "task";
+export type CreateFormKind = "company" | "organization" | "strategy" | "task" | "agent-profile";
 
 export function CreateOverlay(props: {
   kind: CreateFormKind;
@@ -69,6 +70,19 @@ export function CreateOverlay(props: {
         }}
       />
     );
+  if (props.kind === "agent-profile")
+    return (
+      <AgentProfileForm
+        companyId={props.company.id}
+        terminalWidth={props.terminalWidth}
+        onCancel={props.onClose}
+        onSubmit={(input) => {
+          finish(() => {
+            props.store.agentProfiles.update(input);
+          }, `Instruction revision activated for ${input.employeeId}`);
+        }}
+      />
+    );
   return (
     <TaskForm
       companyId={props.company.id}
@@ -89,6 +103,7 @@ export function createFormForSection(section: string): CreateFormKind | null {
     return "organization";
   if (["Projects", "Objectives", "Initiatives", "Goals", "Milestones"].includes(section))
     return "strategy";
+  if (section === "Employees") return "agent-profile";
   return section === "Tasks" ? "task" : null;
 }
 
