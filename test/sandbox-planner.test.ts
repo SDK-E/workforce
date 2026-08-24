@@ -57,6 +57,7 @@ test("Docker command is hardened and contains no host workspace bind", () => {
   assert.ok(args.includes("none"));
   assert.ok(args.some((arg) => arg.startsWith("type=volume")));
   assert.ok(!args.some((arg) => arg.includes(process.env.HOME ?? "/Users")));
+  assert.ok(!args.some((arg) => arg.startsWith("HTTP_PROXY=")));
 });
 
 test("refuses direct allowlisted networking until egress proxy exists", () => {

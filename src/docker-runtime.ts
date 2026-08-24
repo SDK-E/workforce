@@ -79,7 +79,7 @@ export function dockerRunArguments(
     "--mount",
     `type=volume,src=${spec.workspace.name},dst=/work`,
   ];
-  if (egress) {
+  if (egress && spec.networkMode !== "none") {
     args.push("--env", `HTTP_PROXY=${egress.proxyUrl}`);
     args.push("--env", `HTTPS_PROXY=${egress.proxyUrl}`);
     args.push("--env", "NO_PROXY=");

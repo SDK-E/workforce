@@ -3,6 +3,8 @@ import { dockerStatus } from "./docker-runtime.js";
 import { createControlPlaneLogger } from "./observability/control-plane-logger.js";
 import { StateStore } from "./storage/state-store.js";
 import { WorkforceApp } from "./tui/workforce-app.js";
+import { ExecaDockerClient } from "./supervision/docker-client.js";
+import { DockerSupervisor } from "./supervision/docker-supervisor.js";
 
 const store = new StateStore();
 store.initialize();
@@ -17,6 +19,17 @@ const company =
 
 const docker = await dockerStatus();
 const logger = createControlPlaneLogger(store.root);
+const supervisor = new DockerSupervisor(
+  store.attempts,
+  new ExecaDockerClient({
+    networkName: "workforce-egress-internal",
+    proxyUrl: "http://workforce-egress-proxy:3128",
+  }),
+  store.audit,
+);
+const recovery = await supervisor.reconcile();
+await supervisor.tick();
 logger.info({ companyId: company.id, dockerAvailable: docker.available }, "control plane started");
+logger.info(recovery, "supervisor reconciliation completed");
 
 render(<WorkforceApp store={store} docker={docker} initialCompany={company} />);

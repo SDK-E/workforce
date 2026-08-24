@@ -2,7 +2,7 @@ import { SandboxSpecSchema, type JobRequirements, type SandboxSpec } from "./dom
 
 const IMAGE_BY_PROFILE = {
   document: "workforce-agent-document:0.1.0",
-  research: "workforce-agent-browser:0.1.0",
+  research: "workforce-agent-research:0.1.0",
   engineering: "workforce-agent-builder:0.1.0",
   browser: "workforce-agent-browser:0.1.0",
   "restricted-review": "workforce-agent-reviewer:0.1.0",

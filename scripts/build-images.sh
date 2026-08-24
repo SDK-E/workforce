@@ -14,4 +14,7 @@ docker build --build-arg "KILO_VERSION=$kilo_version" --build-arg "OPENCODE_VERS
 docker build -t workforce-egress-proxy:0.1.0 docker/egress
 docker build -f docker/profiles/builder.Dockerfile --build-arg BASE_IMAGE=workforce-agent-base:0.1.0 -t workforce-agent-builder:0.1.0 .
 docker build -f docker/profiles/reviewer.Dockerfile --build-arg BASE_IMAGE=workforce-agent-base:0.1.0 -t workforce-agent-reviewer:0.1.0 .
+docker build -f docker/profiles/document.Dockerfile --build-arg BASE_IMAGE=workforce-agent-base:0.1.0 -t workforce-agent-document:0.1.0 .
+docker build -f docker/profiles/research.Dockerfile --build-arg BASE_IMAGE=workforce-agent-base:0.1.0 -t workforce-agent-research:0.1.0 .
+docker build -f docker/profiles/browser.Dockerfile --build-arg BASE_IMAGE=workforce-agent-base:0.1.0 -t workforce-agent-browser:0.1.0 .
 sh scripts/verify-image-sizes.sh

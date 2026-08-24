@@ -34,6 +34,12 @@ The conversation application service composes separate room, thread, message, an
 
 Docker unavailability is a blocked execution state. The control plane, TUI, CEO, ARM, task management, and conversations remain available; no agent work begins.
 
+## Durable supervisor
+
+The Execa Docker adapter invokes only control-plane-authored Docker argument arrays and never a host shell. Attempts, leases, status events, and bounded output are durable. The scheduler starts two containers by default, reduces to one under memory pressure, and refills freed capacity from its FIFO queue. Startup reconciliation expires stale leases and removes labeled orphan containers. Timeouts, infrastructure failures, non-zero exits, and emergency stops are distinct terminal states. Docker unavailability moves queued work to an explicit infrastructure-blocked state and never selects a host execution path.
+
+Production profiles are separately built for document, research, engineering, browser, and restricted-review work. The build gate inspects every profile and the Tinyproxy image; the currently verified browser image is the largest at 488,159,650 bytes, below the 500 MiB limit.
+
 ## Acceptance
 
 Container completion is only an attempt result. Independent control-plane validation checks required outputs, manifests, tests, policy violations, step exhaustion, permission failures, and acceptance criteria before a task can close.

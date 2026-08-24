@@ -26,7 +26,14 @@ export default tseslint.config(
     }
   },
   {
-    files: ["src/domain.ts", "src/acceptance/**/*.ts", "src/supervision/**/*.ts"],
+    files: [
+      "src/domain.ts",
+      "src/acceptance/**/*.ts",
+      "src/supervision/types.ts",
+      "src/supervision/capacity-controller.ts",
+      "src/supervision/diagnose-stall.ts",
+      "src/supervision/attempt-types.ts"
+    ],
     rules: {
       "no-restricted-imports": ["error", {
         patterns: [

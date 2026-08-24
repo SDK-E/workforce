@@ -35,7 +35,7 @@ Use arrows or `j`/`k` to navigate, Enter to open, `/` or `p` for the command pal
 - `src/tui/views`: page-level workspaces
 - `src/tui/overlays`: command palette, help, and confirmed modal workflows
 - `src/acceptance`: independently testable completion policy
-- `src/supervision`: capacity and progress monitoring policies
+- `src/supervision`: durable attempts, leases, capacity policy, Docker supervision, and recovery
 
 See [docs/coding-standards.md](docs/coding-standards.md). Formatting, typed linting, the 300-line module boundary, dead-code analysis, compilation, and tests are enforced by `pnpm test`; use `pnpm format` to apply formatting.
 

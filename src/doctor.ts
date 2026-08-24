@@ -6,8 +6,11 @@ const images = docker.available
       dockerImageExists("workforce-agent-base:0.1.0"),
       dockerImageExists("workforce-agent-builder:0.1.0"),
       dockerImageExists("workforce-agent-reviewer:0.1.0"),
+      dockerImageExists("workforce-agent-document:0.1.0"),
+      dockerImageExists("workforce-agent-research:0.1.0"),
+      dockerImageExists("workforce-agent-browser:0.1.0"),
     ])
-  : [false, false, false];
+  : [false, false, false, false, false, false];
 const imagesReady = images.every(Boolean);
 console.log("Workforce doctor");
 console.log(`Docker: ${docker.available ? `available (${docker.version})` : "BLOCKED"}`);
