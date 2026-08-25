@@ -53,6 +53,8 @@ import { McpServerView } from "./mcp-server-view.js";
 import { ProjectIntegrationView } from "./project-integration-view.js";
 import { MailView } from "./mail-view.js";
 import { AutomationView } from "./automation-view.js";
+import { ExecutionReadinessView } from "./execution-readiness-view.js";
+import { executionReadiness } from "../../execution/execution-readiness.js";
 
 interface WorkspaceViewProps {
   section: string;
@@ -99,6 +101,18 @@ const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
 };
 
 export function WorkspaceView(props: WorkspaceViewProps) {
+  if (props.section === "Execution readiness")
+    return (
+      <ExecutionReadinessView
+        readiness={executionReadiness({
+          docker: props.docker,
+          environments: props.environments,
+          models: props.models,
+          attempts: props.attempts,
+          runtime: props.runtime,
+        })}
+      />
+    );
   if (props.section === "Companies")
     return (
       <CompanyView

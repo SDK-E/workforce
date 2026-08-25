@@ -33,6 +33,7 @@ export const NAVIGATION_GROUPS = [
   {
     label: "Platform",
     sections: [
+      "Execution readiness",
       "Tools",
       "MCP servers",
       "Project integrations",

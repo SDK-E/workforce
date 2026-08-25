@@ -63,8 +63,11 @@ export function WorkforceApp({
     onStatus: setStatusMessage,
   });
   const forms = useFormController(setStatusMessage);
-  const inputBlocked = [emergencyVisible, executionTaskId, lifecycle.target, forms.active].some(
-    Boolean,
+  const inputBlocked = hasActiveOverlay(
+    emergencyVisible,
+    executionTaskId,
+    lifecycle.target,
+    forms.active,
   );
 
   useWorkforceInput({
@@ -105,12 +108,7 @@ export function WorkforceApp({
         flexDirection="column"
         backgroundColor={theme.colors.canvas}
       >
-        <TopBar
-          companyName={company.displayName}
-          docker={docker}
-          pendingApprovals={data.pendingApprovals}
-        />
-        <Breadcrumbs section={selectedSection} focus={focus} />
+        <WorkforceHeader {...{ company, docker, data, section: selectedSection, focus }} />
 
         <WorkforceContent
           selectedIndex={selectedIndex}
@@ -175,6 +173,26 @@ export function WorkforceApp({
   );
 }
 
+function WorkforceHeader(props: {
+  company: CompanyRecord;
+  docker: DockerStatus;
+  data: WorkspaceData;
+  section: string;
+  focus: "sidebar" | "content";
+}) {
+  return (
+    <>
+      <TopBar
+        companyName={props.company.displayName}
+        docker={props.docker}
+        pendingApprovals={props.data.pendingApprovals}
+        {...attemptMetricsFor(props.data)}
+      />
+      <Breadcrumbs section={props.section} focus={props.focus} />
+    </>
+  );
+}
+
 function startTaskExecution(
   taskId: string | null,
   companyId: string,
@@ -190,6 +208,19 @@ function startTaskExecution(
     .catch((error: unknown) => {
       status(error instanceof Error ? error.message : "Task execution failed");
     });
+}
+
+function attemptMetricsFor(data: WorkspaceData) {
+  return {
+    activeAttempts: data.attempts.filter(({ status }) => ["starting", "running"].includes(status))
+      .length,
+    queuedAttempts: data.attempts.filter(({ status }) => status === "queued").length,
+    capacity: data.runtime?.maxConcurrentAttempts ?? 2,
+  };
+}
+
+function hasActiveOverlay(...values: unknown[]): boolean {
+  return values.some(Boolean);
 }
 
 function WorkforceContent(props: {
@@ -222,6 +253,7 @@ function WorkforceContent(props: {
           docker={props.docker}
           compact={props.compact}
           activeEmployees={props.data.employees.filter(({ status }) => status === "active").length}
+          {...attemptMetricsFor(props.data)}
           pendingApprovals={props.data.pendingApprovals}
           eventCount={props.store.eventCount(props.company.id)}
           auditVerified={props.store.verifyAuditChain()}

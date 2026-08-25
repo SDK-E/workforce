@@ -14,6 +14,8 @@ interface ExecutiveOverviewProps {
   docker: DockerStatus;
   compact: boolean;
   activeEmployees: number;
+  activeAttempts: number;
+  queuedAttempts: number;
   pendingApprovals: number;
   eventCount: number;
   auditVerified: boolean;
@@ -43,10 +45,10 @@ export function ExecutiveOverview(props: ExecutiveOverviewProps) {
 
       <Box marginTop={1} gap={1} flexWrap="wrap">
         <Panel title="WORKFORCE" width={props.compact ? 24 : 28}>
-          <Text color={theme.colors.success}>
-            ● {props.activeEmployees} durable identities healthy
+          <Text color={theme.colors.success}>● {props.activeEmployees} registered identities</Text>
+          <Text>
+            {props.activeAttempts} active Docker attempts · {props.queuedAttempts} queued
           </Text>
-          <Text>0 working · 0 blocked · 0 stale</Text>
         </Panel>
         <Panel title="EXECUTION" width={props.compact ? 24 : 30}>
           <Text color={props.docker.available ? theme.colors.success : theme.colors.warning}>

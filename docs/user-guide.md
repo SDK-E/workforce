@@ -76,6 +76,8 @@ An approved assigned task flows through the execution service into a durable Doc
 
 Use:
 
+- **Overview → Executive overview** for registered identities versus actual active/queued Docker attempts. CEO and ARM identities exist even when no container is running.
+- **Platform → Execution readiness** for concrete Docker, sandbox, model, autonomy, and queue blockers.
 - **Strategy & work → Live work** for attempt state and blockers.
 - **Strategy & work → Deliverables** for validated artifacts.
 - **Governance → Audit** for durable decisions and mutations.

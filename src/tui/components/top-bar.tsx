@@ -7,16 +7,19 @@ interface TopBarProps {
   companyName: string;
   docker: DockerStatus;
   pendingApprovals: number;
+  activeAttempts: number;
+  queuedAttempts: number;
+  capacity: number;
 }
 
-export function TopBar({ companyName, docker, pendingApprovals }: TopBarProps) {
+export function TopBar(props: TopBarProps) {
   const theme = useWorkforceTheme();
   return (
     <Box paddingX={1} justifyContent="space-between" backgroundColor={theme.colors.primary}>
-      <Text bold> WORKFORCE {truncate(companyName, 22)}</Text>
+      <Text bold> WORKFORCE {truncate(props.companyName, 22)}</Text>
       <Text>
-        Docker {docker.available ? "● ready" : "! blocked"} Agents 0/2 Decisions {pendingApprovals}{" "}
-        Alerts {docker.available ? 0 : 1}
+        Docker {props.docker.available ? "● ready" : "! blocked"} · Attempts {props.activeAttempts}/
+        {props.capacity} · Queue {props.queuedAttempts} · Decisions {props.pendingApprovals}
       </Text>
     </Box>
   );
