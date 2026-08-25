@@ -3,6 +3,7 @@ import { Box, Text, useInput } from "ink";
 import type { DockerStatus } from "../../docker-runtime.js";
 import type { CompanyRecord } from "../../storage/records.js";
 import type { StrategyItem } from "../../strategy/strategy-types.js";
+import { DEFAULT_AGENT_CONCURRENCY } from "../../supervision/capacity-controller.js";
 import { Panel } from "../components/panel.js";
 import { truncate } from "../navigation.js";
 import { SectionTabs } from "../components/section-tabs.js";
@@ -107,7 +108,10 @@ export function ExecutiveOverview(props: ExecutiveOverviewProps) {
             </Text>
             <Text>Audit chain: {props.auditVerified ? "verified" : "FAILED"}</Text>
             <Text>Raw events: {props.eventCount}</Text>
-            <Text>Memory policy: 2 containers default</Text>
+            <Text>
+              Agent concurrency: up to {DEFAULT_AGENT_CONCURRENCY} containers, reduced under memory
+              pressure
+            </Text>
             <Text>Network: deny by default</Text>
           </Panel>
         )}

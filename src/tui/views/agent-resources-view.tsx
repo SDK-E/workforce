@@ -64,7 +64,6 @@ export function AgentResourcesView({
           </Box>
         ))
       )}
-      <Text dimColor>e decide selected proposal · [ ] select</Text>
     </Box>
   );
 }

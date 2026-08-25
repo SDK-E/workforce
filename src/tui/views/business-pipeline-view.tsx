@@ -17,7 +17,6 @@ export function BusinessPipelineView(props: {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>{props.section}</Text>
-      <Text dimColor>n create · e edit · ↑/↓ select · d archive · u restore</Text>
       {rows(props).map((row, index) => (
         <Text key={row.id} inverse={index === props.selectedRow} dimColor={row.archived}>
           {row.label}

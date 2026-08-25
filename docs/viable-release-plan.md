@@ -45,7 +45,10 @@ This is a reduced path to a viable release, not a reduction of the product ident
 
 - Business pipeline MCP, viable CEO commercial autonomy, and ARM reinforcement are implemented.
 - The full local quality gate currently passes formatting, typed lint, Knip dead-code analysis,
-  compilation, migrations, and **105 tests**.
+  compilation, migrations, and **108 tests**.
+- TUI truthfulness: no view renders its own key-hint footer (status bar via `section-guidance.ts` is
+  the only guidance source); capacity claims derive from `DEFAULT_AGENT_CONCURRENCY`; the
+  performance page shows real record counts.
 - First-run guidance: execution readiness explains a blocked autonomy loop with the latest CEO cycle
   failure reason and retry cadence; the executive overview shows a Getting started checklist
   (configure model → verify → describe work → run task) until every step is done, and states that

@@ -1,7 +1,10 @@
 import type { CapacityDecision, ResourceSnapshot } from "./types.js";
 
+/** Single source for the default concurrent agent-container limit; TUI displays derive from this. */
+export const DEFAULT_AGENT_CONCURRENCY = 2;
+
 export class CapacityController {
-  constructor(readonly configuredLimit = 2) {
+  constructor(readonly configuredLimit = DEFAULT_AGENT_CONCURRENCY) {
     if (!Number.isInteger(configuredLimit) || configuredLimit < 1 || configuredLimit > 4) {
       throw new Error("Agent concurrency must be between 1 and 4");
     }

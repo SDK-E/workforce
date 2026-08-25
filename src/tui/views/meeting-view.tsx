@@ -26,7 +26,6 @@ export function MeetingView({
           </Box>
         ))
       )}
-      <Text dimColor>n schedule · e edit planned meeting · d archive/restore · [ ] select</Text>
     </Box>
   );
 }

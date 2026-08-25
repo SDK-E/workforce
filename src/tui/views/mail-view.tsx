@@ -16,7 +16,6 @@ export function MailView({ mail, selectedRow }: { mail: MailRecord[]; selectedRo
           </Text>
         ))
       )}
-      <Text dimColor>n compose · [ ] select · d archive · u restore</Text>
     </Box>
   );
 }

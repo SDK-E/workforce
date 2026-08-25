@@ -25,7 +25,6 @@ export function ApprovalView({
           </Box>
         ))
       )}
-      <Text dimColor>e decide selected pending approval · [ ] select</Text>
     </Box>
   );
 }

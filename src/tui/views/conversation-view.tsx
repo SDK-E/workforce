@@ -50,7 +50,7 @@ export function ConversationView({
         ))
       )}
       <Text dimColor>
-        n create room · e edit · d archive/restore rooms and threads · CEO office composes messages
+        Room and thread lifecycle is available here; messages are composed from CEO office.
       </Text>
     </Box>
   );

@@ -44,29 +44,26 @@ deferred item unless the user says "STOP"; defer new requests here until your to
 - Impact: friction; contradicts "easy and seamless" goal.
 - Next: minimal first-run variant with advanced fields hidden behind an explicit toggle.
 
-### BUG-010 Performance page renders a literal placeholder line (found 2026-08-25 truthfulness audit)
-- Evidence: `performance-view.tsx:29` prints "n record evidence-backed …" — a hardcoded string with
-  a literal "n", not a count, not derived from anything.
-- Impact: decorative/untruthful output on a production page.
-- Next: show the real filtered record count or delete the line.
+### BUG-010 Performance page renders a literal placeholder line — FIXED (2026-08-25)
+- Was: `performance-view.tsx` printed "n record evidence-backed …" — a hardcoded string with a
+  literal "n", not a count.
+- Fix: renders `{visible.length} evidence-backed <kind> records` from the filtered record list.
+- Covered by test/tui-truthfulness.test.tsx.
 
-### BUG-011 Fourteen views render their own hardcoded key-hint footers (found 2026-08-25)
-- Evidence: inline `<Text dimColor>n create · e edit · [] select …` footers with literal key letters
-  in approval-view:28, claim-view:29, agent-resources-view:67, company-view:23,
-  business-pipeline-view:20, employee-view:24, automation-view:25, mail-view:19, mcp-server-view:25,
-  organization-view:30, incident-view:32, meeting-view:29, strategy-view:29, task-view:25,
-  project-integration-view:27. The status bar already derives the same guidance from
-  `section-guidance.ts` + `keybindings.ts`; these copies drift and can lie.
-- Impact: violates the "bottom-bar guidance comes from section-guidance.ts" convention; if bindings
-  or per-section actions change, inline text becomes untruthful.
-- Next: delete the inline duplicates (keep the derived bar), or re-derive them from bindingsFor.
+### BUG-011 Fourteen views render their own hardcoded key-hint footers — FIXED (2026-08-25)
+- Was: inline `<Text dimColor>n create · e edit · [] select …` footers with literal key letters in
+  approval, claim, agent-resources, company, business-pipeline, employee, automation,
+  conversation, mail, mcp-server, organization, incident, meeting, strategy, task, and
+  project-integration views duplicated the derived status bar and drifted from it.
+- Fix: inline duplicates deleted; the single source of guidance remains `section-guidance.ts` via
+  the status bar. Covered by test/tui-truthfulness.test.tsx (task view assertion).
 
-### BUG-012 Capacity claims are hardcoded display strings (found 2026-08-25)
-- Evidence: runtime-view.tsx:59 "two active containers by default · memory-pressure reduction
-  enabled"; executive-overview.tsx:110 "Memory policy: 2 containers default". Actual behavior lives
-  in `docker-supervisor.ts:31` (`new CapacityController(2)`); nothing ties the display to it.
-- Impact: changing the supervisor limit silently makes both pages lie.
-- Next: export the configured limit from one source and derive both displays from it.
+### BUG-012 Capacity claims are hardcoded display strings — FIXED (2026-08-25)
+- Was: runtime-view said "two active containers by default" and executive overview said "Memory
+  policy: 2 containers default" while real behavior lives in `docker-supervisor.ts`.
+- Fix: exported `DEFAULT_AGENT_CONCURRENCY` from capacity-controller.ts; supervisor and both TUI
+  displays derive from it ("up to N containers, reduced under memory pressure"). Covered by
+  test/tui-truthfulness.test.tsx.
 
 ### BUG-013 Forms cannot go back, cannot skip prefilled fields (user requirement, found 2026-08-25)
 - Evidence: all 22 overlay forms use forward-only `useState(0)` step wizards; Enter advances, there

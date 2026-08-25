@@ -3,7 +3,7 @@ import { totalmem, freemem } from "node:os";
 import type { AuditRepository } from "../storage/audit-repository.js";
 import { AttemptRepository } from "./attempt-repository.js";
 import type { AttemptRecord, AttemptRequest, AttemptResult } from "./attempt-types.js";
-import { CapacityController } from "./capacity-controller.js";
+import { CapacityController, DEFAULT_AGENT_CONCURRENCY } from "./capacity-controller.js";
 import type { DockerClient } from "./docker-client.js";
 import type { ResourceSnapshot } from "./types.js";
 import { engineAdapter } from "../engines/engine-adapter.js";
@@ -28,7 +28,7 @@ export class DockerSupervisor {
     readonly attempts: AttemptRepository,
     private readonly docker: DockerClient,
     private readonly audit: AuditRepository,
-    private readonly capacity = new CapacityController(2),
+    private readonly capacity = new CapacityController(DEFAULT_AGENT_CONCURRENCY),
     private readonly resources: (running: number) => ResourceSnapshot = (running) => ({
       totalMemoryMb: Math.floor(totalmem() / 1_048_576),
       availableMemoryMb: Math.floor(freemem() / 1_048_576),

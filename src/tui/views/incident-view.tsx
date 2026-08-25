@@ -29,7 +29,6 @@ export function IncidentView({
           [{action.status}] {action.kind} for {action.employeeId}
         </Text>
       ))}
-      <Text dimColor>n report/draft action · e advance selected record · [ ] select</Text>
     </Box>
   );
 }

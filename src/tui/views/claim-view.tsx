@@ -26,7 +26,6 @@ export function ClaimView({ claims, selectedRow }: { claims: ClaimRecord[]; sele
           </Box>
         ))
       )}
-      <Text dimColor>n assert · [ ] select · d retract · u restore</Text>
     </Box>
   );
 }

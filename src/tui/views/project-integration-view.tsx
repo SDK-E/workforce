@@ -24,7 +24,6 @@ export function ProjectIntegrationView({
           </Text>
         ))
       )}
-      <Text dimColor>n configure · e edit · [] select · d archive · u restore</Text>
     </Box>
   );
 }

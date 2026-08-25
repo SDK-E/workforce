@@ -5,6 +5,7 @@ import type {
   ModelRecord,
   ToolRecord,
 } from "../../registries/registry-types.js";
+import { DEFAULT_AGENT_CONCURRENCY } from "../../supervision/capacity-controller.js";
 import { bindingsFor } from "../keybindings.js";
 
 interface RuntimeViewProps {
@@ -56,7 +57,7 @@ function rowsForSection(props: RuntimeViewProps): string[] {
     );
   return [
     `Docker ${props.docker.available ? `available · ${props.docker.version ?? "version unknown"}` : "blocked"}`,
-    "two active containers by default · memory-pressure reduction enabled",
+    `up to ${DEFAULT_AGENT_CONCURRENCY} concurrent agent containers · reduced under memory pressure`,
     "host execution disabled · managed orphan cleanup enabled",
   ];
 }

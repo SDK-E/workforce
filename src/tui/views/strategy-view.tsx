@@ -26,7 +26,6 @@ export function StrategyView({
           </Text>
         ))
       )}
-      <Text dimColor>n create · e edit · [] select · d archive · u restore</Text>
     </Box>
   );
 }
