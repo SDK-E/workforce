@@ -44,6 +44,66 @@ deferred item unless the user says "STOP"; defer new requests here until your to
 - Impact: friction; contradicts "easy and seamless" goal.
 - Next: minimal first-run variant with advanced fields hidden behind an explicit toggle.
 
+### BUG-010 Performance page renders a literal placeholder line (found 2026-08-25 truthfulness audit)
+- Evidence: `performance-view.tsx:29` prints "n record evidence-backed …" — a hardcoded string with
+  a literal "n", not a count, not derived from anything.
+- Impact: decorative/untruthful output on a production page.
+- Next: show the real filtered record count or delete the line.
+
+### BUG-011 Fourteen views render their own hardcoded key-hint footers (found 2026-08-25)
+- Evidence: inline `<Text dimColor>n create · e edit · [] select …` footers with literal key letters
+  in approval-view:28, claim-view:29, agent-resources-view:67, company-view:23,
+  business-pipeline-view:20, employee-view:24, automation-view:25, mail-view:19, mcp-server-view:25,
+  organization-view:30, incident-view:32, meeting-view:29, strategy-view:29, task-view:25,
+  project-integration-view:27. The status bar already derives the same guidance from
+  `section-guidance.ts` + `keybindings.ts`; these copies drift and can lie.
+- Impact: violates the "bottom-bar guidance comes from section-guidance.ts" convention; if bindings
+  or per-section actions change, inline text becomes untruthful.
+- Next: delete the inline duplicates (keep the derived bar), or re-derive them from bindingsFor.
+
+### BUG-012 Capacity claims are hardcoded display strings (found 2026-08-25)
+- Evidence: runtime-view.tsx:59 "two active containers by default · memory-pressure reduction
+  enabled"; executive-overview.tsx:110 "Memory policy: 2 containers default". Actual behavior lives
+  in `docker-supervisor.ts:31` (`new CapacityController(2)`); nothing ties the display to it.
+- Impact: changing the supervisor limit silently makes both pages lie.
+- Next: export the configured limit from one source and derive both displays from it.
+
+### BUG-013 Forms cannot go back, cannot skip prefilled fields (user requirement, found 2026-08-25)
+- Evidence: all 22 overlay forms use forward-only `useState(0)` step wizards; Enter advances, there
+  is no up-arrow/previous-field navigation, no way to revisit an earlier answer without cancelling;
+  empty required fields silently do nothing on Enter (no message).
+- User goal: arrows to move back/skip between fields and refill answers; simple auto-filled forms.
+- Existing autofill wins to preserve: model engine/priority/roles defaults, automation cron default,
+  meeting organizer/participants/time defaults, task risk default.
+- Next: shared form-step controller (up = previous field, down/enter = next, values persist for
+  re-editing, optional/prefilled fields skippable) adopted by all forms; see OBS-015.
+
+### BUG-014 Raw record IDs rendered instead of names (found 2026-08-25)
+- Evidence: task-view assigneeId, claim-view subjectId, business-pipeline-view clientId,
+  workflow-timeline-view employeeId/taskId ×2, incident-view employeeId, agent-resources-view
+  plan.employeeId, organization-view managerId, conversation-view message.authorId,
+  performance-view employeeId/authorId, ceo-office spawnedTaskId, employee-view identity id +
+  manager, task-form confirmation ("for <uuid>").
+- Impact: opaque UUIDs make the TUI hard to read; contradicts named-selector direction already used
+  in forms (commit e2b20bd).
+- Next: resolve names in workspace-data layer (employees/clients lists already loaded) and render
+  names with ID fallback only when a record was deleted.
+
+### OBS-015 Form plumbing is copy-pasted across overlay files (found 2026-08-25)
+- Evidence: identical private `TextField`, `split`, and `activeEmployees` helpers re-implemented in
+  strategy-form, meeting-form, and others; step/confirm/footer logic repeated in all 22 forms.
+- Impact: every UX improvement (back navigation, skip, error display) must be edited 22 times.
+- Next: extract shared field components + step controller as part of BUG-013; delete the copies.
+
+### OBS-016 Advanced inputs appear on general forms (found 2026-08-25)
+- Evidence: company edit form asks for raw "Policies and governance (JSON object)"; tool registry
+  form has 9 fields including "Network policy (JSON object)"; meeting form asks for an ISO
+  timestamp string; governance claim form label says "Subject ID" though it now shows named subject
+  options; MCP form exposes credential bindings inline.
+- Impact: contradicts the handbook rule that advanced/policy JSON appears only on policy forms.
+- Next: move JSON/policy inputs to dedicated policy surfaces or advanced toggles; fix stale labels;
+  consider friendly time presets for meetings.
+
 ## FIXED
 
 ### FIXED-101 Failed model probes emitted verification receipts (2026-08-25)
@@ -99,7 +159,7 @@ guide documents it. TUI surfaces repeat this so operators stop expecting persist
 
 ### D1. Simplified model form
 Hide advanced registry fields (capabilities, roles, secrets, context limit, priority) behind an
-advanced toggle; first-run variant asks engine/model/provider only. See OBS-005.
+advanced toggle; first-run variant asks engine/model/provider only. See OBS-005 and BUG-013.
 
 ### D2. Pre-configured free/local model option
 Would seed a provider template; requires explicit user approval because of the
