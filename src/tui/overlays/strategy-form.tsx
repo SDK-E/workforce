@@ -11,6 +11,13 @@ import { NamedSelect, type NamedOption } from "../components/named-select.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
 import { FormFrame } from "./form-frame.js";
+import {
+  formFooter,
+  isFieldBack,
+  isFieldForward,
+  splitList,
+  useFormSteps,
+} from "../use-form-steps.js";
 
 const REQUIRED_PARENT: Partial<Record<StrategyItemKind, StrategyItemKind>> = {
   initiative: "objective",
@@ -30,7 +37,8 @@ export function StrategyForm(props: {
   initial?: StrategyItem | undefined;
 }) {
   const expectedParent = REQUIRED_PARENT[props.kind];
-  const [step, setStep] = useState(0);
+  const lastStep = 4;
+  const steps = useFormSteps(lastStep);
   const [name, setName] = useState(props.initial?.name ?? "");
   const [parentId, setParentId] = useState(props.initial?.parentId ?? "");
   const [ownerId, setOwnerId] = useState(props.initial?.ownerId ?? "ceo");
@@ -39,9 +47,14 @@ export function StrategyForm(props: {
   const parentItems = (props.items ?? [])
     .filter(({ kind, status }) => kind === expectedParent && status !== "archived")
     .map(({ id, name: label }) => ({ label, value: id }));
+  const selectStep = !steps.confirming && [1, 2].includes(steps.step);
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (step === 4 && matchesKeybinding("activate", input, key))
+    if (isFieldBack(input, key, selectStep)) steps.retreat();
+    if (!steps.confirming && steps.step === 0 && isFieldForward(input, key, false)) advanceName();
+    if (!steps.confirming && steps.step === 3 && isFieldForward(input, key, false))
+      advanceText(measures, "Success measures");
+    if (steps.confirming && matchesKeybinding("activate", input, key))
       props.onSubmit({
         companyId: props.companyId,
         kind: props.kind,
@@ -49,25 +62,39 @@ export function StrategyForm(props: {
         parentId: parentId || null,
         ownerId,
         managerId: ownerId,
-        successMeasures: split(measures),
+        successMeasures: splitList(measures),
       });
   });
+  function advanceName(): void {
+    if (!name.trim()) {
+      steps.fail("Name is required");
+      return;
+    }
+    if (expectedParent) steps.advance();
+    else steps.goTo(2);
+  }
+  function advanceText(value: string, label: string): void {
+    if (value.trim()) steps.advance();
+    else steps.fail(`${label} are required`);
+  }
   return (
     <FormFrame
       title={`${props.initial ? "Edit" : "Create"} ${props.kind}`}
       terminalWidth={props.terminalWidth}
-      footer={step === 4 ? "Enter confirm · Esc cancel" : "Enter/select next · Esc cancel"}
+      footer={formFooter(steps.confirming, steps.step, lastStep, { selectStep })}
     >
-      {step === 0 ? (
+      {steps.error && <Text color="red">{steps.error}</Text>}
+      {steps.step === 0 && !steps.confirming ? (
         <TextField
           label="Name"
           value={name}
-          onChange={setName}
-          onNext={() => {
-            setStep(expectedParent ? 1 : 2);
+          onChange={(value) => {
+            setName(value);
+            steps.fail("");
           }}
+          onNext={advanceName}
         />
-      ) : step === 1 ? (
+      ) : steps.step === 1 && !steps.confirming ? (
         parentItems.length ? (
           <NamedSelect
             label={`${expectedParent} parent`}
@@ -75,7 +102,7 @@ export function StrategyForm(props: {
             value={parentId}
             onSelect={(value) => {
               setParentId(value);
-              setStep(2);
+              steps.advance();
             }}
           />
         ) : (
@@ -83,23 +110,26 @@ export function StrategyForm(props: {
             Create an active {expectedParent} before creating this {props.kind}.
           </Text>
         )
-      ) : step === 2 ? (
+      ) : steps.step === 2 && !steps.confirming ? (
         <NamedSelect
           label="Owner"
           items={ownerItems}
           value={ownerId}
           onSelect={(value) => {
             setOwnerId(value);
-            setStep(3);
+            steps.advance();
           }}
         />
-      ) : step === 3 ? (
+      ) : steps.step === 3 && !steps.confirming ? (
         <TextField
           label="Success measures (comma separated)"
           value={measures}
-          onChange={setMeasures}
+          onChange={(value) => {
+            setMeasures(value);
+            steps.fail("");
+          }}
           onNext={() => {
-            setStep(4);
+            advanceText(measures, "Success measures");
           }}
         />
       ) : (
@@ -126,21 +156,8 @@ function TextField(props: {
       <Text>{props.label}</Text>
       <Box>
         <PromptMarker />
-        <TextInput
-          value={props.value}
-          onChange={props.onChange}
-          onSubmit={() => {
-            if (props.value.trim()) props.onNext();
-          }}
-        />
+        <TextInput value={props.value} onChange={props.onChange} onSubmit={props.onNext} />
       </Box>
     </>
   );
-}
-
-function split(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
 }

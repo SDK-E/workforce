@@ -8,6 +8,7 @@ import { matchesKeybinding } from "../keybindings.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { FormFrame } from "./form-frame.js";
 import { NamedSelect } from "../components/named-select.js";
+import { formFooter, isFieldBack, isFieldForward, useFormSteps } from "../use-form-steps.js";
 
 type RegistryKind = "tool" | "environment";
 
@@ -50,80 +51,79 @@ export function RegistryForm(props: {
   onCancel: () => void;
 }) {
   const fields = FIELDS[props.kind];
-  const [step, setStep] = useState(0);
+  const steps = useFormSteps(fields.length);
   const [values, setValues] = useState(() => initialValues(props.kind, props.initial));
-  const [error, setError] = useState("");
-  const confirming = step === fields.length;
+  const selectStep = !steps.confirming && props.kind === "tool" && [3, 4].includes(steps.step);
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key)) submit();
+    if (isFieldBack(input, key, selectStep)) steps.retreat();
+    if (!steps.confirming && !selectStep && isFieldForward(input, key, false)) tryAdvance();
+    if (steps.confirming && matchesKeybinding("activate", input, key)) submit();
   });
+  function tryAdvance(): void {
+    if (mayAdvance(steps.step, values[steps.step] ?? "", props.kind)) steps.advance();
+    else steps.fail(`${fields[steps.step]} is required`);
+  }
   function submit(): void {
     try {
       props.onSubmit(buildResult(props.companyId, props.kind, values, props.initial?.id));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Invalid registry configuration");
-      setStep(0);
+      steps.fail(caught instanceof Error ? caught.message : "Invalid registry configuration");
+      steps.goTo(0);
     }
   }
   return (
     <FormFrame
       title={`${props.initial ? "Edit" : "Configure"} ${props.kind}`}
       terminalWidth={props.terminalWidth}
-      footer={
-        confirming
-          ? "Enter save and audit · Esc cancel"
-          : `Enter next · Esc cancel · ${step + 1}/${fields.length}`
-      }
+      footer={formFooter(steps.confirming, steps.step, fields.length, { selectStep })}
     >
-      {error && <Text color="red">{error}</Text>}
-      {confirming ? (
+      {steps.error && <Text color="red">{steps.error}</Text>}
+      {steps.confirming ? (
         <Text>
           Save {props.kind} {props.kind === "tool" ? values[1] : values[0]} as unverified
           configuration?
         </Text>
-      ) : props.kind === "tool" && step === 3 ? (
+      ) : selectStep && steps.step === 3 ? (
         <NamedSelect
           label="Risk"
           items={["low", "medium", "high", "critical"].map((value) => ({
             label: value,
             value,
           }))}
-          value={values[step] ?? ""}
+          value={values[steps.step] ?? ""}
           onSelect={(value) => {
-            updateValue(setValues, step, value);
-            setStep((current) => current + 1);
+            updateValue(setValues, steps.step, value);
+            steps.advance();
           }}
         />
-      ) : props.kind === "tool" && step === 4 ? (
+      ) : selectStep && steps.step === 4 ? (
         <NamedSelect
           label="Required environment (optional)"
           items={[
             { label: "No required environment", value: "" },
             ...(props.environments ?? []).map(({ id, name }) => ({ label: name, value: id })),
           ]}
-          value={values[step] ?? ""}
+          value={values[steps.step] ?? ""}
           onSelect={(value) => {
-            updateValue(setValues, step, value);
-            setStep((current) => current + 1);
+            updateValue(setValues, steps.step, value);
+            steps.advance();
           }}
         />
       ) : (
         <>
-          <Text>{fields[step]}</Text>
+          <Text>{fields[steps.step]}</Text>
           <Box>
             <PromptMarker />
             <TextInput
-              value={values[step] ?? ""}
+              value={values[steps.step] ?? ""}
               onChange={(value) => {
                 setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
+                  current.map((item, index) => (index === steps.step ? value : item)),
                 );
+                steps.fail("");
               }}
-              onSubmit={() => {
-                if (mayAdvance(step, values[step] ?? "", props.kind))
-                  setStep((current) => current + 1);
-              }}
+              onSubmit={tryAdvance}
             />
           </Box>
         </>

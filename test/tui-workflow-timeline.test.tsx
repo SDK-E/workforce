@@ -7,6 +7,7 @@ import { Box } from "ink";
 import { render } from "ink-testing-library";
 import type { SandboxSpec } from "../src/domain.js";
 import { StateStore } from "../src/storage/state-store.js";
+import { nameDirectory } from "../src/tui/names.js";
 import { WorkforceThemeProvider } from "../src/tui/themes/theme-context.js";
 import { DEFAULT_THEME } from "../src/tui/themes/index.js";
 import { WorkflowTimelineView } from "../src/tui/views/workflow-timeline-view.js";
@@ -63,13 +64,14 @@ test("workflow timeline renders durable company-scoped attempt progression", () 
             attempts={store.attempts.list("alpha")}
             events={events}
             compact={false}
+            names={nameDirectory({ employees: store.employees("alpha") })}
           />
         </Box>
       </WorkforceThemeProvider>,
     );
     const frame = view.lastFrame() ?? "";
     assert.match(frame, /Agent workflow timeline/);
-    assert.match(frame, /ceo · task-alpha · running/);
+    assert.match(frame, /Chief Executive · task-alpha · running/);
     assert.match(frame, /lease.acquired/);
     assert.match(frame, /checkpoint.recorded/);
     assert.match(frame, /Plan approved/);

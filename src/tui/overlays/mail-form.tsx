@@ -7,6 +7,7 @@ import type { MailRecord } from "../../integrations/integration-types.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
 import { FormFrame } from "./form-frame.js";
+import { formFooter, isFieldBack, isFieldForward, useFormSteps } from "../use-form-steps.js";
 
 type SendMailInput = Pick<
   MailRecord,
@@ -21,13 +22,17 @@ export function MailForm(props: {
   onCancel: () => void;
 }) {
   const recipients = props.employees.filter(({ status }) => status !== "terminated");
-  const [step, setStep] = useState(0);
+  const steps = useFormSteps(3);
   const [recipientId, setRecipientId] = useState(recipients[0]?.id ?? "");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const selectStep = !steps.confirming && steps.step === 0;
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (step === 3 && matchesKeybinding("activate", input, key))
+    if (isFieldBack(input, key, selectStep)) steps.retreat();
+    if (!steps.confirming && [1, 2].includes(steps.step) && isFieldForward(input, key, false))
+      advanceText(steps.step === 1 ? subject : body, steps.step === 1 ? "Subject" : "Body");
+    if (steps.confirming && matchesKeybinding("activate", input, key))
       props.onSubmit({
         companyId: props.companyId,
         senderKind: "human",
@@ -38,16 +43,21 @@ export function MailForm(props: {
         body: body.trim(),
       });
   });
+  function advanceText(value: string, label: string): void {
+    if (value.trim()) steps.advance();
+    else steps.fail(`${label} is required`);
+  }
   const recipient = recipients.find(({ id }) => id === recipientId);
   return (
     <FormFrame
       title="Compose company mail"
       terminalWidth={props.terminalWidth}
-      footer={step === 3 ? "Enter send · Esc cancel" : "Enter/select next · Esc cancel"}
+      footer={formFooter(steps.confirming, steps.step, 3, { selectStep, verb: "next/send" })}
     >
+      {steps.error && <Text color="red">{steps.error}</Text>}
       {recipients.length === 0 ? (
         <Text>No active company recipient is available. Esc closes this dialog.</Text>
-      ) : step === 0 ? (
+      ) : steps.step === 0 ? (
         <>
           <Text>Recipient</Text>
           <SelectInput
@@ -57,54 +67,47 @@ export function MailForm(props: {
             }))}
             onSelect={(item) => {
               setRecipientId(item.value);
-              setStep(1);
+              steps.advance();
             }}
           />
         </>
-      ) : step === 1 ? (
-        <MailTextField
-          label="Subject"
-          value={subject}
-          onChange={setSubject}
-          onNext={() => {
-            setStep(2);
-          }}
-        />
-      ) : step === 2 ? (
-        <MailTextField
-          label="Body"
-          value={body}
-          onChange={setBody}
-          onNext={() => {
-            setStep(3);
-          }}
-        />
+      ) : steps.step === 1 ? (
+        <>
+          <Text>Subject</Text>
+          <Box>
+            <PromptMarker />
+            <TextInput
+              value={subject}
+              onChange={(value) => {
+                setSubject(value);
+                steps.fail("");
+              }}
+              onSubmit={() => {
+                advanceText(subject, "Subject");
+              }}
+            />
+          </Box>
+        </>
+      ) : steps.step === 2 ? (
+        <>
+          <Text>Body</Text>
+          <Box>
+            <PromptMarker />
+            <TextInput
+              value={body}
+              onChange={(value) => {
+                setBody(value);
+                steps.fail("");
+              }}
+              onSubmit={() => {
+                advanceText(body, "Body");
+              }}
+            />
+          </Box>
+        </>
       ) : (
         <Text>Send this mail as you to {recipient?.name ?? recipientId}?</Text>
       )}
     </FormFrame>
-  );
-}
-
-function MailTextField(props: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  onNext: () => void;
-}) {
-  return (
-    <>
-      <Text>{props.label}</Text>
-      <Box>
-        <PromptMarker />
-        <TextInput
-          value={props.value}
-          onChange={props.onChange}
-          onSubmit={() => {
-            if (props.value.trim()) props.onNext();
-          }}
-        />
-      </Box>
-    </>
   );
 }

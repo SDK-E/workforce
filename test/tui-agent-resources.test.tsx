@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
+import { nameDirectory } from "../src/tui/names.js";
 import { AgentResourcesView } from "../src/tui/views/agent-resources-view.js";
 
 test("Agent Resources exposes reinforcement and ARM decision status", () => {
+  const names = nameDirectory({
+    employees: [{ id: "worker", name: "Worker", title: "Agent" }] as never[],
+  });
   const view = render(
     <AgentResourcesView
       proposals={[]}
@@ -36,12 +40,13 @@ test("Agent Resources exposes reinforcement and ARM decision status", () => {
         },
       ]}
       selectedRow={0}
+      names={names}
     />,
   );
   const frame = view.lastFrame() ?? "";
   assert.match(frame, /REINFORCEMENT/);
-  assert.match(frame, /active.*worker/);
-  assert.match(frame, /reinforce.*worker/);
+  assert.match(frame, /active.*Worker/);
+  assert.match(frame, /reinforce.*Employee — Worker/);
   assert.match(frame, /No hiring proposals/);
   view.unmount();
 });

@@ -1,5 +1,6 @@
 import { Box, Text } from "ink";
 import type { AttemptEventRecord, AttemptRecord } from "../../supervision/attempt-types.js";
+import type { NameDirectory } from "../names.js";
 import { truncate } from "../navigation.js";
 import { useWorkforceTheme } from "../themes/theme-context.js";
 
@@ -7,6 +8,7 @@ export function WorkflowTimelineView(props: {
   attempts: AttemptRecord[];
   events: AttemptEventRecord[];
   compact: boolean;
+  names: NameDirectory;
 }) {
   const theme = useWorkforceTheme();
   const latest = props.events.slice(-30).reverse();
@@ -18,8 +20,8 @@ export function WorkflowTimelineView(props: {
       </Text>
       {props.attempts.slice(0, props.compact ? 4 : 8).map((attempt) => (
         <Text key={attempt.id} color={statusColor(attempt.status, theme.colors)}>
-          {statusMarker(attempt.status)} {attempt.employeeId} · {truncate(attempt.taskId, 24)} ·{" "}
-          {attempt.status}
+          {statusMarker(attempt.status)} {props.names.employee(attempt.employeeId)} ·{" "}
+          {props.names.task(attempt.taskId)} · {attempt.status}
         </Text>
       ))}
       <Text bold>Recent progression</Text>
@@ -29,12 +31,12 @@ export function WorkflowTimelineView(props: {
         latest.map((event, index) => (
           <Box key={event.sequence} flexDirection="column">
             <Text color={theme.colors.accent}>
-              {index === latest.length - 1 ? "└─" : "├─"} {time(event.at)} · {event.employeeId} ·{" "}
-              {event.kind}
+              {index === latest.length - 1 ? "└─" : "├─"} {time(event.at)} ·{" "}
+              {props.names.employee(event.employeeId)} · {event.kind}
             </Text>
             {!props.compact && (
               <Text dimColor>
-                │ task {truncate(event.taskId, 30)} · attempt {event.attemptId.slice(0, 8)} ·{" "}
+                │ task {props.names.task(event.taskId)} · attempt {event.attemptId.slice(0, 8)} ·{" "}
                 {eventSummary(event.data)}
               </Text>
             )}

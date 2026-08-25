@@ -4,6 +4,7 @@ import type {
   ArmDecision,
   ReinforcementPlan,
 } from "../../governance/workforce-adaptation-types.js";
+import type { NameDirectory } from "../names.js";
 import { Panel } from "../components/panel.js";
 import { truncate } from "../navigation.js";
 
@@ -12,11 +13,13 @@ export function AgentResourcesView({
   plans,
   decisions,
   selectedRow,
+  names,
 }: {
   proposals: HiringProposal[];
   plans: ReinforcementPlan[];
   decisions: ArmDecision[];
   selectedRow: number;
+  names: NameDirectory;
 }) {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
@@ -31,7 +34,8 @@ export function AgentResourcesView({
           ) : (
             plans.slice(0, 4).map((plan) => (
               <Text key={plan.id}>
-                [{plan.status}] {plan.employeeId} · review {plan.reviewAt.slice(0, 10)}
+                [{plan.status}] {names.employee(plan.employeeId)} · review{" "}
+                {plan.reviewAt.slice(0, 10)}
               </Text>
             ))
           )}
@@ -42,7 +46,8 @@ export function AgentResourcesView({
           ) : (
             decisions.slice(0, 4).map((decision) => (
               <Text key={decision.id}>
-                {decision.action} · {decision.subjectId} · {truncate(decision.rationale, 46)}
+                {decision.action} · {names.subject(decision.subjectId)} ·{" "}
+                {truncate(decision.rationale, 46)}
               </Text>
             ))
           )}
@@ -58,8 +63,8 @@ export function AgentResourcesView({
               [{proposal.status}] {proposal.blueprint.employee.title}
             </Text>
             <Text dimColor>
-              job {proposal.jobId} · {proposal.probationCriteria.length} probation gates · proposed
-              by {proposal.proposedBy}
+              {proposal.probationCriteria.length} probation gates · proposed by{" "}
+              {proposal.proposedBy}
             </Text>
           </Box>
         ))

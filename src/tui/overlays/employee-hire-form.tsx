@@ -4,6 +4,13 @@ import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import { FormFrame } from "./form-frame.js";
+import {
+  formFooter,
+  isFieldBack,
+  isFieldForward,
+  splitList,
+  useFormSteps,
+} from "../use-form-steps.js";
 
 const FIELDS = [
   "Role objective",
@@ -22,58 +29,48 @@ export function EmployeeHireForm(props: {
   onSubmit: (input: EmployeeHireInput) => void;
   onCancel: () => void;
 }) {
-  const [step, setStep] = useState(0);
+  const steps = useFormSteps(FIELDS.length);
   const [values, setValues] = useState(["", "", ""]);
-  const confirming = step === FIELDS.length;
+  const updateAt = (value: string): void => {
+    setValues((current) => current.map((item, index) => (index === steps.step ? value : item)));
+    steps.fail("");
+  };
+  const tryAdvance = (): void => {
+    const label = FIELDS[steps.step] ?? "";
+    if (values[steps.step]?.trim()) steps.advance();
+    else steps.fail(`${label.split(" (")[0]} is required`);
+  };
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key)) submit();
+    if (isFieldBack(input, key, false)) steps.retreat();
+    if (!steps.confirming && isFieldForward(input, key, false)) tryAdvance();
+    if (steps.confirming && matchesKeybinding("activate", input, key)) submit();
   });
   function submit(): void {
     props.onSubmit({
       objective: values[0]?.trim() ?? "",
-      capabilities: split(values[1]),
-      acceptanceCriteria: split(values[2]),
+      capabilities: splitList(values[1]),
+      acceptanceCriteria: splitList(values[2]),
     });
   }
   return (
     <FormFrame
       title="Hire probationary agent"
       terminalWidth={props.terminalWidth}
-      footer={
-        confirming
-          ? "Enter approve hire · Esc cancel"
-          : `Enter next · Esc cancel · ${step + 1}/${FIELDS.length}`
-      }
+      footer={formFooter(steps.confirming, steps.step, FIELDS.length)}
     >
-      {confirming ? (
+      {steps.error && <Text color="red">{steps.error}</Text>}
+      {steps.confirming ? (
         <Text>Approve an audited probationary hire for “{values[0]}”?</Text>
       ) : (
         <>
-          <Text>{FIELDS[step]}</Text>
+          <Text>{FIELDS[steps.step]}</Text>
           <Box>
             <PromptMarker />
-            <TextInput
-              value={values[step] ?? ""}
-              onChange={(value) => {
-                setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
-                );
-              }}
-              onSubmit={() => {
-                if (values[step]?.trim()) setStep((current) => current + 1);
-              }}
-            />
+            <TextInput value={values[steps.step] ?? ""} onChange={updateAt} onSubmit={tryAdvance} />
           </Box>
         </>
       )}
     </FormFrame>
   );
-}
-
-function split(value: string | undefined): string[] {
-  return (value ?? "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
 }

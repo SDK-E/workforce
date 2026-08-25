@@ -6,6 +6,7 @@ import type { ConversationThread, RoomRecord } from "../../conversations/convers
 import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
 import { FormFrame } from "./form-frame.js";
+import { formFooter, isFieldBack, isFieldForward, useFormSteps } from "../use-form-steps.js";
 
 export function MessageForm(props: {
   rooms: RoomRecord[];
@@ -20,38 +21,46 @@ export function MessageForm(props: {
   onCancel: () => void;
 }) {
   const activeRooms = props.rooms.filter(({ status }) => status === "active");
-  const [step, setStep] = useState(0);
+  const steps = useFormSteps(3);
   const [roomId, setRoomId] = useState(activeRooms[0]?.id ?? "");
   const [threadId, setThreadId] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const threads = props.threads.filter(
     (thread) => thread.roomId === roomId && thread.status === "open",
   );
+  const selectStep = !steps.confirming && [0, 1].includes(steps.step);
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (step === 3 && matchesKeybinding("activate", input, key))
+    if (isFieldBack(input, key, selectStep)) steps.retreat();
+    if (steps.step === 2 && !steps.confirming && isFieldForward(input, key, false)) advanceBody();
+    if (steps.confirming && matchesKeybinding("activate", input, key))
       props.onSubmit({ roomId, threadId, authorId: "human", body: body.trim() });
   });
+  function advanceBody(): void {
+    if (body.trim()) steps.advance();
+    else steps.fail("Message is required");
+  }
   return (
     <FormFrame
       title="Compose durable message"
       terminalWidth={props.terminalWidth}
-      footer={step === 3 ? "Enter send and audit · Esc cancel" : "Enter/select next · Esc cancel"}
+      footer={formFooter(steps.confirming, steps.step, 3, { selectStep, verb: "next/send" })}
     >
+      {steps.error && <Text color="red">{steps.error}</Text>}
       {activeRooms.length === 0 ? (
         <Text>Create an active room before sending a message. Esc closes this dialog.</Text>
-      ) : step === 0 ? (
+      ) : steps.step === 0 ? (
         <>
           <Text>Room</Text>
           <SelectInput
             items={activeRooms.map((room) => ({ label: room.name, value: room.id }))}
             onSelect={(item) => {
               setRoomId(item.value);
-              setStep(1);
+              steps.advance();
             }}
           />
         </>
-      ) : step === 1 ? (
+      ) : steps.step === 1 ? (
         <>
           <Text>Thread</Text>
           <SelectInput
@@ -61,21 +70,22 @@ export function MessageForm(props: {
             ]}
             onSelect={(item) => {
               setThreadId(item.value || null);
-              setStep(2);
+              steps.advance();
             }}
           />
         </>
-      ) : step === 2 ? (
+      ) : steps.step === 2 ? (
         <>
           <Text>Message</Text>
           <Box>
             <PromptMarker />
             <TextInput
               value={body}
-              onChange={setBody}
-              onSubmit={() => {
-                if (body.trim()) setStep(3);
+              onChange={(value) => {
+                setBody(value);
+                steps.fail("");
               }}
+              onSubmit={advanceBody}
             />
           </Box>
         </>

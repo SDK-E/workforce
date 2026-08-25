@@ -65,41 +65,40 @@ deferred item unless the user says "STOP"; defer new requests here until your to
   displays derive from it ("up to N containers, reduced under memory pressure"). Covered by
   test/tui-truthfulness.test.tsx.
 
-### BUG-013 Forms cannot go back, cannot skip prefilled fields (user requirement, found 2026-08-25)
-- Evidence: all 22 overlay forms use forward-only `useState(0)` step wizards; Enter advances, there
-  is no up-arrow/previous-field navigation, no way to revisit an earlier answer without cancelling;
-  empty required fields silently do nothing on Enter (no message).
-- User goal: arrows to move back/skip between fields and refill answers; simple auto-filled forms.
-- Existing autofill wins to preserve: model engine/priority/roles defaults, automation cron default,
-  meeting organizer/participants/time defaults, task risk default.
-- Next: shared form-step controller (up = previous field, down/enter = next, values persist for
-  re-editing, optional/prefilled fields skippable) adopted by all forms; see OBS-015.
+### BUG-013 Forms cannot go back, cannot skip prefilled fields — FIXED (2026-08-25)
+- Was: all overlay forms used forward-only step wizards; Enter advanced, there was no arrow
+  navigation, no way to revisit an earlier answer without cancelling, and empty required fields
+  silently ignored Enter.
+- Fix: shared `useFormSteps` controller (`src/tui/use-form-steps.ts`) adopted by all wizard forms.
+  ↑ goes back to the previous field (values persist for re-editing), ↓ skips forward past a field,
+  ← goes back from select/choice steps where ↑/↓ move the option list, empty required fields show
+  an explicit inline message instead of doing nothing. Truthful footers are derived from
+  `bindingsFor` per step type. Covered by test/tui-form-navigation.test.tsx and the operator
+  journey.
 
-### BUG-014 Raw record IDs rendered instead of names (found 2026-08-25)
-- Evidence: task-view assigneeId, claim-view subjectId, business-pipeline-view clientId,
-  workflow-timeline-view employeeId/taskId ×2, incident-view employeeId, agent-resources-view
-  plan.employeeId, organization-view managerId, conversation-view message.authorId,
-  performance-view employeeId/authorId, ceo-office spawnedTaskId, employee-view identity id +
-  manager, task-form confirmation ("for <uuid>").
-- Impact: opaque UUIDs make the TUI hard to read; contradicts named-selector direction already used
-  in forms (commit e2b20bd).
-- Next: resolve names in workspace-data layer (employees/clients lists already loaded) and render
-  names with ID fallback only when a record was deleted.
+### BUG-014 Raw record IDs rendered instead of names — FIXED (2026-08-25)
+- Was: tasks, claims, engagements, workflow events, incidents, ARM decisions/plans, organization
+  managers, conversation authors, performance records, CEO-office spawned tasks, approvals, mail
+  parties, meetings, and strategy owners displayed raw UUIDs or opaque IDs.
+- Fix: `nameDirectory` (`src/tui/names.ts`) resolves employees, task objectives, clients, and all
+  governance subject kinds to persisted names; unknown IDs fall back to the raw value so display
+  never invents a name. Wired through workspace views; task confirmations now name the assignee.
+  Covered by view-level test updates and test/tui-agent-resources.test.tsx.
 
-### OBS-015 Form plumbing is copy-pasted across overlay files (found 2026-08-25)
-- Evidence: identical private `TextField`, `split`, and `activeEmployees` helpers re-implemented in
-  strategy-form, meeting-form, and others; step/confirm/footer logic repeated in all 22 forms.
-- Impact: every UX improvement (back navigation, skip, error display) must be edited 22 times.
-- Next: extract shared field components + step controller as part of BUG-013; delete the copies.
+### OBS-015 Form plumbing is copy-pasted across overlay files — resolved by BUG-013 work (2026-08-25)
+- Was: identical `TextField`, `split`, and `activeEmployees` helpers re-implemented per form;
+  step/confirm/footer logic repeated in every overlay.
+- Resolution: shared `useFormSteps` controller, `formFooter`, `splitList` now live in
+  `src/tui/use-form-steps.ts`; per-file copies were deleted during the conversion.
 
-### OBS-016 Advanced inputs appear on general forms (found 2026-08-25)
-- Evidence: company edit form asks for raw "Policies and governance (JSON object)"; tool registry
-  form has 9 fields including "Network policy (JSON object)"; meeting form asks for an ISO
-  timestamp string; governance claim form label says "Subject ID" though it now shows named subject
-  options; MCP form exposes credential bindings inline.
-- Impact: contradicts the handbook rule that advanced/policy JSON appears only on policy forms.
-- Next: move JSON/policy inputs to dedicated policy surfaces or advanced toggles; fix stale labels;
-  consider friendly time presets for meetings.
+### OBS-016 Advanced inputs appear on general forms — PARTIALLY addressed (2026-08-25)
+- Done: company policies field relabeled "(advanced JSON object)" and tolerates an empty value;
+  MCP secret/credential fields marked optional; claim form's stale "Subject ID" label corrected to
+  "Subject"; meeting time field explains that Enter keeps the pre-filled time; task/hire forms use
+  short required-field labels.
+- Remaining (deferred): tool/environment registry JSON fields are the policy surface itself and
+  stay on the registry form until a dedicated policy editor exists; a friendly meeting-time picker
+  (presets instead of ISO) awaits explicit pick-up.
 
 ## FIXED
 

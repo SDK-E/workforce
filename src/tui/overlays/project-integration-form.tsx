@@ -8,6 +8,7 @@ import type { ProjectIntegrationRecord } from "../../integrations/integration-ty
 import type { StrategyItem } from "../../strategy/strategy-types.js";
 import { NamedSelect } from "../components/named-select.js";
 import { FormFrame } from "./form-frame.js";
+import { formFooter, isFieldBack, useFormSteps } from "../use-form-steps.js";
 
 const FIELDS = ["Project", "Provider (for example beads)", "Configuration JSON", "Secret names"];
 
@@ -20,7 +21,7 @@ export function ProjectIntegrationForm(props: {
   initial?: ProjectIntegrationRecord | undefined;
 }) {
   const theme = useWorkforceTheme();
-  const [step, setStep] = useState(props.initial ? 1 : 0);
+  const steps = useFormSteps(FIELDS.length);
   const [values, setValues] = useState(
     props.initial
       ? [
@@ -31,15 +32,15 @@ export function ProjectIntegrationForm(props: {
         ]
       : ["", "beads", "{}", ""],
   );
-  const [error, setError] = useState("");
-  const confirming = step === FIELDS.length;
+  const selectStep = steps.step === 0 && !steps.confirming;
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key)) submit();
+    if (isFieldBack(input, key, selectStep)) steps.retreat();
+    if (steps.confirming && matchesKeybinding("activate", input, key)) submit();
   });
   function submit(): void {
     try {
-      const config = JSON.parse(values[2] ?? "{}") as unknown;
+      const config = JSON.parse(values[2]?.trim() ? values[2] : "{}") as unknown;
       if (!config || typeof config !== "object" || Array.isArray(config)) throw new Error();
       props.onSubmit({
         companyId: props.companyId,
@@ -50,25 +51,21 @@ export function ProjectIntegrationForm(props: {
         status: props.initial?.status ?? "active",
       });
     } catch {
-      setError("Configuration must be a JSON object");
+      steps.fail("Configuration must be a JSON object");
     }
   }
   return (
     <FormFrame
       title={`${props.initial ? "Edit" : "Configure"} project integration`}
       terminalWidth={props.terminalWidth}
-      footer={
-        confirming
-          ? "Enter confirm · Esc cancel"
-          : `Enter next · Esc cancel · ${step + 1}/${FIELDS.length}`
-      }
+      footer={formFooter(steps.confirming, steps.step, FIELDS.length, { selectStep })}
     >
-      {error && <Text color={theme.colors.danger}>{error}</Text>}
-      {confirming ? (
+      {steps.error && <Text color={theme.colors.danger}>{steps.error}</Text>}
+      {steps.confirming ? (
         <Text>
           Activate {values[1]} only for project {values[0]}?
         </Text>
-      ) : step === 0 ? (
+      ) : steps.step === 0 ? (
         props.projects?.length ? (
           <NamedSelect
             label="Project"
@@ -76,7 +73,7 @@ export function ProjectIntegrationForm(props: {
             value={values[0] ?? ""}
             onSelect={(value) => {
               setValues((current) => current.map((item, index) => (index === 0 ? value : item)));
-              setStep(1);
+              steps.advance();
             }}
           />
         ) : (
@@ -84,18 +81,20 @@ export function ProjectIntegrationForm(props: {
         )
       ) : (
         <>
-          <Text>{FIELDS[step]}</Text>
+          <Text>{FIELDS[steps.step]}</Text>
           <Box>
             <PromptMarker />
             <TextInput
-              value={values[step] ?? ""}
+              value={values[steps.step] ?? ""}
               onChange={(value) => {
                 setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
+                  current.map((item, index) => (index === steps.step ? value : item)),
                 );
+                steps.fail("");
               }}
               onSubmit={() => {
-                setStep((current) => current + 1);
+                if ((values[steps.step] ?? "").trim() || steps.step === 3) steps.advance();
+                else steps.fail(`${FIELDS[steps.step]} is required`);
               }}
             />
           </Box>

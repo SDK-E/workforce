@@ -1,12 +1,14 @@
 import { Box, Text } from "ink";
 import type { MessageRecord } from "../../conversations/conversation-types.js";
 import type { ConversationThread, RoomRecord } from "../../conversations/conversation-types.js";
+import type { NameDirectory } from "../names.js";
 
 interface ConversationViewProps {
   messages: MessageRecord[];
   rooms: RoomRecord[];
   threads: ConversationThread[];
   selectedRow?: number;
+  names: NameDirectory;
 }
 
 export function ConversationView({
@@ -14,6 +16,7 @@ export function ConversationView({
   rooms,
   threads,
   selectedRow = 0,
+  names,
 }: ConversationViewProps) {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
@@ -44,7 +47,7 @@ export function ConversationView({
         messages.slice(-12).map((message) => (
           <Text key={message.id}>
             {message.pinned ? "◆ " : ""}
-            {message.authorId}: {message.body}
+            {names.employee(message.authorId)}: {message.body}
             {message.status === "edited" ? " (edited)" : ""}
           </Text>
         ))

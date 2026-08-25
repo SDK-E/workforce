@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
@@ -7,6 +7,13 @@ import SelectInput from "ink-select-input";
 import type { Employee } from "../../domain.js";
 import type { CreateTaskInput, TaskRecord } from "../../tasks/task-types.js";
 import { FormFrame } from "./form-frame.js";
+import {
+  formFooter,
+  isFieldBack,
+  isFieldForward,
+  splitList,
+  useFormSteps,
+} from "../use-form-steps.js";
 
 const RISKS: { label: string; value: TaskRecord["risk"] }[] = [
   "low",
@@ -23,23 +30,32 @@ export function TaskForm(props: {
   employees?: Employee[];
   initial?: TaskRecord | undefined;
 }) {
-  const [step, setStep] = useState(0);
+  const steps = useFormSteps(4);
   const [objective, setObjective] = useState(props.initial?.objective ?? "");
   const [criteria, setCriteria] = useState(props.initial?.acceptanceCriteria.join(", ") ?? "");
   const [risk, setRisk] = useState<TaskRecord["risk"]>(props.initial?.risk ?? "medium");
   const [assigneeId, setAssigneeId] = useState(props.initial?.assigneeId ?? "");
+  // stdin events can arrive before React re-renders; refs keep validation on the latest text.
+  const latest = useRef({ objective, criteria });
+  latest.current = { objective, criteria };
+  const assignee = (props.employees ?? []).find(({ id }) => id === assigneeId);
+  const selectStep = !steps.confirming && [2, 3].includes(steps.step);
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (step === 4 && matchesKeybinding("activate", input, key)) submit();
+    if (isFieldBack(input, key, selectStep)) steps.retreat();
+    if (!steps.confirming && [0, 1].includes(steps.step) && isFieldForward(input, key, false))
+      advanceText(steps.step === 0 ? latest.current.objective : latest.current.criteria);
+    if (steps.confirming && matchesKeybinding("activate", input, key)) submit();
   });
+  function advanceText(value: string): void {
+    if (value.trim()) steps.advance();
+    else steps.fail("This field is required");
+  }
   function submit(): void {
     props.onSubmit({
       companyId: props.companyId,
       objective: objective.trim(),
-      acceptanceCriteria: criteria
-        .split(",")
-        .map((value) => value.trim())
-        .filter(Boolean),
+      acceptanceCriteria: splitList(criteria),
       risk,
       dataSensitivity: "internal",
       managerId: "ceo",
@@ -50,39 +66,46 @@ export function TaskForm(props: {
     <FormFrame
       title={`${props.initial ? "Edit" : "Create"} task`}
       terminalWidth={props.terminalWidth}
-      footer={step === 4 ? "Enter confirm · Esc cancel" : "Enter/select next · Esc cancel"}
+      footer={formFooter(steps.confirming, steps.step, 4, { selectStep })}
     >
-      {step === 0 && (
+      {steps.error && <Text color="red">{steps.error}</Text>}
+      {steps.step === 0 && !steps.confirming && (
         <>
           <Text>Objective</Text>
           <Box>
             <PromptMarker />
             <TextInput
               value={objective}
-              onChange={setObjective}
+              onChange={(value) => {
+                setObjective(value);
+                steps.fail("");
+              }}
               onSubmit={() => {
-                if (objective.trim()) setStep(1);
+                advanceText(latest.current.objective);
               }}
             />
           </Box>
         </>
       )}
-      {step === 1 && (
+      {steps.step === 1 && !steps.confirming && (
         <>
           <Text>Acceptance criteria (comma separated)</Text>
           <Box>
             <PromptMarker />
             <TextInput
               value={criteria}
-              onChange={setCriteria}
+              onChange={(value) => {
+                setCriteria(value);
+                steps.fail("");
+              }}
               onSubmit={() => {
-                if (criteria.trim()) setStep(2);
+                advanceText(latest.current.criteria);
               }}
             />
           </Box>
         </>
       )}
-      {step === 2 && (
+      {steps.step === 2 && !steps.confirming && (
         <>
           <Text>Risk</Text>
           <SelectInput
@@ -93,12 +116,12 @@ export function TaskForm(props: {
             )}
             onSelect={(item) => {
               setRisk(item.value);
-              setStep(3);
+              steps.advance();
             }}
           />
         </>
       )}
-      {step === 3 && (
+      {steps.step === 3 && !steps.confirming && (
         <>
           <Text>Assignee (optional)</Text>
           <SelectInput
@@ -113,16 +136,16 @@ export function TaskForm(props: {
             ]}
             onSelect={(item) => {
               setAssigneeId(item.value);
-              setStep(4);
+              steps.advance();
             }}
           />
         </>
       )}
-      {step === 4 && (
+      {steps.confirming && (
         <Text>
           Confirm and approve “{objective}” at {risk} risk
-          {assigneeId.trim() ? ` for ${assigneeId.trim()}` : " for ARM staffing"}? This mutation is
-          audited.
+          {assignee ? ` for ${assignee.name} — ${assignee.title}` : " for ARM staffing"}? This
+          mutation is audited.
         </Text>
       )}
     </FormFrame>

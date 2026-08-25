@@ -1,12 +1,15 @@
 import { Box, Text } from "ink";
 import type { MeetingRecord } from "../../governance/meeting-repository.js";
+import type { NameDirectory } from "../names.js";
 
 export function MeetingView({
   meetings,
   selectedRow = 0,
+  names,
 }: {
   meetings: MeetingRecord[];
   selectedRow?: number;
+  names: NameDirectory;
 }) {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
@@ -21,7 +24,7 @@ export function MeetingView({
             </Text>
             <Text dimColor>
               {meeting.participantIds.length} participants · {meeting.agenda.length} agenda items ·
-              organizer {meeting.organizerId}
+              organizer {names.employee(meeting.organizerId)}
             </Text>
           </Box>
         ))

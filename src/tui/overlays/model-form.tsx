@@ -2,20 +2,30 @@ import { randomUUID } from "node:crypto";
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { PromptMarker } from "../components/prompt-marker.js";
-import { bindingsFor, matchesKeybinding } from "../keybindings.js";
+import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import type { ModelRecord } from "../../registries/registry-types.js";
 import { FormFrame } from "./form-frame.js";
+import {
+  formFooter,
+  isFieldBack,
+  isFieldForward,
+  splitList,
+  useFormSteps,
+} from "../use-form-steps.js";
 
 const FIELDS = [
   "Engine (opencode or kilo)",
   "Model identifier",
   "Provider",
   "Priority (higher starts first)",
-  "Capabilities (comma separated)",
+  "Capabilities (comma separated, optional)",
   "Supported roles (comma separated)",
-  "Required secret names (comma separated)",
+  "Required secret names (optional)",
 ] as const;
+
+/** Steps whose Enter accepts an empty value. */
+const OPTIONAL_STEPS = [4, 6];
 
 export interface ModelFormInput {
   id: string;
@@ -34,7 +44,7 @@ export function ModelForm(props: {
   onCancel: () => void;
   onSubmit: (input: ModelFormInput) => void;
 }) {
-  const [step, setStep] = useState(0);
+  const steps = useFormSteps(FIELDS.length);
   const [values, setValues] = useState([
     props.initial?.engine ?? "opencode",
     props.initial?.model ?? "",
@@ -44,41 +54,35 @@ export function ModelForm(props: {
     props.initial?.supportedRoles.join(", ") ?? "general",
     props.initial?.secretRequirements.join(", ") ?? "",
   ]);
-  const confirming = step === FIELDS.length;
+  const updateAt = (value: string): void => {
+    setValues((current) => current.map((item, index) => (index === steps.step ? value : item)));
+  };
+  const tryAdvance = (): void => {
+    if ((values[steps.step] ?? "").trim() || OPTIONAL_STEPS.includes(steps.step)) steps.advance();
+    else steps.fail(`${FIELDS[steps.step]} is required`);
+  };
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key))
+    if (isFieldBack(input, key, false)) steps.retreat();
+    if (!steps.confirming && isFieldForward(input, key, false)) tryAdvance();
+    if (steps.confirming && matchesKeybinding("activate", input, key))
       props.onSubmit(parse(values, props.initial?.id));
   });
   return (
     <FormFrame
       title={props.initial ? "Edit model registry entry" : "Configure model registry entry"}
       terminalWidth={props.terminalWidth}
-      footer={
-        confirming
-          ? `${bindingsFor("activate")} save · ${bindingsFor("cancel")} cancel`
-          : `${bindingsFor("activate")} next · ${bindingsFor("cancel")} cancel · ${step + 1}/${FIELDS.length}`
-      }
+      footer={formFooter(steps.confirming, steps.step, FIELDS.length)}
     >
-      {confirming ? (
+      {steps.error && <Text color="red">{steps.error}</Text>}
+      {steps.confirming ? (
         <Text>Save model “{values[1]}” for controlled verification?</Text>
       ) : (
         <>
-          <Text>{FIELDS[step]}</Text>
+          <Text>{FIELDS[steps.step]}</Text>
           <Box>
             <PromptMarker />
-            <TextInput
-              value={values[step] ?? ""}
-              onChange={(value) => {
-                setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
-                );
-              }}
-              onSubmit={() => {
-                if (values[step]?.trim() || [4, 6].includes(step))
-                  setStep((current) => current + 1);
-              }}
-            />
+            <TextInput value={values[steps.step] ?? ""} onChange={updateAt} onSubmit={tryAdvance} />
           </Box>
         </>
       )}
@@ -101,15 +105,8 @@ function parse(values: string[], existingId?: string): ModelFormInput {
     model,
     provider,
     priority,
-    capabilities: split(values[4]),
-    supportedRoles: split(values[5]),
-    secretRequirements: split(values[6]),
+    capabilities: splitList(values[4]),
+    supportedRoles: splitList(values[5]),
+    secretRequirements: splitList(values[6]),
   };
-}
-
-function split(value: string | undefined): string[] {
-  return (value ?? "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
 }

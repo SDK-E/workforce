@@ -59,6 +59,7 @@ import { MailView } from "./mail-view.js";
 import { AutomationView } from "./automation-view.js";
 import { ExecutionReadinessView } from "./execution-readiness-view.js";
 import { executionReadiness } from "../../execution/execution-readiness.js";
+import { nameDirectory } from "../names.js";
 import type {
   ClientRecord,
   EngagementRecord,
@@ -125,9 +126,10 @@ const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
 };
 
 export function WorkspaceView(props: WorkspaceViewProps) {
-  const business = businessView(props);
+  const names = nameDirectory(props);
+  const business = businessView(props, names);
   if (business) return business;
-  const organization = organizationView(props);
+  const organization = organizationView(props, names);
   if (organization) return organization;
   if (props.section === "Execution readiness") return executionReadinessView(props);
   if (props.section === "Companies")
@@ -147,11 +149,12 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         kind={strategyKind}
         items={props.strategyItems}
         selectedRow={props.selectedRow}
+        names={names}
       />
     );
   }
   if (props.section === "Tasks")
-    return <TaskView tasks={props.tasks} selectedRow={props.selectedRow} />;
+    return <TaskView tasks={props.tasks} selectedRow={props.selectedRow} names={names} />;
   if (props.section === "Employees")
     return (
       <EmployeeView
@@ -168,26 +171,30 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         plans={props.reinforcementPlans}
         decisions={props.armDecisions}
         selectedRow={props.selectedRow}
+        names={names}
       />
     );
   if (props.section === "Approvals")
-    return <ApprovalView approvals={props.approvals} selectedRow={props.selectedRow} />;
+    return (
+      <ApprovalView approvals={props.approvals} selectedRow={props.selectedRow} names={names} />
+    );
   if (props.section === "Meetings")
-    return <MeetingView meetings={props.meetings} selectedRow={props.selectedRow} />;
+    return <MeetingView meetings={props.meetings} selectedRow={props.selectedRow} names={names} />;
   if (props.section === "Performance")
-    return <PerformanceView records={props.performanceRecords} />;
+    return <PerformanceView records={props.performanceRecords} names={names} />;
   if (props.section === "Recognition")
-    return <PerformanceView records={props.performanceRecords} kind="recognition" />;
+    return <PerformanceView records={props.performanceRecords} kind="recognition" names={names} />;
   if (props.section === "Warnings & incidents")
     return (
       <IncidentView
         incidents={props.incidents}
         actions={props.correctiveActions}
         selectedRow={props.selectedRow}
+        names={names}
       />
     );
   if (props.section === "Critics & reviews")
-    return <ClaimView claims={props.claims} selectedRow={props.selectedRow} />;
+    return <ClaimView claims={props.claims} selectedRow={props.selectedRow} names={names} />;
   if (props.section === "CEO office")
     return (
       <CeoOfficeView
@@ -195,6 +202,7 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         cycle={props.latestCeoCycle}
         rooms={props.rooms}
         messages={props.messages}
+        names={names}
       />
     );
   if (props.section === "Conversations") {
@@ -204,17 +212,19 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         rooms={props.rooms}
         threads={props.threads}
         selectedRow={props.selectedRow}
+        names={names}
       />
     );
   }
   if (props.section === "Mail")
-    return <MailView mail={props.mail} selectedRow={props.selectedRow} />;
+    return <MailView mail={props.mail} selectedRow={props.selectedRow} names={names} />;
   if (props.section === "Live work")
     return (
       <WorkflowTimelineView
         attempts={props.attempts}
         events={props.attemptEvents}
         compact={props.compact}
+        names={names}
       />
     );
   if (props.section === "Deliverables") return <DeliverableView artifacts={props.artifacts} />;
@@ -248,17 +258,18 @@ export function WorkspaceView(props: WorkspaceViewProps) {
   throw new Error(`No workspace view is registered for ${props.section}`);
 }
 
-function businessView(props: WorkspaceViewProps) {
+function businessView(props: WorkspaceViewProps, names: ReturnType<typeof nameDirectory>) {
   if (!["Opportunities", "Leads", "Clients", "Engagements"].includes(props.section)) return null;
   return (
     <BusinessPipelineView
       {...props}
       section={props.section as "Opportunities" | "Leads" | "Clients" | "Engagements"}
+      names={names}
     />
   );
 }
 
-function organizationView(props: WorkspaceViewProps) {
+function organizationView(props: WorkspaceViewProps, names: ReturnType<typeof nameDirectory>) {
   const kinds = {
     Organization: undefined,
     Departments: "department",
@@ -271,6 +282,7 @@ function organizationView(props: WorkspaceViewProps) {
     <OrganizationView
       units={props.organizationUnits}
       selectedRow={props.selectedRow}
+      names={names}
       {...(kind === undefined ? {} : { kind })}
     />
   );

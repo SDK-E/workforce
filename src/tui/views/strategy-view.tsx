@@ -1,16 +1,19 @@
 import { Box, Text } from "ink";
 import type { StrategyItem, StrategyItemKind } from "../../strategy/strategy-types.js";
+import type { NameDirectory } from "../names.js";
 
 export function StrategyView({
   title,
   kind,
   items,
   selectedRow,
+  names,
 }: {
   title: string;
   kind: StrategyItemKind;
   items: StrategyItem[];
   selectedRow: number;
+  names: NameDirectory;
 }) {
   const matching = items.filter((item) => item.kind === kind);
   return (
@@ -21,7 +24,7 @@ export function StrategyView({
       ) : (
         matching.map((item, index) => (
           <Text key={item.id} inverse={index === selectedRow}>
-            [{item.status}] {item.name} · owner {item.ownerId} · measures{" "}
+            [{item.status}] {item.name} · owner {names.employee(item.ownerId)} · measures{" "}
             {item.successMeasures.length}
           </Text>
         ))

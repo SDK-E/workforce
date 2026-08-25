@@ -5,6 +5,7 @@ import type {
   LeadRecord,
   OpportunityRecord,
 } from "../../business/business-types.js";
+import type { NameDirectory } from "../names.js";
 
 export function BusinessPipelineView(props: {
   section: "Opportunities" | "Leads" | "Clients" | "Engagements";
@@ -13,6 +14,7 @@ export function BusinessPipelineView(props: {
   clients: ClientRecord[];
   engagements: EngagementRecord[];
   selectedRow: number;
+  names: NameDirectory;
 }) {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
@@ -52,7 +54,7 @@ function rows(props: Parameters<typeof BusinessPipelineView>[0]): {
     }));
   return props.engagements.map((item) => ({
     id: item.id,
-    label: `[${item.status}] ${item.name} · client ${item.clientId} · ${item.successCriteria.length} success criteria`,
+    label: `[${item.status}] ${item.name} · client ${props.names.client(item.clientId)} · ${item.successCriteria.length} success criteria`,
     archived: item.status === "archived",
   }));
 }

@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import type { CompanyRuntime, OperatingCycle } from "../../autonomy/autonomy-types.js";
 import type { MessageRecord, RoomRecord } from "../../conversations/conversation-types.js";
+import type { NameDirectory } from "../names.js";
 import { Panel } from "../components/panel.js";
 import { truncate } from "../navigation.js";
 
@@ -9,6 +10,7 @@ export function CeoOfficeView(props: {
   cycle: OperatingCycle | undefined;
   rooms: RoomRecord[];
   messages: MessageRecord[];
+  names: NameDirectory;
 }) {
   const decision = props.cycle?.decision;
   return (
@@ -31,7 +33,10 @@ export function CeoOfficeView(props: {
           <Text>
             Reason: {truncate(text(decision?.rationale, props.cycle?.failureReason ?? "—"), 78)}
           </Text>
-          <Text>Task: {props.cycle?.spawnedTaskId ?? "none"}</Text>
+          <Text>
+            Task:{" "}
+            {props.cycle?.spawnedTaskId ? props.names.task(props.cycle.spawnedTaskId) : "none"}
+          </Text>
         </Panel>
       </Box>
       <Box marginTop={1} flexDirection="column">

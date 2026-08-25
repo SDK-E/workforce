@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { render } from "ink-testing-library";
+import { nameDirectory } from "../src/tui/names.js";
 import { CeoOfficeView } from "../src/tui/views/ceo-office-view.js";
 
 test("CEO office renders the latest durable autonomous decision", () => {
@@ -36,6 +37,9 @@ test("CEO office renders the latest durable autonomous decision", () => {
       }}
       rooms={[]}
       messages={[]}
+      names={nameDirectory({
+        tasks: [{ id: "task-1", objective: "Draft the opportunity brief" }],
+      })}
     />,
   );
   const frame = view.lastFrame() ?? "";
@@ -43,6 +47,6 @@ test("CEO office renders the latest durable autonomous decision", () => {
   assert.match(frame, /discover-opportunities/);
   assert.match(frame, /no active commercial/);
   assert.match(frame, /opportunities/);
-  assert.match(frame, /task-1/);
+  assert.match(frame, /Draft the opportunity brief/);
   view.unmount();
 });

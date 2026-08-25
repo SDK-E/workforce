@@ -7,6 +7,7 @@ import { PromptMarker } from "../components/prompt-marker.js";
 import { truncate } from "../navigation.js";
 import { matchesKeybinding } from "../keybindings.js";
 import { FormFrame } from "./form-frame.js";
+import { formFooter, isFieldBack, isFieldForward, useFormSteps } from "../use-form-steps.js";
 
 const LABELS = ["Filename", "Media type", "Size in bytes", "SHA-256 digest", "Artifact URI"];
 
@@ -25,13 +26,24 @@ export function AttachmentForm(props: {
   onSubmit: (input: AttachmentFormInput) => void;
   onCancel: () => void;
 }) {
-  const [step, setStep] = useState(0);
+  const steps = useFormSteps(LABELS.length + 1);
   const [messageId, setMessageId] = useState(props.messages[0]?.id ?? "");
   const [values, setValues] = useState(["", "application/octet-stream", "0", "", "artifact://"]);
-  const confirming = step === LABELS.length + 1;
+  const field = steps.step - 1;
+  const updateAt = (value: string): void => {
+    setValues((current) => current.map((item, index) => (index === field ? value : item)));
+    steps.fail("");
+  };
+  const tryAdvance = (): void => {
+    if ((values[field] ?? "").trim()) steps.advance();
+    else steps.fail(`${LABELS[field]} is required`);
+  };
+  const selectStep = steps.step === 0 && !steps.confirming;
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key))
+    if (isFieldBack(input, key, selectStep)) steps.retreat();
+    if (!steps.confirming && steps.step >= 1 && isFieldForward(input, key, false)) tryAdvance();
+    if (steps.confirming && matchesKeybinding("activate", input, key))
       props.onSubmit({
         messageId,
         filename: values[0]?.trim() ?? "",
@@ -41,18 +53,16 @@ export function AttachmentForm(props: {
         artifactUri: values[4]?.trim() ?? "",
       });
   });
-  const field = step - 1;
   return (
     <FormFrame
       title="Register message attachment"
       terminalWidth={props.terminalWidth}
-      footer={
-        confirming ? "Enter register and audit · Esc cancel" : "Enter/select next · Esc cancel"
-      }
+      footer={formFooter(steps.confirming, steps.step, LABELS.length + 1, { selectStep })}
     >
+      {steps.error && <Text color="red">{steps.error}</Text>}
       {props.messages.length === 0 ? (
         <Text>Create a message before registering an attachment. Esc closes this dialog.</Text>
-      ) : step === 0 ? (
+      ) : steps.step === 0 ? (
         <NamedSelect
           label="Message"
           items={props.messages.map((message) => ({
@@ -62,27 +72,17 @@ export function AttachmentForm(props: {
           value={messageId}
           onSelect={(value) => {
             setMessageId(value);
-            setStep(1);
+            steps.advance();
           }}
         />
-      ) : confirming ? (
+      ) : steps.confirming ? (
         <Text>Register this immutable artifact reference on the selected message?</Text>
       ) : (
         <>
           <Text>{LABELS[field]}</Text>
           <Box>
             <PromptMarker />
-            <TextInput
-              value={values[field] ?? ""}
-              onChange={(value) => {
-                setValues((current) =>
-                  current.map((item, index) => (index === field ? value : item)),
-                );
-              }}
-              onSubmit={() => {
-                if ((values[field] ?? "").trim()) setStep((current) => current + 1);
-              }}
-            />
+            <TextInput value={values[field] ?? ""} onChange={updateAt} onSubmit={tryAdvance} />
           </Box>
         </>
       )}

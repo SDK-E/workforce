@@ -66,6 +66,12 @@ Workforce asks for confirmation before consequential actions. Deleting from the 
 4. Open **Execution readiness**. Resolve every blocker shown there before expecting agents to start.
 5. Open **Organization** to review the CEO, ARM, departments, teams, reporting structure, policies, and agent profiles.
 
+Every form dialog works the same way: `Enter` accepts the current answer and moves on, `↑` returns
+to the previous field with your earlier answer intact so you can change it, `↓` skips forward past
+a field, and choice lists use `↑`/`↓` to highlight an option (`←` steps back from a list) with
+`Enter` to confirm. Empty required fields say what is missing instead of silently ignoring `Enter`,
+and each form's footer shows exactly which keys work on the current step.
+
 If the overview shows CEO and ARM identities but Docker shows no containers, that is normal:
 identities are permanent company records; containers exist only while an assigned task is actually
 running. Until the company has a verified model and a delivered task, the overview also shows a

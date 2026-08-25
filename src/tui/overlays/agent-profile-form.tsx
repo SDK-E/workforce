@@ -5,6 +5,7 @@ import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import type { UpdateAgentInstructionsInput } from "../../employees/agent-profile-types.js";
 import { FormFrame } from "./form-frame.js";
+import { formFooter, isFieldBack, isFieldForward, useFormSteps } from "../use-form-steps.js";
 
 const FIELDS = [
   "Persona name",
@@ -24,17 +25,23 @@ export function AgentProfileForm(props: {
   onCancel: () => void;
   initial?: UpdateAgentInstructionsInput | undefined;
 }) {
-  const [step, setStep] = useState(0);
+  const steps = useFormSteps(FIELDS.length);
   const [values, setValues] = useState(() => initialValues(props.initial));
-  const confirming = step === FIELDS.length;
+  const updateAt = (value: string): void => {
+    setValues((current) => current.map((item, index) => (index === steps.step ? value : item)));
+    steps.fail("");
+  };
+  const tryAdvance = (): void => {
+    const label = FIELDS[steps.step] ?? "";
+    if (values[steps.step]?.trim()) steps.advance();
+    else steps.fail(`${label.split(" (")[0]} is required`);
+  };
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key)) submit();
+    if (isFieldBack(input, key, false)) steps.retreat();
+    if (!steps.confirming && isFieldForward(input, key, false)) tryAdvance();
+    if (steps.confirming && matchesKeybinding("activate", input, key)) submit();
   });
-  function advance(): void {
-    if (!values[step]?.trim()) return;
-    setStep((current) => current + 1);
-  }
   function submit(): void {
     props.onSubmit({
       companyId: props.companyId,
@@ -56,31 +63,20 @@ export function AgentProfileForm(props: {
     <FormFrame
       title="Version agent identity and instructions"
       terminalWidth={props.terminalWidth}
-      footer={
-        confirming
-          ? "Enter confirm · Esc cancel"
-          : `Enter next · Esc cancel · ${step + 1}/${FIELDS.length}`
-      }
+      footer={formFooter(steps.confirming, steps.step, FIELDS.length)}
     >
-      {confirming ? (
+      {steps.error && <Text color="red">{steps.error}</Text>}
+      {steps.confirming ? (
         <Text>
           Activate a new instruction revision for the selected employee? Prior revisions remain
           preserved.
         </Text>
       ) : (
         <>
-          <Text>{FIELDS[step]}</Text>
+          <Text>{FIELDS[steps.step]}</Text>
           <Box>
             <PromptMarker />
-            <TextInput
-              value={values[step] ?? ""}
-              onChange={(value) => {
-                setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
-                );
-              }}
-              onSubmit={advance}
-            />
+            <TextInput value={values[steps.step] ?? ""} onChange={updateAt} onSubmit={tryAdvance} />
           </Box>
         </>
       )}

@@ -31,7 +31,7 @@ test("governance pages route to explicit evidence-backed forms", async () => {
     );
     await settle();
     assert.match(view.lastFrame() ?? "", new RegExp(title));
-    assert.match(view.lastFrame() ?? "", /Enter next · Esc cancel/);
+    assert.match(view.lastFrame() ?? "", /Enter next/);
     view.unmount();
   }
 });

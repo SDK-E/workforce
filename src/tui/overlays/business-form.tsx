@@ -13,6 +13,7 @@ import { NamedSelect, type NamedOption } from "../components/named-select.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
 import { FormFrame } from "./form-frame.js";
+import { formFooter, isFieldBack, isFieldForward, useFormSteps } from "../use-form-steps.js";
 
 export type BusinessFormKind = "opportunity" | "lead" | "client" | "engagement";
 type BusinessRecord = OpportunityRecord | LeadRecord | ClientRecord | EngagementRecord;
@@ -30,27 +31,30 @@ export function BusinessForm(props: {
   onCancel: () => void;
 }) {
   const fields = FIELDS[props.kind];
-  const steps = props.initial ? fields.map((_, index) => index) : CREATE_STEPS[props.kind];
-  const [step, setStep] = useState(0);
+  const visibleSteps = props.initial ? fields.map((_, index) => index) : CREATE_STEPS[props.kind];
+  const steps = useFormSteps(visibleSteps.length);
   const [values, setValues] = useState(() => initialValues(props.kind, props.initial));
-  const fieldIndex = steps[step];
+  const fieldIndex = visibleSteps[steps.step];
   const options = fieldIndex === undefined ? undefined : selectOptions(props, fieldIndex);
-  const confirming = step === steps.length;
+  const selectStep = Boolean(options);
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key)) props.onSubmit(values);
+    if (isFieldBack(input, key, selectStep)) steps.retreat();
+    if (!steps.confirming && !options && isFieldForward(input, key, false)) tryAdvance();
+    if (steps.confirming && matchesKeybinding("activate", input, key)) props.onSubmit(values);
   });
+  function tryAdvance(): void {
+    if ((values[fieldIndex ?? 0] ?? "").trim()) steps.advance();
+    else steps.fail(`${fields[fieldIndex ?? 0]} is required`);
+  }
   return (
     <FormFrame
       title={`${props.initial ? "Edit" : "Create"} ${props.kind}`}
       terminalWidth={props.terminalWidth}
-      footer={
-        confirming
-          ? "Enter confirm and audit · Esc cancel"
-          : `Enter next · Esc cancel · ${step + 1}/${steps.length}`
-      }
+      footer={formFooter(steps.confirming, steps.step, visibleSteps.length, { selectStep })}
     >
-      {confirming ? (
+      {steps.error && <Text color="red">{steps.error}</Text>}
+      {steps.confirming ? (
         <Text>Persist this company-scoped {props.kind} record?</Text>
       ) : options ? (
         <NamedSelect
@@ -61,7 +65,7 @@ export function BusinessForm(props: {
             setValues((current) =>
               current.map((item, index) => (index === fieldIndex ? value : item)),
             );
-            setStep((current) => current + 1);
+            steps.advance();
           }}
         />
       ) : (
@@ -75,10 +79,9 @@ export function BusinessForm(props: {
                 setValues((current) =>
                   current.map((item, index) => (index === fieldIndex ? value : item)),
                 );
+                steps.fail("");
               }}
-              onSubmit={() => {
-                if ((values[fieldIndex ?? 0] ?? "").trim()) setStep((current) => current + 1);
-              }}
+              onSubmit={tryAdvance}
             />
           </Box>
         </>

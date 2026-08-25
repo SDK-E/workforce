@@ -3,15 +3,18 @@ import type {
   CorrectiveActionRecord,
   IncidentRecord,
 } from "../../governance/incident-repository.js";
+import type { NameDirectory } from "../names.js";
 
 export function IncidentView({
   incidents,
   actions,
   selectedRow,
+  names,
 }: {
   incidents: IncidentRecord[];
   actions: CorrectiveActionRecord[];
   selectedRow: number;
+  names: NameDirectory;
 }) {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
@@ -26,7 +29,7 @@ export function IncidentView({
       ))}
       {actions.map((action, index) => (
         <Text key={action.id} inverse={incidents.length + index === selectedRow}>
-          [{action.status}] {action.kind} for {action.employeeId}
+          [{action.status}] {action.kind} for {names.employee(action.employeeId)}
         </Text>
       ))}
     </Box>

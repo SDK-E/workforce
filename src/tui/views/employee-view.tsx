@@ -1,8 +1,10 @@
 import { Box, Text } from "ink";
 import type { Employee } from "../../domain.js";
 import type { AgentProfile } from "../../employees/agent-profile-types.js";
+import type { NameDirectory } from "../names.js";
 import { Panel } from "../components/panel.js";
 import { truncate } from "../navigation.js";
+import { nameDirectory } from "../names.js";
 
 export function EmployeeView({
   employees,
@@ -17,6 +19,7 @@ export function EmployeeView({
 }) {
   const employee = employees[selectedRow];
   const profile = profiles.find((item) => item.employeeId === employee?.id);
+  const names: NameDirectory = nameDirectory({ employees });
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>Employee directory</Text>
@@ -35,9 +38,7 @@ export function EmployeeView({
               <Text>
                 {employee.name} · {employee.title}
               </Text>
-              <Text>
-                Identity: {employee.id} · manager {employee.manager ?? "board"}
-              </Text>
+              <Text>Manager: {employee.manager ? names.employee(employee.manager) : "board"}</Text>
               <Text>Department: {employee.department}</Text>
               <Text>Persona: {profile?.personaName ?? "not configured"}</Text>
               <Text>Instruction revision: {profile?.activeRevision ?? "none"}</Text>

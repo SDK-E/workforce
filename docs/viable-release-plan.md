@@ -45,10 +45,15 @@ This is a reduced path to a viable release, not a reduction of the product ident
 
 - Business pipeline MCP, viable CEO commercial autonomy, and ARM reinforcement are implemented.
 - The full local quality gate currently passes formatting, typed lint, Knip dead-code analysis,
-  compilation, migrations, and **108 tests**.
+  compilation, migrations, and **110 tests**.
 - TUI truthfulness: no view renders its own key-hint footer (status bar via `section-guidance.ts` is
   the only guidance source); capacity claims derive from `DEFAULT_AGENT_CONCURRENCY`; the
   performance page shows real record counts.
+- Readable identities: workspace views resolve employee, task, client, and governance-subject IDs to
+  persisted names via `nameDirectory`; raw IDs appear only as honest fallbacks for unknown records.
+- Form navigation: all wizard forms share `useFormSteps` — ↑ returns to the previous field with the
+  earlier answer intact, ↓ skips forward, ← backs out of select steps, empty required fields show an
+  explicit message, and footers derive their key hints from the keybinding config.
 - First-run guidance: execution readiness explains a blocked autonomy loop with the latest CEO cycle
   failure reason and retry cadence; the executive overview shows a Getting started checklist
   (configure model → verify → describe work → run task) until every step is done, and states that

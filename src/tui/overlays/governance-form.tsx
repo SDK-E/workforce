@@ -8,6 +8,7 @@ import { NamedSelect, type NamedOption } from "../components/named-select.js";
 import { matchesKeybinding } from "../keybindings.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { FormFrame } from "./form-frame.js";
+import { formFooter, isFieldBack, isFieldForward, useFormSteps } from "../use-form-steps.js";
 
 export type GovernanceFormKind =
   | "performance"
@@ -60,7 +61,7 @@ const FIELDS: Record<GovernanceFormKind, string[]> = {
     "Related incident (optional)",
   ],
   claim: [
-    "Subject ID",
+    "Subject",
     "Predicate",
     "Value (JSON)",
     "Evidence IDs (comma separated)",
@@ -78,61 +79,63 @@ export function GovernanceForm(props: {
   onCancel: () => void;
 }) {
   const fields = FIELDS[props.kind];
-  const [step, setStep] = useState(0);
+  const steps = useFormSteps(fields.length);
   const [values, setValues] = useState(() => defaults(props.kind));
-  const [error, setError] = useState("");
-  const options = selectOptions(props, step);
-  const confirming = step === fields.length;
+  const options = selectOptions(props, steps.step);
+  const selectStep = Boolean(options);
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key)) submit();
+    if (isFieldBack(input, key, selectStep)) steps.retreat();
+    if (!steps.confirming && !options && isFieldForward(input, key, false)) tryAdvance();
+    if (steps.confirming && matchesKeybinding("activate", input, key)) submit();
   });
+  function tryAdvance(): void {
+    if ((values[steps.step] ?? "").trim()) steps.advance();
+    else steps.fail(`${fields[steps.step]} is required`);
+  }
   function submit(): void {
     try {
       props.onSubmit(buildResult(props.kind, values));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Invalid governance record");
-      setStep(0);
+      steps.fail(caught instanceof Error ? caught.message : "Invalid governance record");
+      steps.goTo(0);
     }
   }
   return (
     <FormFrame
       title={titleFor(props.kind)}
       terminalWidth={props.terminalWidth}
-      footer={
-        confirming
-          ? "Enter persist and audit · Esc cancel"
-          : `Enter next · Esc cancel · ${step + 1}/${fields.length}`
-      }
+      footer={formFooter(steps.confirming, steps.step, fields.length, { selectStep })}
     >
-      {error && <Text color="red">{error}</Text>}
-      {confirming ? (
+      {steps.error && <Text color="red">{steps.error}</Text>}
+      {steps.confirming ? (
         <Text>Persist this evidence-backed {props.kind} record?</Text>
       ) : options ? (
         <NamedSelect
-          label={fields[step] ?? "Selection"}
+          label={fields[steps.step] ?? "Selection"}
           items={options}
-          value={values[step] ?? ""}
+          value={values[steps.step] ?? ""}
           onSelect={(value) => {
-            setValues((current) => current.map((item, index) => (index === step ? value : item)));
-            setStep((current) => current + 1);
+            setValues((current) =>
+              current.map((item, index) => (index === steps.step ? value : item)),
+            );
+            steps.advance();
           }}
         />
       ) : (
         <>
-          <Text>{fields[step]}</Text>
+          <Text>{fields[steps.step]}</Text>
           <Box>
             <PromptMarker />
             <TextInput
-              value={values[step] ?? ""}
+              value={values[steps.step] ?? ""}
               onChange={(value) => {
                 setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
+                  current.map((item, index) => (index === steps.step ? value : item)),
                 );
+                steps.fail("");
               }}
-              onSubmit={() => {
-                if ((values[step] ?? "").trim()) setStep((current) => current + 1);
-              }}
+              onSubmit={tryAdvance}
             />
           </Box>
         </>

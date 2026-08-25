@@ -3,15 +3,18 @@ import type {
   OrganizationUnit,
   OrganizationUnitKind,
 } from "../../organizations/organization-types.js";
+import type { NameDirectory } from "../names.js";
 
 export function OrganizationView({
   units,
   kind,
   selectedRow,
+  names,
 }: {
   units: OrganizationUnit[];
   kind?: OrganizationUnitKind | OrganizationUnitKind[];
   selectedRow: number;
+  names: NameDirectory;
 }) {
   const kinds = Array.isArray(kind) ? kind : kind ? [kind] : undefined;
   const visible = kinds ? units.filter((unit) => kinds.includes(unit.kind)) : units;
@@ -23,7 +26,8 @@ export function OrganizationView({
       ) : (
         visible.map((unit, index) => (
           <Text key={unit.id} inverse={index === selectedRow}>
-            [{unit.kind}] {unit.name} · manager {unit.managerId ?? "unassigned"}
+            [{unit.kind}] {unit.name} · manager{" "}
+            {unit.managerId ? names.employee(unit.managerId) : "unassigned"}
           </Text>
         ))
       )}

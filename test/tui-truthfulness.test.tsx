@@ -4,15 +4,18 @@ import { render } from "ink-testing-library";
 import test from "node:test";
 import { DEFAULT_AGENT_CONCURRENCY } from "../src/supervision/capacity-controller.js";
 import type { PerformanceRecord } from "../src/governance/performance-repository.js";
+import { nameDirectory } from "../src/tui/names.js";
 import { ExecutiveOverview } from "../src/tui/views/executive-overview.js";
 import { PerformanceView } from "../src/tui/views/performance-view.js";
 import { TaskView } from "../src/tui/views/task-view.js";
+
+const names = nameDirectory({});
 
 test("performance view reports the real record count instead of a placeholder", () => {
   const records = [record("p1"), record("p2")];
   const instance = render(
     <Box width={80}>
-      <PerformanceView records={records} />
+      <PerformanceView records={records} names={names} />
     </Box>,
   );
   assert.match(instance.lastFrame() ?? "", /2 evidence-backed performance records/);
@@ -20,7 +23,7 @@ test("performance view reports the real record count instead of a placeholder", 
 
   const recognition = render(
     <Box width={80}>
-      <PerformanceView records={[record("r1", "recognition")]} kind="recognition" />
+      <PerformanceView records={[record("r1", "recognition")]} kind="recognition" names={names} />
     </Box>,
   );
   assert.doesNotMatch(recognition.lastFrame() ?? "", /n record evidence-backed/);
@@ -31,7 +34,7 @@ test("performance view reports the real record count instead of a placeholder", 
 test("task view no longer prints its own key-hint footer", () => {
   const instance = render(
     <Box width={80}>
-      <TaskView tasks={[]} />
+      <TaskView tasks={[]} names={names} />
     </Box>,
   );
   const frame = instance.lastFrame() ?? "";
