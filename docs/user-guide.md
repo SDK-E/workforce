@@ -101,6 +101,8 @@ A zero exit code alone never completes a task. Missing outputs, failed validator
 
 While the control plane is running, CEO, ARM, and automation loops evaluate work every ten seconds. The CEO chooses or delegates company direction; the ARM fills verified capability/capacity gaps; approved automations create governed task runs. Every real agent attempt still passes through the same Docker, model, secret, and acceptance gates as a human-triggered run.
 
+Open **Execution → Live work** for the agent workflow timeline. The summary shows the latest durable status for each agent attempt; the connected timeline below shows queued, lease, start, runtime, checkpoint, validation, recovery, and terminal events with time, employee, task, and attempt identity. Events come from the bounded durable attempt-event ledger and are company isolated, so the screen reflects actual supervisor history rather than simulated “running agent” counters.
+
 If events appear but agents do not start, inspect Docker status, image availability, the selected model's verification state, task assignment/status, approvals, secret scope, and operating-cycle failure reason.
 
 ## Agent Workforce MCP access

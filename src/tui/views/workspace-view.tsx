@@ -16,7 +16,7 @@ import type {
   IncidentRecord,
 } from "../../governance/incident-repository.js";
 import type { ClaimRecord, PerformanceRecord } from "../../governance/performance-repository.js";
-import type { AttemptRecord } from "../../supervision/attempt-types.js";
+import type { AttemptEventRecord, AttemptRecord } from "../../supervision/attempt-types.js";
 import type { ArtifactRecord } from "../../acceptance/artifact-types.js";
 import type { WorkforceEvent } from "../../domain.js";
 import type { DockerStatus } from "../../docker-runtime.js";
@@ -32,7 +32,8 @@ import { MeetingView } from "./meeting-view.js";
 import { PerformanceView } from "./performance-view.js";
 import { IncidentView } from "./incident-view.js";
 import { ClaimView } from "./claim-view.js";
-import { DeliverableView, LiveWorkView } from "./execution-view.js";
+import { DeliverableView } from "./execution-view.js";
+import { WorkflowTimelineView } from "./workflow-timeline-view.js";
 import { RuntimeView } from "./runtime-view.js";
 import { AuditView, DiagnosticsView } from "./audit-view.js";
 import { SettingsView } from "./settings-view.js";
@@ -74,6 +75,7 @@ interface WorkspaceViewProps {
   correctiveActions: CorrectiveActionRecord[];
   claims: ClaimRecord[];
   attempts: AttemptRecord[];
+  attemptEvents: AttemptEventRecord[];
   artifacts: ArtifactRecord[];
   events: WorkforceEvent[];
   auditVerified: boolean;
@@ -202,7 +204,14 @@ export function WorkspaceView(props: WorkspaceViewProps) {
   }
   if (props.section === "Mail")
     return <MailView mail={props.mail} selectedRow={props.selectedRow} />;
-  if (props.section === "Live work") return <LiveWorkView attempts={props.attempts} />;
+  if (props.section === "Live work")
+    return (
+      <WorkflowTimelineView
+        attempts={props.attempts}
+        events={props.attemptEvents}
+        compact={props.compact}
+      />
+    );
   if (props.section === "Deliverables") return <DeliverableView artifacts={props.artifacts} />;
   if (["Tools", "Environments", "Models & engines", "Docker & resources"].includes(props.section))
     return (

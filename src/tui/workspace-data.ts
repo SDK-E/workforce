@@ -20,6 +20,7 @@ export function loadWorkspaceData(store: StateStore, companyId: string) {
     correctiveActions: store.incidents.listCorrective(companyId),
     claims: store.performance.listClaims(companyId),
     attempts: store.attempts.list(companyId),
+    attemptEvents: store.attempts.listEvents(companyId),
     artifacts: store.artifacts.listCompany(companyId),
     events: store.events(companyId, 200),
     tools: store.tools.list(companyId),

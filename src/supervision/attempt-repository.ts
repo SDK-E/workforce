@@ -1,7 +1,12 @@
 import type { AuditRepository } from "../storage/audit-repository.js";
 import type { WorkforceDatabase } from "../storage/database.js";
 import { parseJson } from "../storage/serialization.js";
-import type { AttemptRecord, AttemptRequest, AttemptStatus } from "./attempt-types.js";
+import type {
+  AttemptEventRecord,
+  AttemptRecord,
+  AttemptRequest,
+  AttemptStatus,
+} from "./attempt-types.js";
 
 export class AttemptRepository {
   constructor(
@@ -79,6 +84,26 @@ export class AttemptRepository {
       .prepare("SELECT * FROM attempts WHERE company_id=? ORDER BY queued_at DESC LIMIT ?")
       .all(companyId, limit) as Record<string, unknown>[];
     return rows.map((row) => this.map(row));
+  }
+
+  listEvents(companyId: string, limit = 200): AttemptEventRecord[] {
+    const bounded = Math.min(Math.max(limit, 1), 1_000);
+    const rows = this.database.connection
+      .prepare(
+        `SELECT ae.sequence,ae.at,ae.kind,ae.data_json,a.id AS attempt_id,
+        a.task_id,a.employee_id FROM attempt_events ae JOIN attempts a ON a.id=ae.attempt_id
+        WHERE a.company_id=? ORDER BY ae.sequence DESC LIMIT ?`,
+      )
+      .all(companyId, bounded) as Record<string, unknown>[];
+    return rows.reverse().map((row) => ({
+      sequence: Number(row.sequence),
+      attemptId: String(row.attempt_id),
+      taskId: String(row.task_id),
+      employeeId: String(row.employee_id),
+      at: String(row.at),
+      kind: String(row.kind),
+      data: parseJson(row.data_json),
+    }));
   }
 
   get(id: string): AttemptRecord {

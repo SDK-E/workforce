@@ -44,3 +44,13 @@ export interface AttemptResult {
   stderr: string;
   timedOut: boolean;
 }
+
+export interface AttemptEventRecord {
+  sequence: number;
+  attemptId: string;
+  taskId: string;
+  employeeId: string;
+  at: string;
+  kind: string;
+  data: Record<string, unknown>;
+}
