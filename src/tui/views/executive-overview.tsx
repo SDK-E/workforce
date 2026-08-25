@@ -17,6 +17,7 @@ interface ExecutiveOverviewProps {
   activeAttempts: number;
   queuedAttempts: number;
   pendingApprovals: number;
+  acceptedDeliverables: number;
   eventCount: number;
   auditVerified: boolean;
   strategyItems: StrategyItem[];
@@ -58,7 +59,7 @@ export function ExecutiveOverview(props: ExecutiveOverviewProps) {
         </Panel>
         <Panel title="DECISIONS" width={props.compact ? 24 : 28}>
           <Text>{props.pendingApprovals} pending approvals</Text>
-          <Text>0 deliverables ready</Text>
+          <Text>{props.acceptedDeliverables} validated deliverables</Text>
         </Panel>
       </Box>
 

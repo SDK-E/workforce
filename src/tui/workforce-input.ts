@@ -31,8 +31,7 @@ export function handleContentInput(
   context: ContentInputContext,
 ): void {
   if (matchesKeybinding("create", input, key)) context.forms.openCreate(context.section);
-  else if (matchesKeybinding("edit", input, key))
-    context.forms.openEdit(context.section, Boolean(context.lifecycle.selected));
+  else if (matchesKeybinding("edit", input, key)) requestEdit(context);
   else if (context.lifecycle.handleKey(input)) return;
   else if (isPrevious(input, key)) context.lifecycle.moveSelection(-1);
   else if (isNext(input, key)) context.lifecycle.moveSelection(1);
@@ -70,6 +69,15 @@ interface ContentInputContext {
   setCompany: (company: CompanyRecord) => void;
   setStatusMessage: (message: string) => void;
   cycleTheme: () => void;
+}
+
+function requestEdit(context: ContentInputContext): void {
+  const selected = context.lifecycle.selected;
+  if (context.section === "Conversations" && selected?.kind === "thread") {
+    context.setStatusMessage("Threads support archive and restore here; press n to post a message");
+    return;
+  }
+  context.forms.openEdit(context.section, Boolean(selected));
 }
 
 function requestTaskExecution(context: ContentInputContext): void {

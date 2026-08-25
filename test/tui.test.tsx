@@ -139,6 +139,7 @@ test("conversation view exposes rooms, threads, pins, and message state", () => 
   const frame = view.lastFrame() ?? "";
   assert.match(frame, /Engineering/);
   assert.match(frame, /1 rooms · 1 threads in the primary room/);
+  assert.match(frame, /#Release · thread · open/);
   assert.match(frame, /◆ arm: Evidence attached \(edited\)/);
   view.unmount();
 });

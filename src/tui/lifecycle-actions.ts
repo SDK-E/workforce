@@ -3,12 +3,14 @@ import type { OrganizationUnitKind } from "../organizations/organization-types.j
 import type { StrategyItemKind } from "../strategy/strategy-types.js";
 import { applyBusinessLifecycleAction, businessLifecycleTargets } from "./business-lifecycle.js";
 import { incidentLifecycleTargets } from "./governance-lifecycle.js";
+import { registryLifecycleTargets } from "./registry-lifecycle.js";
 
 export interface LifecycleTarget {
   kind:
     | "company"
     | "employee"
     | "room"
+    | "thread"
     | "meeting"
     | "model"
     | "organization"
@@ -34,6 +36,7 @@ export interface LifecycleTarget {
   status: string;
   projectId?: string;
   lifecycleMutable?: boolean;
+  lifecycleNote?: string;
 }
 
 export interface LifecycleData {
@@ -46,6 +49,7 @@ export interface LifecycleData {
   companies: ReturnType<StateStore["companies"]>;
   employees: ReturnType<StateStore["employees"]>;
   rooms: ReturnType<StateStore["conversations"]["roomList"]>;
+  threads: ReturnType<StateStore["conversations"]["threads"]["list"]>;
   meetings: ReturnType<StateStore["meetings"]["list"]>;
   models: ReturnType<StateStore["models"]["list"]>;
   approvals: ReturnType<StateStore["approvalsRepository"]["list"]>;
@@ -80,12 +84,20 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       status: item.status,
     }));
   if (section === "Conversations")
-    return data.rooms.map((item) => ({
-      kind: "room",
-      id: item.id,
-      label: `${item.name} · ${item.kind}`,
-      status: item.status,
-    }));
+    return [
+      ...data.rooms.map((item) => ({
+        kind: "room" as const,
+        id: item.id,
+        label: `${item.name} · ${item.kind}`,
+        status: item.status,
+      })),
+      ...data.threads.map((item) => ({
+        kind: "thread" as const,
+        id: item.id,
+        label: `${item.title} · thread`,
+        status: item.status,
+      })),
+    ];
   if (section === "Meetings")
     return data.meetings.map((item) => ({
       kind: "meeting",
@@ -99,6 +111,7 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       id: item.id,
       label: `${item.subjectType} · ${item.subjectId}`,
       status: item.status,
+      lifecycleMutable: false,
     }));
   if (section === "Agent Resources")
     return data.hiringProposals.map((item) => ({
@@ -106,6 +119,7 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       id: item.id,
       label: `${item.blueprint.employee.title} · ${item.jobId}`,
       status: item.status,
+      lifecycleMutable: false,
     }));
   if (section === "Mail")
     return data.mail.map((item) => ({
@@ -122,27 +136,8 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       label: `${item.subjectId} · ${item.predicate}`,
       status: item.status,
     }));
-  if (section === "Models & engines")
-    return data.models.map((item) => ({
-      kind: "model",
-      id: item.id,
-      label: `${item.engine} · ${item.model}`,
-      status: item.health,
-    }));
-  if (section === "Tools")
-    return data.tools.map((item) => ({
-      kind: "tool",
-      id: item.id,
-      label: `${item.id} · ${item.provider}`,
-      status: item.health,
-    }));
-  if (section === "Environments")
-    return data.environments.map((item) => ({
-      kind: "environment",
-      id: item.id,
-      label: `${item.name} · ${item.sandboxImage}`,
-      status: item.health,
-    }));
+  const registryTargets = registryLifecycleTargets(section, data);
+  if (registryTargets) return registryTargets;
   const organizationKinds = organizationSectionKinds(section);
   if (organizationKinds)
     return data.organizationUnits
@@ -226,6 +221,13 @@ export function applyLifecycleAction(
         announcement: room.announcement,
         status: restore ? "active" : "archived",
       },
+      actorId,
+    );
+  } else if (target.kind === "thread") {
+    store.conversations.threads.setStatus(
+      companyId,
+      target.id,
+      restore ? "open" : "archived",
       actorId,
     );
   } else if (target.kind === "meeting") {

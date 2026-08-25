@@ -35,22 +35,26 @@ must not receive ANSI color styling. Cursor-control sequences remain necessary f
 | Key                 | Action                                    |
 | ------------------- | ----------------------------------------- |
 | `Tab` / `Shift-Tab` | Move between sidebar and main panel       |
-| `Up` / `Down`       | Move within the focused area              |
+| `Up` / `Down`       | Move within the focused area (`k`/`j` too) |
 | `Left` / `Right`    | Change sidebar area or main-panel tab     |
 | `Enter`             | Open or confirm                           |
 | `Esc`               | Close a popup or go back                  |
-| `/` or `Ctrl-P`     | Find and open any page                    |
+| `/`, `p`, or `Ctrl-P` | Find and open any page                  |
 | `[` / `]`           | Select the previous or next record        |
 | `n`                 | Create a record                           |
 | `e`                 | Edit or decide the selected record        |
 | `d` / `u`           | Archive or restore a record               |
 | `r`                 | Run the selected ready task               |
 | `v`                 | Verify a supported platform configuration |
+| `Space`             | Toggle one choice in multi-select forms   |
+| `y`                 | Confirm inside a confirmation popup       |
 | `Ctrl-B`            | Hide or show the sidebar                  |
 | `Ctrl-,`            | Open settings                             |
 | `?`                 | Show keyboard help                        |
 | `!`                 | Emergency-stop agent execution            |
 | `q`                 | Close the TUI safely                      |
+
+On **Settings**, `t` cycles the color theme for this session.
 
 Workforce asks for confirmation before consequential actions. Deleting from the TUI normally archives the record so its history remains available and it can be restored.
 
@@ -93,7 +97,8 @@ Use `n`, `e`, `d`, and `u` consistently to create, edit, archive, and restore th
   asks whether to create a room, a thread in a named active room, a human-authored message, or an
   immutable attachment reference; messages can target the room timeline or an open thread. Attachment
   registration requires existing artifact metadata (filename, media type, size, SHA-256, and URI) and
-  never reads an arbitrary host file into the control plane.
+  never reads an arbitrary host file into the control plane. Rooms and threads are listed as rows:
+  `d` archives the selected room or thread (closing it to new messages) and `u` restores it.
 - **Approvals** contains actions waiting for human authority.
 - **Agent Resources** shows hiring and workforce proposals from the ARM.
 - **Performance**, **Recognition**, and **Warnings & incidents** hold evidence-backed workforce records.

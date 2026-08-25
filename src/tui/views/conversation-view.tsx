@@ -17,7 +17,7 @@ export function ConversationView({
 }: ConversationViewProps) {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
-      <Text bold>Conversation rooms</Text>
+      <Text bold>Conversation rooms and threads</Text>
       <Text dimColor>
         {rooms.length} rooms · {threads.length} threads in the primary room
       </Text>
@@ -25,6 +25,16 @@ export function ConversationView({
         <Text key={room.id} inverse={index === selectedRow} dimColor={room.status === "archived"}>
           {index === selectedRow ? "›" : " "} {room.name} · {room.kind} · {room.status}
           {room.retentionDays ? ` · ${room.retentionDays}d retention` : ""}
+        </Text>
+      ))}
+      {threads.map((thread, index) => (
+        <Text
+          key={thread.id}
+          inverse={rooms.length + index === selectedRow}
+          dimColor={thread.status !== "open"}
+        >
+          {rooms.length + index === selectedRow ? "›" : " "} #{thread.title} · thread ·{" "}
+          {thread.status}
         </Text>
       ))}
       <Text bold>Primary room messages</Text>
@@ -40,7 +50,7 @@ export function ConversationView({
         ))
       )}
       <Text dimColor>
-        n create room · e edit · d archive/restore · CEO office composes messages
+        n create room · e edit · d archive/restore rooms and threads · CEO office composes messages
       </Text>
     </Box>
   );

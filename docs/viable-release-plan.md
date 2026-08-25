@@ -45,7 +45,7 @@ This is a reduced path to a viable release, not a reduction of the product ident
 
 - Business pipeline MCP, viable CEO commercial autonomy, and ARM reinforcement are implemented.
 - The full local quality gate currently passes formatting, typed lint, Knip dead-code analysis,
-  compilation, migrations, and **100 tests**.
+  compilation, migrations, and **101 tests**.
 - Human forms now generate company/model/MCP/tool/environment IDs; infer company, actor, timestamps,
   approval targets, and safe defaults; and select company-scoped relationships by readable names.
   This covers organization, strategy, business, governance, meetings, automations, project
@@ -72,6 +72,14 @@ This is a reduced path to a viable release, not a reduction of the product ident
 - Claim creation now selects readable company-scoped employees, tasks, strategy, opportunities, leads,
   clients, or engagements instead of asking the operator for a raw subject ID. Evidence references
   remain explicit because they are the governed basis of the claim.
+- The page/action audit is closed. The executive overview reports the real validated deliverable
+  count instead of a hardcoded zero. Approvals, hiring proposals, models, tools, and environments now
+  refuse archive/restore before any confirmation dialog with an explicit explanation (governed
+  decision workflow, retained execution history, or registry management through Edit and
+  verification). Conversations lists rooms and primary-room threads as one selectable row set;
+  `d`/`u` archive and restore both, closing threads to new messages; pressing `e` on a thread
+  explains that threads support archive/restore only. The getting-started guide documents every
+  configured key including `k`/`j`, `p`, `Space`, `y`, `t`, and thread archival.
 
 ## What to defer until after the viable release
 
@@ -99,10 +107,11 @@ Do not defer Docker isolation, company isolation, scoped credentials, audit inte
 
 ## Slice 1 — Close the human operating workflow
 
-**Implementation status:** in progress. Navigation/focus, configured keys/themes, opaque dialogs,
-contextual guidance, simplified human-facing forms, business/governance workflows, durable timelines,
-and the compiled operator journey exist. The remaining work is the broader interaction/action audit
-and guide parity listed below.
+**Implementation status:** complete. Navigation/focus, configured keys/themes, opaque dialogs,
+contextual guidance, simplified human-facing forms, business/governance workflows, durable
+timelines, the compiled operator journey, page/action audit, archive/restore coverage including
+threads, pre-confirmation lifecycle refusals, and exact getting-started-guide parity are done and
+tested.
 
 ### Outcome
 

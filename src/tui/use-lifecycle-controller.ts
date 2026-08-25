@@ -38,7 +38,10 @@ export function useLifecycleController(input: {
     const selected = targets[rowIndex];
     if (!selected) input.onStatus(`No manageable record is selected in ${input.section}`);
     else if (selected.lifecycleMutable === false)
-      input.onStatus(`${selected.label} uses its governed decision workflow; press Edit`);
+      input.onStatus(
+        selected.lifecycleNote ??
+          `${selected.label} uses its governed decision workflow; press Edit`,
+      );
     else if (action === "archive" && lifecycleVerb(selected) === "restore")
       input.onStatus(`${selected.label} is already archived; use Restore instead`);
     else if (action === "restore" && lifecycleVerb(selected) === "archive")
