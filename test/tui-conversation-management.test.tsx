@@ -8,7 +8,7 @@ import { StateStore } from "../src/storage/state-store.js";
 import { CreateOverlay } from "../src/tui/overlays/create-overlay.js";
 import { createFormForSection } from "../src/tui/overlays/form-routing.js";
 
-test("Conversations creates named threads and thread-scoped human messages", async () => {
+test("Conversations creates threads, scoped messages, and attachment references", async () => {
   const root = mkdtempSync(join(tmpdir(), "workforce-tui-conversations-"));
   const store = new StateStore(root);
   try {
@@ -44,8 +44,30 @@ test("Conversations creates named threads and thread-scoped human messages", asy
     assert.equal(message.authorId, "human");
     assert.equal(message.threadId, thread.id);
     assert.equal(message.body, "Validator evidence is ready");
-    assert.ok(store.verifyAuditChain());
     messageView.unmount();
+
+    const attachmentView = renderOverlay(store, company);
+    for (let index = 0; index < 3; index += 1) await send(attachmentView, "\u001B[B");
+    await send(attachmentView, "\r");
+    await send(attachmentView, "\r");
+    await send(attachmentView, "report.json");
+    await send(attachmentView, "\r");
+    await send(attachmentView, "\r");
+    await send(attachmentView, "42");
+    await send(attachmentView, "\r");
+    await send(attachmentView, "a".repeat(64));
+    await send(attachmentView, "\r");
+    await send(attachmentView, "reports/release");
+    await send(attachmentView, "\r");
+    await send(attachmentView, "\r");
+    const attachment = store.conversations.attachments.list("acme", message.id)[0];
+    assert.ok(attachment);
+    assert.equal(attachment.filename, "report.json");
+    assert.equal(attachment.mediaType, "application/octet-stream");
+    assert.equal(attachment.sizeBytes, 42);
+    assert.equal(attachment.artifactUri, "artifact://reports/release");
+    assert.ok(store.verifyAuditChain());
+    attachmentView.unmount();
   } finally {
     store.close();
     rmSync(root, { recursive: true, force: true });

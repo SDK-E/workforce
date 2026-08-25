@@ -90,8 +90,10 @@ Use `n`, `e`, `d`, and `u` consistently to create, edit, archive, and restore th
 ## Work with agents and decisions
 
 - **Conversations**, **Mail**, and **Meetings** hold company communication. On Conversations, `n`
-  asks whether to create a room, a thread in a named active room, or a human-authored message; messages
-  can target the room timeline or an open thread.
+  asks whether to create a room, a thread in a named active room, a human-authored message, or an
+  immutable attachment reference; messages can target the room timeline or an open thread. Attachment
+  registration requires existing artifact metadata (filename, media type, size, SHA-256, and URI) and
+  never reads an arbitrary host file into the control plane.
 - **Approvals** contains actions waiting for human authority.
 - **Agent Resources** shows hiring and workforce proposals from the ARM.
 - **Performance**, **Recognition**, and **Warnings & incidents** hold evidence-backed workforce records.

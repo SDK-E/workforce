@@ -8,8 +8,9 @@ import { ConversationMutationOverlay } from "./conversation-mutation-overlay.js"
 import { FormFrame } from "./form-frame.js";
 import { MessageForm } from "./message-form.js";
 import { ThreadForm } from "./thread-form.js";
+import { AttachmentForm } from "./attachment-form.js";
 
-type ConversationKind = "room" | "thread" | "message";
+type ConversationKind = "room" | "thread" | "message" | "attachment";
 
 export function ConversationCreateOverlay(props: {
   company: CompanyRecord;
@@ -26,6 +27,9 @@ export function ConversationCreateOverlay(props: {
   const threads = rooms.flatMap((room) =>
     props.store.conversations.threads.list(props.company.id, room.id),
   );
+  const messages = rooms.flatMap(
+    (room) => props.store.conversations.messagePage(props.company.id, room.id).items,
+  );
   if (!kind)
     return (
       <FormFrame
@@ -39,6 +43,7 @@ export function ConversationCreateOverlay(props: {
             { label: "Room", value: "room" as const },
             { label: "Thread", value: "thread" as const },
             { label: "Message", value: "message" as const },
+            { label: "Attachment reference", value: "attachment" as const },
           ]}
           onSelect={(item) => {
             setKind(item.value);
@@ -65,22 +70,39 @@ export function ConversationCreateOverlay(props: {
         }}
       />
     );
+  if (kind === "message")
+    return (
+      <MessageForm
+        rooms={rooms}
+        threads={threads}
+        terminalWidth={props.terminalWidth}
+        onCancel={props.onClose}
+        onSubmit={(input) => {
+          props.finish(() => {
+            props.store.addMessage(
+              props.company.id,
+              input.roomId,
+              input.authorId,
+              input.body,
+              input.threadId,
+            );
+          }, "Message persisted and audited");
+        }}
+      />
+    );
   return (
-    <MessageForm
-      rooms={rooms}
-      threads={threads}
+    <AttachmentForm
+      messages={messages}
       terminalWidth={props.terminalWidth}
       onCancel={props.onClose}
       onSubmit={(input) => {
         props.finish(() => {
-          props.store.addMessage(
-            props.company.id,
-            input.roomId,
-            input.authorId,
-            input.body,
-            input.threadId,
-          );
-        }, "Message persisted and audited");
+          props.store.conversations.createAttachment({
+            companyId: props.company.id,
+            ...input,
+            createdBy: "human",
+          });
+        }, "Attachment reference registered and audited");
       }}
     />
   );

@@ -92,7 +92,11 @@ The conversation application service composes separate room, thread, message, an
 
 Agent mail crosses the sandbox boundary without exposing the control-plane database. A task granted `workforce-mail` receives a bounded immutable inbox snapshot. It may emit a `workforce-mail-outbox.json` artifact; only after archive validation and secret scanning does the control plane validate its schema, enforce the attempt employee as sender, re-check company-scoped recipients, and persist the messages with audit events.
 
-Conversation rooms are managed records rather than implicit UI state. The Conversations area provides selected-row creation, editing, archival, and restoration for room names, kinds, announcements, and retention policies; the CEO office remains the focused message composer. Threads, memberships, messages, pins, redactions, and attachments retain company and room isolation.
+Conversation rooms are managed records rather than implicit UI state. The Conversations area provides
+selected-row editing, archival, and restoration for room configuration plus a creation chooser for
+rooms, threads, messages, and immutable attachment references. Human authorship is inferred and
+relationships are selected by readable labels. Memberships, messages, pins, redactions, and attachments
+retain company and room isolation.
 
 ## No host fallback
 

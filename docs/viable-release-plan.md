@@ -65,9 +65,10 @@ This is a reduced path to a viable release, not a reduction of the product ident
   fail visibly instead of silently falling through to Advanced diagnostics.
 - The bottom bar explicitly labels immutable evidence, audit, readiness, runtime, and diagnostics
   pages as read-only, and the executive overview advertises its configured left/right panel controls.
-- Conversations now offers an explicit room/thread/message creation chooser. Thread and room
-  relationships use named selectors, human authorship is inferred, and messages can target an open
-  thread without requesting internal IDs.
+- Conversations now offers an explicit room/thread/message/attachment creation chooser. Thread, room,
+  and message relationships use named selectors, human authorship is inferred, and messages can target
+  an open thread without requesting internal IDs. Attachment registration accepts validated artifact
+  metadata and never imports arbitrary host files.
 
 ## What to defer until after the viable release
 
