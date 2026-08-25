@@ -1,10 +1,13 @@
-# Workforce issue ledger
+# Workforce tracking ledger
 
-Running log of real issues observed while developing or operating Workforce.
-Every entry records evidence and status. Update an entry's status in the same slice that changes it;
-never delete entries — close them with the commit that fixed them.
+Single source of truth for defects, observations, and deferred/user-reported follow-ups.
+Update an entry's status in the same slice that changes it; never delete entries — close them with
+the commit that fixed them. Slice status and test counts live in docs/viable-release-plan.md.
 
-Statuses: OPEN · IN PROGRESS · FIXED (<commit>) · WONTFIX (reason) · DEFERRED (link)
+Statuses: OPEN · IN PROGRESS · FIXED (<commit>) · WONTFIX (reason) · DEFERRED (reason)
+
+Pick deferred items only when explicitly told to. NEVER stray from your current task to work a
+deferred item unless the user says "STOP"; defer new requests here until your todo list is done.
 
 ---
 
@@ -16,16 +19,7 @@ Statuses: OPEN · IN PROGRESS · FIXED (<commit>) · WONTFIX (reason) · DEFERRE
   build at 471,129,730 bytes, so cleanup regressed or was skipped in the last local build.
 - Impact: release blocker for Slice 2; every boundary test inherits the oversized image.
 - Next: rebuild via `scripts/build-images.sh`, run `scripts/verify-image-cleanup.sh`, inspect layer
-  caches if still large, re-run size gate.
-
-### BUG-002 First operating cycle blocks forever without actionable guidance — FIXED (2026-08-25)
-- Was: blocked autonomy rendered "blocked · 60s cadence" with no reason; no first-run guidance after
-  company creation; operator could not tell why nothing executed.
-- Fix: readiness autonomy check now renders the latest CEO cycle failureReason ("Blocked · <reason> ·
-  retrying every Ns"); executive overview shows a Getting started checklist until model configured,
-  verified, work described, and a deliverable produced; overview and CEO office state that
-  identities persist while containers run only during attempts. Bootstrap-task option remains
-  deferred in WORKFORWARD.md.
+  caches if still large, re-run size gate (`pnpm images:verify-size`).
 
 ### BUG-003 TUI input drops letters / overlaps / lags under fast typing
 - Reported 2026-08-25 with screenshot; not reproduced locally yet.
@@ -39,13 +33,16 @@ Statuses: OPEN · IN PROGRESS · FIXED (<commit>) · WONTFIX (reason) · DEFERRE
   volume persistence, timeout cleanup, secret argv hygiene, refill, orphan reconcile, and
   false-completion have no daemon-backed proof.
 - Impact: Slice 2 acceptance cannot be claimed from mocks.
-- Next: add `test/docker-boundary.test.ts` per plan in docs/viable-release-plan.md Slice 2.
+- Next: add `test/docker-boundary.test.ts` covering: hardening flags + non-root uid, read-only root,
+  private volume persistence across containers, timeout cleanup, secret name-only argv, two-attempt
+  refill through ExecaDockerClient, orphan reconcile, stale leases, false-completion (exit 0 without
+  evidence stays incomplete), zero leftover managed containers.
 
 ### OBS-005 Model creation form exposes registry-level fields during onboarding
 - Evidence: model form requests engine/model/provider plus capabilities, roles, secrets, context
   limit, priority… all before the operator has any working agent.
 - Impact: friction; contradicts "easy and seamless" goal.
-- Next (deferred until core flow works): advanced-field toggle or minimal first-run variant.
+- Next: minimal first-run variant with advanced fields hidden behind an explicit toggle.
 
 ## FIXED
 
@@ -72,6 +69,15 @@ Statuses: OPEN · IN PROGRESS · FIXED (<commit>) · WONTFIX (reason) · DEFERRE
 - Fix: Conversations lists rooms and threads as one row set; d/u archives/restores threads; edit on a
   thread explains supported actions. Commits 883ee48.
 
+### FIXED-105 First operating cycle blocked forever without actionable guidance (2026-08-25)
+- Was: blocked autonomy rendered "blocked · 60s cadence" with no reason; no first-run guidance after
+  company creation; operator could not tell why nothing executed.
+- Fix: readiness autonomy check renders the latest CEO cycle failureReason ("Blocked · <reason> ·
+  retrying every Ns"); executive overview shows a Getting started checklist until model configured,
+  verified, work described, and a deliverable produced; overview and CEO office state that
+  identities persist while containers run only during attempts.
+- Commit: d3972ea
+
 ## Observations (accepted behavior, revisit only if requirements change)
 
 ### OBS-006 Mail markRead has no TUI key
@@ -83,10 +89,27 @@ Termination preserves all records; hard-archive of terminated employees stays an
 concern. Intentional per architecture doc.
 
 ### OBS-008 Company budget defaults to 0 and is not enforced
-CEO loop ignores budget today. Field is informational until enforcement ships (WORKFORWARD.md deferred
-list).
+CEO loop ignores budget today. Field is informational until enforcement ships (deferred list below).
 
 ### OBS-009 Docker Desktop reports engine-only containers between attempts
 CEO/ARM are durable employees; attempt containers exist only while tasks execute. Correct per design;
-guide documents it. TUI surfaces should repeat this so operators stop expecting persistent agent
-containers.
+guide documents it. TUI surfaces repeat this so operators stop expecting persistent agent containers.
+
+## Deferred / user-reported follow-ups (pick up only when told)
+
+### D1. Simplified model form
+Hide advanced registry fields (capabilities, roles, secrets, context limit, priority) behind an
+advanced toggle; first-run variant asks engine/model/provider only. See OBS-005.
+
+### D2. Pre-configured free/local model option
+Would seed a provider template; requires explicit user approval because of the
+no-fictional-seeding rule for production defaults.
+
+### D3. Bootstrap task auto-created on first company creation
+Chicken-and-egg breaker for the first agent run; needs product approval before implementation.
+
+### D4. Budget enforcement in the CEO loop
+Budget field currently informational (OBS-008).
+
+### D5. Audited egress proof through workforce-egress-proxy
+Images exist locally; boundary evidence still owed as part of Slice 2.

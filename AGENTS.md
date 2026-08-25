@@ -18,15 +18,17 @@ Everything consequential is audited. The host control plane never runs an agent 
 3. `docs/product-specification.md` — what the product must do and its release gates.
 4. `docs/architecture.md` — trust boundaries, persistence, supervisor, MCP, autonomy design.
 5. `docs/coding-standards.md` — module boundaries and readability rules.
-6. `docs/issues.md` — the bug ledger you must keep accurate.
-7. `WORKFORWARD.md` — deferred/user-reported follow-ups awaiting explicit pick-up. NEVER stray from your current task unless user says "STOP", instead Use this `WORKFORWARD.md` to defer the request until you have finished your todo list, unless instructed by the user otherwise.
+6. `docs/tracking.md` — the single ledger for defects, observations, and deferred/user-reported
+   follow-ups awaiting explicit pick-up. NEVER stray from your current task unless user says "STOP";
+   instead use this file to defer the request until you have finished your todo list, unless
+   instructed by the user otherwise.
 
 ## Issue and follow-up tracking
 
-- Record every real defect you observe in `docs/issues.md` with evidence, impact, and status:
-  OPEN · IN PROGRESS · FIXED (<commit>) · WONTFIX (reason) · DEFERRED (link).
+- Record every real defect you observe in `docs/tracking.md` with evidence, impact, and status:
+  OPEN · IN PROGRESS · FIXED (<commit>) · WONTFIX (reason) · DEFERRED (reason).
 - Update an entry's status in the same commit that fixes or reclassifies it. Never delete entries.
-- Put user-reported ideas that await approval in `WORKFORWARD.md`, not in the slice plan.
+- Put user-reported ideas that await approval in `docs/tracking.md`, not in the slice plan.
 - Slice progress and test counts live only in `docs/viable-release-plan.md`.
 
 ## Non-negotiable invariants
