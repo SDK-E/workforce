@@ -22,6 +22,7 @@ const company: CompanyRecord = {
   values: [],
   policies: { network: "audited-internet" },
   budgetCents: 0,
+  status: "active",
   createdAt: "2026-08-25T00:00:00.000Z",
 };
 const noop = (): undefined => undefined;

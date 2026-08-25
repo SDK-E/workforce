@@ -84,6 +84,21 @@ export class CompanyRepository {
     });
   }
 
+  archive(id: string, actorId = "human"): CompanyRecord {
+    const activeAttempt = this.database.connection
+      .prepare(
+        `SELECT id FROM attempts WHERE company_id=?
+         AND status IN ('queued','starting','running') LIMIT 1`,
+      )
+      .get(id);
+    if (activeAttempt) throw new Error("Stop active company attempts before archiving it");
+    return this.setStatus(id, "archived", actorId);
+  }
+
+  restore(id: string, actorId = "human"): CompanyRecord {
+    return this.setStatus(id, "active", actorId);
+  }
+
   employees(companyId: string): Employee[] {
     const rows = this.database.connection
       .prepare("SELECT * FROM employees WHERE company_id = ? ORDER BY hired_at")
@@ -119,13 +134,18 @@ export class CompanyRepository {
       values: (input.values ?? []).map((value) => sanitizeTerminal(value, 200)),
       policies: input.policies ?? {},
       budgetCents: input.budgetCents ?? 0,
+      status: "active",
       createdAt,
     };
   }
 
   private insert(company: CompanyRecord): void {
     this.database.connection
-      .prepare("INSERT INTO companies VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .prepare(
+        `INSERT INTO companies
+         (id,name,display_name,mission,vision,values_json,policies_json,budget_cents,created_at,status)
+         VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      )
       .run(
         company.id,
         company.name,
@@ -136,6 +156,7 @@ export class CompanyRepository {
         JSON.stringify(company.policies),
         company.budgetCents,
         company.createdAt,
+        company.status,
       );
   }
 
@@ -155,6 +176,46 @@ export class CompanyRepository {
         JSON.stringify(employee.capabilityTags),
         employee.hiredAt,
       );
+  }
+
+  private setStatus(id: string, status: CompanyRecord["status"], actorId: string): CompanyRecord {
+    const current = this.require(id);
+    if (current.status === status) throw new Error(`Company is already ${status}`);
+    const now = new Date().toISOString();
+    const runtime = this.database.connection
+      .prepare("SELECT enabled FROM company_runtime WHERE company_id=?")
+      .get(id) as { enabled: number } | undefined;
+    const archivedState = this.database.connection
+      .prepare("SELECT autonomy_enabled_before_archive AS enabled FROM companies WHERE id=?")
+      .get(id) as { enabled: number | null };
+    const enableOnRestore = archivedState.enabled === null ? true : Boolean(archivedState.enabled);
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare(`UPDATE companies SET status=?,autonomy_enabled_before_archive=? WHERE id=?`)
+        .run(status, status === "archived" ? (runtime?.enabled ?? 0) : null, id);
+      this.database.connection
+        .prepare(
+          `UPDATE company_runtime SET enabled=?,state=?,next_cycle_at=?,updated_at=?
+           WHERE company_id=?`,
+        )
+        .run(
+          status === "active" && enableOnRestore ? 1 : 0,
+          status === "active" && enableOnRestore ? "idle" : "stopped",
+          now,
+          now,
+          id,
+        );
+      if (status === "archived")
+        this.database.connection
+          .prepare(
+            "UPDATE automation_requests SET status='disabled',updated_at=? WHERE company_id=? AND status='approved'",
+          )
+          .run(now, id);
+      this.audit.append(`company.${status}`, actorId, id, {
+        autonomyEnabled: status === "active" && enableOnRestore,
+      });
+    });
+    return { ...current, status };
   }
 
   private durableEmployees(hiredAt: string): Employee[] {
@@ -203,6 +264,7 @@ export class CompanyRepository {
       values: parseJson(row.values_json),
       policies: parseJson(row.policies_json),
       budgetCents: Number(row.budget_cents),
+      status: String(row.status) as CompanyRecord["status"],
       createdAt: String(row.created_at),
     };
   }

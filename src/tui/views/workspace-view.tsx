@@ -87,7 +87,6 @@ interface WorkspaceViewProps {
   runtime: CompanyRuntime | undefined;
   compact: boolean;
   companies: CompanyRecord[];
-  onCompanySelect: (company: CompanyRecord) => void;
   selectedRow: number;
 }
 
@@ -106,7 +105,7 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         company={props.company}
         companies={props.companies}
         compact={props.compact}
-        onSelect={props.onCompanySelect}
+        selectedRow={props.selectedRow}
       />
     );
   if (props.section === "Organization")

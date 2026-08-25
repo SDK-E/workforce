@@ -218,14 +218,20 @@ function CompanyMutationOverlay(
         }}
       />
     );
+  const selectedCompany =
+    props.selectedTarget?.kind === "company"
+      ? props.store.company(props.selectedTarget.id)
+      : undefined;
+  const company = selectedCompany ?? props.company;
   return (
     <CompanyForm
-      company={props.company}
+      company={company}
       terminalWidth={props.terminalWidth}
       onCancel={props.onClose}
       onSubmit={(input) => {
         props.finish(() => {
-          props.onCompanyChange(props.store.updateCompany(input));
+          const updated = props.store.updateCompany(input);
+          if (updated.id === props.company.id) props.onCompanyChange(updated);
         }, "Company configuration saved and audited");
       }}
     />

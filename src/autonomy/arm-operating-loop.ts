@@ -8,7 +8,7 @@ export class ArmOperatingLoop {
   constructor(private readonly store: StateStore) {}
 
   tick(): void {
-    for (const company of this.store.companies())
+    for (const company of this.store.companies().filter(({ status }) => status === "active"))
       for (const task of this.unassignedWork(company.id)) this.staff(task);
   }
 

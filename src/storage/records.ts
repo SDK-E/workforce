@@ -7,6 +7,7 @@ export interface CompanyRecord {
   values: string[];
   policies: Record<string, unknown>;
   budgetCents: number;
+  status: "active" | "archived";
   createdAt: string;
 }
 

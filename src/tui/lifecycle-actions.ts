@@ -3,7 +3,7 @@ import type { OrganizationUnitKind } from "../organizations/organization-types.j
 import type { StrategyItemKind } from "../strategy/strategy-types.js";
 
 export interface LifecycleTarget {
-  kind: "organization" | "strategy" | "task" | "mcp" | "integration" | "automation";
+  kind: "company" | "organization" | "strategy" | "task" | "mcp" | "integration" | "automation";
   id: string;
   label: string;
   status: string;
@@ -17,9 +17,17 @@ export interface LifecycleData {
   mcpServers: ReturnType<StateStore["mcpServers"]["list"]>;
   projectIntegrations: ReturnType<StateStore["projectIntegrations"]["list"]>;
   automations: ReturnType<StateStore["automations"]["list"]>;
+  companies: ReturnType<StateStore["companies"]>;
 }
 
 export function lifecycleTargets(section: string, data: LifecycleData): LifecycleTarget[] {
+  if (section === "Companies")
+    return data.companies.map((item) => ({
+      kind: "company",
+      id: item.id,
+      label: item.displayName,
+      status: item.status,
+    }));
   const organizationKinds = organizationSectionKinds(section);
   if (organizationKinds)
     return data.organizationUnits
@@ -78,7 +86,10 @@ export function applyLifecycleAction(
   actorId = "human",
 ): void {
   const restore = lifecycleVerb(target) === "restore";
-  if (target.kind === "organization") {
+  if (target.kind === "company") {
+    if (restore) store.companiesRepository.restore(target.id, actorId);
+    else store.companiesRepository.archive(target.id, actorId);
+  } else if (target.kind === "organization") {
     if (restore) store.organizationRepository.restore(companyId, target.id, actorId);
     else store.organizationRepository.archive(companyId, target.id, actorId);
   } else if (target.kind === "strategy") {

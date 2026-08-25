@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { Box, Text, useInput } from "ink";
+import { Box, Text } from "ink";
 import type { CompanyRecord } from "../../storage/records.js";
 import { Panel } from "../components/panel.js";
 
@@ -7,48 +6,25 @@ export function CompanyView({
   company,
   companies,
   compact,
-  onSelect,
+  selectedRow,
 }: {
   company: CompanyRecord;
   companies: CompanyRecord[];
   compact: boolean;
-  onSelect: (company: CompanyRecord) => void;
+  selectedRow: number;
 }) {
-  const initial = Math.max(
-    0,
-    companies.findIndex(({ id }) => id === company.id),
-  );
-  const [selected, setSelected] = useState(initial);
-  useEffect(() => {
-    setSelected(
-      Math.max(
-        0,
-        companies.findIndex(({ id }) => id === company.id),
-      ),
-    );
-  }, [companies, company.id]);
-  useInput((input, key) => {
-    if (companies.length === 0) return;
-    if (input === "[")
-      setSelected((current) => (current + companies.length - 1) % companies.length);
-    if (input === "]") setSelected((current) => (current + 1) % companies.length);
-    if (key.return) {
-      const selectedCompany = companies[selected];
-      if (selectedCompany) onSelect(selectedCompany);
-    }
-  });
-  const inspected = companies[selected] ?? company;
+  const inspected = companies[selectedRow] ?? company;
   const networkPolicy =
     typeof inspected.policies.network === "string" ? inspected.policies.network : "deny-by-default";
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>Companies</Text>
-      <Text dimColor>n create · e edit active · [/] inspect · Enter activate</Text>
+      <Text dimColor>n create · e edit · [/] select · Enter activate · d archive · u restore</Text>
       <Box marginTop={1} gap={1} flexDirection={compact ? "column" : "row"}>
         <Panel title="COMPANY LIST" width={compact ? "100%" : "36%"}>
           {companies.map((item, index) => (
-            <Text key={item.id} inverse={index === selected}>
-              {item.id === company.id ? "●" : " "} {item.displayName}
+            <Text key={item.id} inverse={index === selectedRow}>
+              {item.id === company.id ? "●" : " "} [{item.status}] {item.displayName}
             </Text>
           ))}
         </Panel>

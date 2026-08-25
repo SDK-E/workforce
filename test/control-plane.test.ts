@@ -55,6 +55,66 @@ test("company onboarding persists CEO and ARM and enforces isolation", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+test("company archive stops autonomy and automations while restore preserves identity", () => {
+  const { root, state } = store();
+  try {
+    state.initialize();
+    const company = state.createCompany({ id: "acme", name: "Acme" });
+    const automation = state.automations.propose({
+      companyId: company.id,
+      requestedBy: "ceo",
+      title: "Portfolio refresh",
+      trigger: { kind: "interval", everySeconds: 60 },
+      action: {
+        kind: "task",
+        objective: "Refresh portfolio evidence",
+        acceptanceCriteria: ["Evidence is current"],
+      },
+      rationale: "Avoid repeated scheduling",
+      estimatedRunsSaved: 5,
+    });
+    state.automations.decide(company.id, automation.id, "approved", "human", "Validated");
+
+    const archived = state.companiesRepository.archive(company.id);
+    assert.equal(archived.status, "archived");
+    assert.equal(state.autonomy.get(company.id)?.enabled, false);
+    assert.equal(state.autonomy.get(company.id)?.state, "stopped");
+    assert.equal(state.automations.list(company.id)[0]?.status, "disabled");
+    assert.deepEqual(
+      state
+        .employees(company.id)
+        .map(({ id }) => id)
+        .sort(),
+      ["arm", "ceo"],
+    );
+
+    const restored = state.companiesRepository.restore(company.id);
+    assert.equal(restored.status, "active");
+    assert.equal(state.autonomy.get(company.id)?.enabled, true);
+    assert.equal(state.autonomy.get(company.id)?.state, "idle");
+    assert.equal(state.automations.list(company.id)[0]?.status, "disabled");
+    const runtime = state.autonomy.get(company.id);
+    assert.ok(runtime);
+    state.autonomy.configure(
+      company.id,
+      {
+        enabled: false,
+        cadenceSeconds: runtime.cadenceSeconds,
+        monthlyBudgetCents: runtime.monthlyBudgetCents,
+        maxConcurrentAttempts: runtime.maxConcurrentAttempts,
+      },
+      "human",
+    );
+    state.companiesRepository.archive(company.id);
+    state.companiesRepository.restore(company.id);
+    assert.equal(state.autonomy.get(company.id)?.enabled, false);
+    assert.equal(state.autonomy.get(company.id)?.state, "stopped");
+    assert.ok(state.verifyAuditChain());
+  } finally {
+    state.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 test("chat is company scoped and terminal escapes are removed", () => {
   const { root, state } = store();
   try {

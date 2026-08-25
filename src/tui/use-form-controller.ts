@@ -32,7 +32,12 @@ export function useFormController(onStatus: (message: string) => void) {
 }
 
 function requiresSelection(kind: CreateFormKind | null): boolean {
-  return ["organization", "strategy", "task", "mcp-server", "project-integration"].includes(
-    kind ?? "",
-  );
+  return [
+    "company-edit",
+    "organization",
+    "strategy",
+    "task",
+    "mcp-server",
+    "project-integration",
+  ].includes(kind ?? "");
 }

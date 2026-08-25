@@ -93,6 +93,8 @@ export function WorkforceApp({
       setSelectedIndex((current) => moveNavigation(current, -1));
     else if (key.downArrow || input === "j")
       setSelectedIndex((current) => moveNavigation(current, 1));
+    else if (key.return && selectedSection === "Companies")
+      activateSelectedCompany(data.companies[lifecycle.rowIndex], setCompany, setStatusMessage);
     else if (key.return) setStatusMessage(`Opened ${selectedSection}`);
   });
 
@@ -129,7 +131,6 @@ export function WorkforceApp({
         height={height}
         data={data}
         rowIndex={lifecycle.rowIndex}
-        onCompanySelect={setCompany}
       />
 
       <StatusBar message={statusMessage} />
@@ -259,7 +260,6 @@ function WorkforceContent(props: {
   height: number;
   data: WorkspaceData;
   rowIndex: number;
-  onCompanySelect: (company: CompanyRecord) => void;
 }) {
   return (
     <Box flexGrow={1} flexDirection="row">
@@ -282,7 +282,6 @@ function WorkforceContent(props: {
           auditVerified={props.store.verifyAuditChain()}
           docker={props.docker}
           compact={props.compact}
-          onCompanySelect={props.onCompanySelect}
           selectedRow={props.rowIndex}
           {...props.data}
         />
@@ -293,4 +292,17 @@ function WorkforceContent(props: {
 
 function moveNavigation(current: number, offset: number): number {
   return (current + offset + NAVIGATION_SECTIONS.length) % NAVIGATION_SECTIONS.length;
+}
+
+function activateSelectedCompany(
+  selected: CompanyRecord | undefined,
+  activate: (company: CompanyRecord) => void,
+  status: (message: string) => void,
+): void {
+  if (!selected) status("No company is selected");
+  else if (selected.status !== "active") status("Restore the company before activating it");
+  else {
+    activate(selected);
+    status(`Activated ${selected.displayName}`);
+  }
 }
