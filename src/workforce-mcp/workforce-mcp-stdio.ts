@@ -30,6 +30,8 @@ const Config = z.object({
         "deliverable:read",
         "decision:read",
         "audit:read",
+        "business:read",
+        "business:mutate",
         "work:mutate",
         "workforce:manage",
         "company:manage",

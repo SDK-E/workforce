@@ -2,7 +2,9 @@
 
 Start with the documents that match what you are doing:
 
-- [User guide](user-guide.md) — install, configure, operate, and troubleshoot Workforce.
+- [TUI getting-started guide](tui-getting-started.md) — run and operate your first company without developer concepts.
+- [User guide](user-guide.md) — detailed installation, configuration, operation, and troubleshooting.
+- [Viable-release plan and OpenCode handoff](viable-release-plan.md) — remaining slices, acceptance evidence, and copy-ready continuation prompts.
 - [Repository map](repository-map.md) — source ownership and file-placement rules.
 - [TUI customization](tui-customization.md) — focus, keybinding, and theme configuration.
 - [Product specification](product-specification.md) — authoritative product behavior and acceptance scope.

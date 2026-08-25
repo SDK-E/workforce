@@ -10,6 +10,7 @@ import { registerManagementTools } from "./workforce-mcp-management-tools.js";
 import { registerConfigurationTools } from "./workforce-mcp-configuration-tools.js";
 import { registerEmergencyTool } from "./workforce-mcp-emergency-tool.js";
 import type { WorkforceMcpRuntimeActions } from "./workforce-mcp-runtime-actions.js";
+import { registerBusinessTools } from "./workforce-mcp-business-tools.js";
 
 export function createWorkforceMcpServer(
   store: StateStore,
@@ -23,6 +24,7 @@ export function createWorkforceMcpServer(
     ...registerParticipationTools(server, store, principal),
     ...registerWorkTools(server, store, principal),
     ...registerManagementTools(server, store, principal),
+    ...registerBusinessTools(server, store, principal),
     ...registerConfigurationTools(server, store, principal),
     ...registerEmergencyTool(server, store, principal, actions),
     ...(secrets ? registerSecretTools(server, store, secrets, principal) : []),

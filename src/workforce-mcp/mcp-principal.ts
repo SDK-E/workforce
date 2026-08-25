@@ -15,6 +15,8 @@ export type WorkforceMcpCapability =
   | "deliverable:read"
   | "decision:read"
   | "audit:read"
+  | "business:read"
+  | "business:mutate"
   | "work:mutate"
   | "workforce:manage"
   | "company:manage"

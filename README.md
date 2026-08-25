@@ -38,7 +38,7 @@ CEO, ARM, and approved automation loops run every ten seconds while the control 
 - `printf '%s' "$VERCEL_TOKEN" | pnpm secrets:import -- vercel <company> [employee] [task]`
 - `printf '%s' "$VALUE" | pnpm secrets:import -- credential SECRET_NAME <company> [employee] [task]`
 - `pnpm workforce:mcp -- /absolute/path/to/principal-config.json` (company-scoped stdio MCP)
-The daemon persists companies, secrets, audit history, and artifacts in the `workforce-state` named volume. Container-scoped Workforce MCP is operational on its authenticated internal Streamable HTTP endpoint; attempt tokens are short-lived and never persisted.
+  The daemon persists companies, secrets, audit history, and artifacts in the `workforce-state` named volume. Container-scoped Workforce MCP is operational on its authenticated internal Streamable HTTP endpoint; attempt tokens are short-lived and never persisted.
 
 Node.js 22.13–26 and pnpm 10–11 are supported and checked explicitly. Dependency install scripts are denied unless individually allowlisted. The lockfile pins the dependency graph.
 
@@ -57,7 +57,7 @@ Use arrows or `j`/`k` to navigate sections, `[`/`]` to select records, `n` to cr
 
 See [docs/coding-standards.md](docs/coding-standards.md). Formatting, typed linting, the 300-line module boundary, dead-code analysis, compilation, and tests are enforced by `pnpm test`; use `pnpm format` to apply formatting.
 
-Start with the [documentation index](docs/README.md), [user guide](docs/user-guide.md), and [repository map](docs/repository-map.md). Read [docs/architecture.md](docs/architecture.md) for system boundaries, [docs/product-specification.md](docs/product-specification.md) for requirements, [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules, and [SECURITY.md](SECURITY.md) for private vulnerability reporting. The project is available under the [MIT License](LICENSE).
+Start with the [TUI getting-started guide](docs/tui-getting-started.md). The [documentation index](docs/README.md) links the detailed user guide, repository map, architecture, and product specification. See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules and [SECURITY.md](SECURITY.md) for private vulnerability reporting. The project is available under the [MIT License](LICENSE).
 
 Docker Desktop or another compatible Docker daemon must be running before any agent attempt can start.
 

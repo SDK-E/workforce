@@ -152,7 +152,10 @@ function attemptCapabilities(employeeId: string): WorkforceMcpCapability[] {
       "company:manage",
       "emergency:stop",
       "secret:manage",
+      "business:read",
+      "business:mutate",
     ];
-  if (employeeId === "arm") return [...participation, "work:mutate", "workforce:manage"];
+  if (employeeId === "arm")
+    return [...participation, "work:mutate", "workforce:manage", "business:read"];
   return participation;
 }
