@@ -42,6 +42,47 @@ test("model verification requires real probe evidence and redacts scoped secrets
   }
 });
 
+test("failed probes clear prior receipts instead of emitting one", async () => {
+  const root = mkdtempSync(join(tmpdir(), "workforce-model-failed-probe-"));
+  const store = new StateStore(root);
+  try {
+    store.initialize();
+    store.createCompany({ id: "acme", name: "Acme" });
+    const existing = store.models.get("acme", "opencode-default");
+    assert.ok(existing);
+    store.models.save({ ...existing, model: "openai/gpt-5", provider: "openai" });
+    const healthy: ModelProbeRunner = {
+      probe: () => Promise.resolve({ healthy: true, details: { output: "WORKFORCE_MODEL_READY" } }),
+    };
+    const verified = await new ModelVerifier(store.models, healthy, () => ({})).verify(
+      "acme",
+      "opencode-default",
+      "human",
+    );
+    assert.ok(verified.verifiedAt);
+    assert.ok(verified.verificationReceiptId);
+    const failing: ModelProbeRunner = {
+      probe: () =>
+        Promise.resolve({
+          healthy: false,
+          details: { exitCode: 1, output: "provider unreachable", failureClass: "startup-failed" },
+        }),
+    };
+    const failed = await new ModelVerifier(store.models, failing, () => ({})).verify(
+      "acme",
+      "opencode-default",
+      "human",
+    );
+    assert.equal(failed.health, "unavailable");
+    assert.equal(failed.verifiedAt, null);
+    assert.equal(failed.verificationReceiptId, null);
+    assert.equal(failed.failureClass, "startup-failed");
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("healthy model state cannot be forged without a receipt", () => {
   const root = mkdtempSync(join(tmpdir(), "workforce-model-receipt-"));
   const store = new StateStore(root);

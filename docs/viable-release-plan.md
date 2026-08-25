@@ -45,7 +45,7 @@ This is a reduced path to a viable release, not a reduction of the product ident
 
 - Business pipeline MCP, viable CEO commercial autonomy, and ARM reinforcement are implemented.
 - The full local quality gate currently passes formatting, typed lint, Knip dead-code analysis,
-  compilation, migrations, and **101 tests**.
+  compilation, migrations, and **102 tests**.
 - Human forms now generate company/model/MCP/tool/environment IDs; infer company, actor, timestamps,
   approval targets, and safe defaults; and select company-scoped relationships by readable names.
   This covers organization, strategy, business, governance, meetings, automations, project

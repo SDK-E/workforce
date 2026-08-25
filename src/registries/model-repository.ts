@@ -73,20 +73,21 @@ export class ModelRepository {
   ): ModelRecord {
     const current = this.get(companyId, id);
     if (!current) throw new Error(`Unknown model: ${id}`);
-    const receiptId = randomUUID();
+    const verifiedAt = healthy ? new Date().toISOString() : null;
+    const verificationReceiptId = healthy ? randomUUID() : null;
     const record = this.save(
       {
         ...current,
         health: healthy ? "healthy" : "unavailable",
-        verifiedAt: new Date().toISOString(),
-        verificationReceiptId: receiptId,
+        verifiedAt,
+        verificationReceiptId,
         failureClass: healthy ? null : failureClass(details),
       },
       actorId,
     );
     this.audit.append("model.verification-recorded", actorId, companyId, {
       modelId: id,
-      receiptId,
+      receiptId: verificationReceiptId,
       healthy,
       details,
     });
