@@ -21,6 +21,7 @@ export interface AttemptCompletionProcessor {
 export class DockerSupervisor {
   readonly ownerId = randomUUID();
   private readonly running = new Map<string, Promise<void>>();
+  private readonly interrupted = new Set<string>();
   private stopped = false;
 
   constructor(
@@ -89,6 +90,7 @@ export class DockerSupervisor {
   async emergencyStop(actorId: string): Promise<void> {
     this.stopped = true;
     const active = this.attempts.active();
+    for (const attempt of active) this.interrupted.add(attempt.id);
     await Promise.all(active.map((attempt) => this.docker.stop(attempt.containerName)));
     for (const attempt of active)
       this.attempts.setStatus(attempt.id, "interrupted", {
@@ -98,6 +100,19 @@ export class DockerSupervisor {
       this.audit.append("supervisor.emergency-stop", actorId, companyId, {
         attempts: active.map(({ id }) => id),
       });
+  }
+
+  async emergencyStopCompany(companyId: string, actorId: string): Promise<void> {
+    const active = this.attempts.active().filter((attempt) => attempt.companyId === companyId);
+    for (const attempt of active) this.interrupted.add(attempt.id);
+    await Promise.all(active.map((attempt) => this.docker.stop(attempt.containerName)));
+    for (const attempt of active)
+      this.attempts.setStatus(attempt.id, "interrupted", {
+        reason: `Company emergency stop by ${actorId}`,
+      });
+    this.audit.append("supervisor.company-emergency-stop", actorId, companyId, {
+      attempts: active.map(({ id }) => id),
+    });
   }
 
   async reconcile(): Promise<{ recoveredLeases: string[]; removedOrphans: string[] }> {
@@ -141,12 +156,14 @@ export class DockerSupervisor {
         secrets,
         attempt.environment,
       );
+      if (this.interrupted.has(attempt.id)) return;
       await this.recordResult(attempt, result, secrets);
     } catch (error) {
       const reason = error instanceof Error ? error.message : "Unknown Docker failure";
       this.attempts.setStatus(attempt.id, "infrastructure-blocked", { reason });
       await this.docker.stop(attempt.containerName);
     } finally {
+      this.interrupted.delete(attempt.id);
       this.revokeEphemeralSecrets?.(attempt);
     }
   }

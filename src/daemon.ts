@@ -18,6 +18,10 @@ const mcp = new WorkforceMcpHttpService(
     allowedHosts: ["workforce-engine"],
   },
   runtime.secrets,
+  {
+    emergencyStopCompany: (companyId, actorId) =>
+      runtime.supervisor.emergencyStopCompany(companyId, actorId),
+  },
 );
 const api = new ControlApi(runtime, controlToken, "0.0.0.0", 7789);
 

@@ -44,13 +44,24 @@ test("CEO MCP management is idempotent, company scoped, capability filtered, and
   store.createCompany({ id: "managed-co", name: "Managed" });
   store.createCompany({ id: "other-co", name: "Other" });
   insertTestEmployee(store);
-  const server = createWorkforceMcpServer(store, {
-    id: "ceo-management-session",
-    role: "ceo",
-    companyIds: ["managed-co"],
-    employeeId: "ceo",
-    capabilities: ["work:mutate", "workforce:manage"],
-  });
+  const emergencyStops: string[] = [];
+  const server = createWorkforceMcpServer(
+    store,
+    {
+      id: "ceo-management-session",
+      role: "ceo",
+      companyIds: ["managed-co"],
+      employeeId: "ceo",
+      capabilities: ["work:mutate", "workforce:manage", "company:manage", "emergency:stop"],
+    },
+    undefined,
+    {
+      emergencyStopCompany: (companyId) => {
+        emergencyStops.push(companyId);
+        return Promise.resolve();
+      },
+    },
+  );
   const client = new Client({ name: "management-test", version: "1" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   try {
@@ -59,6 +70,7 @@ test("CEO MCP management is idempotent, company scoped, capability filtered, and
     const tools = await client.listTools();
     assert.ok(tools.tools.some(({ name }) => name === "create_objective"));
     assert.ok(tools.tools.some(({ name }) => name === "transition_employment"));
+    assert.ok(tools.tools.some(({ name }) => name === "configure_registry"));
     assert.ok(!tools.tools.some(({ name }) => name === "get_secret"));
 
     const objective = {
@@ -124,6 +136,13 @@ test("CEO MCP management is idempotent, company scoped, capability filtered, and
       job: hireJob,
     });
     assert.equal(store.employment.proposalList("managed-co").length, 1);
+    await exerciseConfiguration(client, store);
+    await requestTwice(client, "emergency_stop", {
+      companyId: "managed-co",
+      idempotencyKey: "emergency-stop-1",
+      rationale: "Immediate containment",
+    });
+    assert.deepEqual(emergencyStops, ["managed-co"]);
 
     const durableDenied = await client.callTool({
       name: "transition_employment",
@@ -166,6 +185,15 @@ async function callOk(
   assert.equal(result.isError, undefined, JSON.stringify(result.content));
 }
 
+async function requestTwice(
+  client: Client,
+  name: string,
+  arguments_: Record<string, unknown>,
+): Promise<void> {
+  await callOk(client, name, arguments_);
+  await callOk(client, name, arguments_);
+}
+
 function insertTestEmployee(store: StateStore): void {
   store.db
     .prepare("INSERT INTO employees VALUES (?,?,?,?,?,?,?,?,?,?,?)")
@@ -182,4 +210,41 @@ function insertTestEmployee(store: StateStore): void {
       "[]",
       new Date().toISOString(),
     );
+}
+
+async function exerciseConfiguration(client: Client, store: StateStore): Promise<void> {
+  await callOk(client, "configure_room", {
+    companyId: "managed-co",
+    idempotencyKey: "room-create-001",
+    mutation: { action: "create", name: "Delivery", kind: "project" },
+  });
+  const room = store.conversations.rooms.list("managed-co").find(({ name }) => name === "Delivery");
+  assert.ok(room);
+  await callOk(client, "configure_room", {
+    companyId: "managed-co",
+    idempotencyKey: "room-member-001",
+    mutation: { action: "add-member", roomId: room.id, employeeId: "worker", role: "member" },
+  });
+  assert.equal(store.conversations.rooms.memberships("managed-co", "worker").length, 1);
+  await callOk(client, "configure_registry", {
+    companyId: "managed-co",
+    idempotencyKey: "registry-model-1",
+    mutation: {
+      registry: "model",
+      record: {
+        id: "delivery-model",
+        engine: "opencode",
+        model: "provider/model",
+        provider: "provider",
+        capabilities: ["coding"],
+        supportedRoles: ["employee"],
+        secretRequirements: ["MODEL_TOKEN"],
+        contextLimit: 100_000,
+        freePreferred: false,
+        localModel: false,
+        priority: 50,
+      },
+    },
+  });
+  assert.equal(store.models.get("managed-co", "delivery-model")?.health, "unknown");
 }

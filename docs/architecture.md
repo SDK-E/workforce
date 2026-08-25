@@ -62,6 +62,8 @@ Docker attempts declare encrypted persistent secrets and ephemeral control-plane
 
 The scoped MCP secret broker exposes metadata listing plus explicit fetch, set, and removal tools. Employee attempts are restricted to secret scopes matching both their employee and task claims; they cannot broaden newly created or updated records. CEO principals have complete secret authority inside their company only. Secret operations audit names, scopes, actors, and operation types without recording values.
 
+Administrative MCP handlers call the same strategy, task, approval, employment, conversation, and registry services as the TUI. Idempotency records bind each principal, operation, key, and request digest, making exact retries safe while rejecting changed-request replay. Registry configuration cannot self-assert health. Runtime actions are injected separately from storage services: the MCP emergency action invokes a company-filtered supervisor stop, while the authenticated human control API owns the global stop.
+
 ## Acceptance
 
 Container completion is only an attempt result. Independent control-plane validation checks required outputs, manifests, tests, policy violations, step exhaustion, permission failures, and acceptance criteria before a task can close.

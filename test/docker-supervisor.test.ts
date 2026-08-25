@@ -125,6 +125,51 @@ test("supervisor runs two attempts, queues the third, refills capacity, and clea
   }
 });
 
+test("company emergency stop interrupts only that company's attempts", async () => {
+  const root = mkdtempSync(join(tmpdir(), "workforce-company-stop-"));
+  const store = new StateStore(root);
+  try {
+    store.initialize();
+    store.createCompany({ id: "first", name: "First" });
+    store.createCompany({ id: "second", name: "Second" });
+    const docker = new FakeDockerClient();
+    const supervisor = new DockerSupervisor(
+      store.attempts,
+      docker,
+      store.audit,
+      undefined,
+      (running) => ({ totalMemoryMb: 16_000, availableMemoryMb: 8_000, running }),
+    );
+    for (const companyId of ["first", "second"])
+      supervisor.enqueue({
+        id: `${companyId}-attempt`,
+        companyId,
+        taskId: `${companyId}-task`,
+        employeeId: "ceo",
+        sandbox: {
+          ...sandbox,
+          workspace: { type: "volume", name: `${companyId}-volume` },
+        },
+        command: ["opencode", "run", "--model", "openai/gpt-5", "Complete task"],
+        secretNames: [],
+        ephemeralSecretNames: [],
+      });
+    await supervisor.tick();
+    await until(() => docker.starts.length === 2);
+    await supervisor.emergencyStopCompany("first", "first-ceo");
+    await until(() => store.attempts.get("first-attempt").status === "interrupted");
+    assert.equal(store.attempts.get("second-attempt").status, "running");
+    assert.deepEqual(docker.stops, ["workforce-first-attempt"]);
+    docker.complete("second-attempt");
+    await supervisor.waitForIdle();
+    assert.equal(store.attempts.get("first-attempt").status, "interrupted");
+    assert.equal(store.attempts.get("second-attempt").status, "succeeded");
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("supervisor redacts injected secrets before persisting container output", async () => {
   const root = mkdtempSync(join(tmpdir(), "workforce-redaction-"));
   const store = new StateStore(root);

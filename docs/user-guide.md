@@ -105,6 +105,8 @@ An agent can coordinate through joined rooms, mail, and meetings; checkpoint ass
 
 CEO and ARM sessions discover management tools only when their signed capabilities allow them. The CEO can create measurable objectives and governed tasks, decide approvals, and delegate assignments. Workforce managers can assign work, request adaptive gap analysis and probationary hiring proposals, and apply valid employment-machine transitions. MCP cannot transition the durable CEO or ARM identity, cross company boundaries, or bypass an invalid lifecycle transition.
 
+Company management authority can create and configure rooms, add validated company employees as members, and configure tool, environment, and model registry records. New or changed registry records always return to `unknown` health; only the independent Docker verifier can issue a health receipt. A CEO emergency stop is company-scoped and interrupts only that company's active attempts. The human TUI/control API emergency stop remains global.
+
 ## 7. Recovery and safety
 
 `pnpm stop` stops the daemon but preserves `workforce-state`; the next `pnpm start` reuses the database, encrypted secrets, artifacts, and control identity. On startup, Workforce expires stale leases and reconciles managed containers. `pnpm reset` is intentionally destructive: it stops the stack and removes the named state volume, deleting every company and its history. Use `pnpm doctor` for Docker/image readiness and `pnpm sandbox:verify` for isolation checks. Emergency stop interrupts managed attempts without deleting task, employee, message, artifact, or audit history.
