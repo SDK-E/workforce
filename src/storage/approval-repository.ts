@@ -7,6 +7,7 @@ import {
   type ApprovalEvent,
   type ApprovalStatus,
 } from "../governance/approval-machine.js";
+import { sanitizeTerminal } from "./sanitize-terminal.js";
 
 export interface ApprovalRecord {
   id: string;
@@ -28,7 +29,13 @@ export class ApprovalRepository {
     private readonly audit: AuditRepository,
   ) {}
 
-  request(companyId: string, subjectType: string, subjectId: string, requestedBy: string): string {
+  request(
+    companyId: string,
+    subjectType: string,
+    subjectId: string,
+    requestedBy: string,
+    rationale = "",
+  ): string {
     this.companies.require(companyId);
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -36,10 +43,18 @@ export class ApprovalRepository {
       this.database.connection
         .prepare(
           `INSERT INTO approvals
-        (id, company_id, subject_type, subject_id, requested_by, status, created_at)
-        VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
+        (id, company_id, subject_type, subject_id, requested_by, status, rationale, created_at)
+        VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`,
         )
-        .run(id, companyId, subjectType, subjectId, requestedBy, now);
+        .run(
+          id,
+          companyId,
+          subjectType,
+          subjectId,
+          requestedBy,
+          sanitizeTerminal(rationale, 4_000),
+          now,
+        );
       this.audit.append("approval.requested", requestedBy, companyId, {
         id,
         subjectType,
@@ -74,7 +89,7 @@ export class ApprovalRepository {
           `UPDATE approvals SET status=?, rationale=?, decided_by=?, decided_at=?
            WHERE company_id=? AND id=?`,
         )
-        .run(status, rationale, actorId, decidedAt, companyId, approvalId);
+        .run(status, sanitizeTerminal(rationale, 4_000), actorId, decidedAt, companyId, approvalId);
       this.audit.append("approval.decided", actorId, companyId, {
         approvalId,
         status,

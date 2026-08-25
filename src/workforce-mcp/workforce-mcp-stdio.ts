@@ -25,6 +25,7 @@ const Config = z.object({
         "meeting:read",
         "meeting:write",
         "checkpoint:write",
+        "participation:write",
         "attempt:read",
         "deliverable:read",
         "decision:read",

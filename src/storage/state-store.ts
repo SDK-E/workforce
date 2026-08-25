@@ -42,6 +42,8 @@ import { McpServerRepository } from "../integrations/mcp-server-repository.js";
 import { ProjectIntegrationRepository } from "../integrations/project-integration-repository.js";
 import { MailRepository } from "../integrations/mail-repository.js";
 import { TaskCheckpointRepository } from "../tasks/task-checkpoint-repository.js";
+import { TaskHandoffRepository } from "../tasks/task-handoff-repository.js";
+import { ArtifactReferenceRepository } from "./artifact-reference-repository.js";
 
 /** Composition facade used by the application while feature services are introduced. */
 export class StateStore {
@@ -74,6 +76,8 @@ export class StateStore {
   readonly projectIntegrations: ProjectIntegrationRepository;
   readonly mail: MailRepository;
   readonly taskCheckpoints: TaskCheckpointRepository;
+  readonly taskHandoffs: TaskHandoffRepository;
+  readonly artifactReferences: ArtifactReferenceRepository;
 
   constructor(root?: string) {
     this.database = new WorkforceDatabase(root);
@@ -91,6 +95,8 @@ export class StateStore {
     );
     this.tasksRepository = new TaskRepository(this.database, this.companiesRepository, this.audit);
     this.taskCheckpoints = new TaskCheckpointRepository(this.database, this.audit);
+    this.taskHandoffs = new TaskHandoffRepository(this.database, this.audit);
+    this.artifactReferences = new ArtifactReferenceRepository(this.database, this.audit);
     this.organizationRepository = new OrganizationRepository(
       this.database,
       this.companiesRepository,

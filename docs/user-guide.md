@@ -101,6 +101,8 @@ If events appear but agents do not start, inspect Docker status, image availabil
 
 The daemon serves authenticated Streamable HTTP at its internal `workforce-engine` network identity. Authorized attempts receive that endpoint and a short-lived token scoped to one company, employee, task, and attempt. Tokens are omitted from Docker command arguments and persistent state, checked against the live attempt record on every request, rate limited, and revoked when execution ends. Trusted external clients may still use the separate stdio command.
 
+An agent can coordinate through joined rooms, mail, and meetings; checkpoint assigned work; submit evidence-backed claims; reference artifacts produced by its signed attempt; request a task approval; propose a typed automation for repetitive work; or request help and hand off durable context. Mutation calls require a unique idempotency key. Repeating the same request is safe, while reusing its key for changed arguments is rejected. These tools never grant access to another task or company.
+
 ## 7. Recovery and safety
 
 `pnpm stop` stops the daemon but preserves `workforce-state`; the next `pnpm start` reuses the database, encrypted secrets, artifacts, and control identity. On startup, Workforce expires stale leases and reconciles managed containers. `pnpm reset` is intentionally destructive: it stops the stack and removes the named state volume, deleting every company and its history. Use `pnpm doctor` for Docker/image readiness and `pnpm sandbox:verify` for isolation checks. Emergency stop interrupts managed attempts without deleting task, employee, message, artifact, or audit history.

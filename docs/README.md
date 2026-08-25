@@ -7,7 +7,7 @@ Start with the documents that match what you are doing:
 - [TUI customization](tui-customization.md) — focus, keybinding, and theme configuration.
 - [Product specification](product-specification.md) — authoritative product behavior and acceptance scope.
 - [Architecture](architecture.md) — trust boundaries, execution flow, persistence, and domain design.
-- [Workforce MCP plan](workforce-mcp.md) — external AI control and agent-scoped workforce tools.
+- [Workforce MCP](workforce-mcp.md) — external AI control and agent-scoped workforce tools.
 - [Coding standards](coding-standards.md) — repository structure and contribution rules.
 - [Package decisions](package-decisions.md) — maintained open-source dependency choices.
 

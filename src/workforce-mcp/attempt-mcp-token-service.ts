@@ -136,6 +136,7 @@ function attemptCapabilities(employeeId: string): WorkforceMcpCapability[] {
     "meeting:read",
     "meeting:write",
     "checkpoint:write",
+    "participation:write",
     "attempt:read",
     "deliverable:read",
     "decision:read",
