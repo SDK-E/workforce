@@ -47,7 +47,7 @@ const machine = createMachine({
       on: { ACTIVATE: "active", COACH: "coaching", SUSPEND: "suspended", TERMINATE: "terminated" },
     },
     terminated: { on: { REINSTATE: "probation", ARCHIVE: "archived" } },
-    archived: { type: "final" },
+    archived: { on: { REINSTATE: "probation" } },
   },
 });
 

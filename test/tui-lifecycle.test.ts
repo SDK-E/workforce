@@ -53,6 +53,7 @@ test("selected TUI resources archive and restore without deleting records", () =
     });
     const data = workspaceData(store, "acme");
     assert.equal(lifecycleTargets("Companies", data)[0]?.kind, "company");
+    assert.equal(lifecycleTargets("Employees", data)[0]?.kind, "employee");
     const departmentTarget = lifecycleTargets("Departments", data)[0];
     const objectiveTarget = lifecycleTargets("Objectives", data)[0];
     const taskTarget = lifecycleTargets("Tasks", data)[0];
@@ -93,5 +94,6 @@ function workspaceData(store: StateStore, companyId: string) {
     projectIntegrations: store.projectIntegrations.list(companyId),
     automations: store.automations.list(companyId),
     companies: store.companies(),
+    employees: store.employees(companyId),
   };
 }

@@ -3,7 +3,15 @@ import type { OrganizationUnitKind } from "../organizations/organization-types.j
 import type { StrategyItemKind } from "../strategy/strategy-types.js";
 
 export interface LifecycleTarget {
-  kind: "company" | "organization" | "strategy" | "task" | "mcp" | "integration" | "automation";
+  kind:
+    | "company"
+    | "employee"
+    | "organization"
+    | "strategy"
+    | "task"
+    | "mcp"
+    | "integration"
+    | "automation";
   id: string;
   label: string;
   status: string;
@@ -18,6 +26,7 @@ export interface LifecycleData {
   projectIntegrations: ReturnType<StateStore["projectIntegrations"]["list"]>;
   automations: ReturnType<StateStore["automations"]["list"]>;
   companies: ReturnType<StateStore["companies"]>;
+  employees: ReturnType<StateStore["employees"]>;
 }
 
 export function lifecycleTargets(section: string, data: LifecycleData): LifecycleTarget[] {
@@ -26,6 +35,13 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       kind: "company",
       id: item.id,
       label: item.displayName,
+      status: item.status,
+    }));
+  if (section === "Employees")
+    return data.employees.map((item) => ({
+      kind: "employee",
+      id: item.id,
+      label: `${item.name} · ${item.title}`,
       status: item.status,
     }));
   const organizationKinds = organizationSectionKinds(section);
@@ -76,6 +92,8 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
 }
 
 export function lifecycleVerb(target: LifecycleTarget): "archive" | "restore" {
+  if (target.kind === "employee" && ["terminated", "archived"].includes(target.status))
+    return "restore";
   return target.status === "archived" || target.status === "disabled" ? "restore" : "archive";
 }
 
@@ -89,6 +107,14 @@ export function applyLifecycleAction(
   if (target.kind === "company") {
     if (restore) store.companiesRepository.restore(target.id, actorId);
     else store.companiesRepository.archive(target.id, actorId);
+  } else if (target.kind === "employee") {
+    store.employment.transition(
+      companyId,
+      target.id,
+      restore ? "REINSTATE" : "TERMINATE",
+      actorId,
+      `${restore ? "Reinstated" : "Terminated"} through confirmed TUI lifecycle action`,
+    );
   } else if (target.kind === "organization") {
     if (restore) store.organizationRepository.restore(companyId, target.id, actorId);
     else store.organizationRepository.archive(companyId, target.id, actorId);

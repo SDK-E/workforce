@@ -20,9 +20,10 @@ export function AgentProfileForm(props: {
   terminalWidth: number;
   onSubmit: (input: UpdateAgentInstructionsInput) => void;
   onCancel: () => void;
+  initial?: UpdateAgentInstructionsInput | undefined;
 }) {
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(FIELDS.map(() => ""));
+  const [values, setValues] = useState(() => initialValues(props.initial));
   const confirming = step === FIELDS.length;
   useInput((_input, key) => {
     if (key.escape) props.onCancel();
@@ -82,6 +83,20 @@ export function AgentProfileForm(props: {
       )}
     </FormFrame>
   );
+}
+
+function initialValues(initial?: UpdateAgentInstructionsInput): string[] {
+  if (!initial) return FIELDS.map(() => "");
+  return [
+    initial.employeeId,
+    initial.personaName,
+    initial.identitySummary,
+    initial.communicationStyle,
+    initial.systemPrompt,
+    initial.instructions.join(", "),
+    initial.constraints.join(", "),
+    "Update selected employee persona and instructions",
+  ];
 }
 
 function split(value: string | undefined): string[] {

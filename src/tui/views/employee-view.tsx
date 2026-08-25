@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Box, Text, useInput } from "ink";
+import { Box, Text } from "ink";
 import type { Employee } from "../../domain.js";
 import type { AgentProfile } from "../../employees/agent-profile-types.js";
 import { Panel } from "../components/panel.js";
@@ -9,29 +8,27 @@ export function EmployeeView({
   employees,
   profiles,
   compact,
+  selectedRow,
 }: {
   employees: Employee[];
   profiles: AgentProfile[];
   compact: boolean;
+  selectedRow: number;
 }) {
-  const [selected, setSelected] = useState(0);
-  useInput((input) => {
-    if (employees.length === 0) return;
-    if (input === "[")
-      setSelected((current) => (current + employees.length - 1) % employees.length);
-    if (input === "]") setSelected((current) => (current + 1) % employees.length);
-  });
-  const employee = employees[selected];
+  const employee = employees[selectedRow];
   const profile = profiles.find((item) => item.employeeId === employee?.id);
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>Employee directory</Text>
-      <Text dimColor>{employees.length} durable identities · [/] select employee</Text>
+      <Text dimColor>
+        {employees.length} durable identities · n hire · e persona · [/] select · d terminate · u
+        reinstate
+      </Text>
       <Box marginTop={1} gap={1} flexDirection={compact ? "column" : "row"}>
         <Panel title="DIRECTORY" width={compact ? "100%" : "40%"}>
           {employees.slice(0, 10).map((item, index) => (
-            <Text key={item.id} inverse={index === selected}>
-              {index === selected ? "›" : " "} [{item.status}] {truncate(item.name, 26)}
+            <Text key={item.id} inverse={index === selectedRow}>
+              {index === selectedRow ? "›" : " "} [{item.status}] {truncate(item.name, 26)}
             </Text>
           ))}
         </Panel>

@@ -1,7 +1,6 @@
 import type { CompanyRecord } from "../../storage/records.js";
 import type { StateStore } from "../../storage/state-store.js";
 import { CompanyForm } from "./company-form.js";
-import { AgentProfileForm } from "./agent-profile-form.js";
 import { CompanyCreateForm } from "./company-create-form.js";
 import { MessageForm } from "./message-form.js";
 import { MeetingForm } from "./meeting-form.js";
@@ -12,6 +11,7 @@ import { MailForm } from "./mail-form.js";
 import { AutomationForm } from "./automation-form.js";
 import type { LifecycleTarget } from "../lifecycle-actions.js";
 import { ResourceMutationOverlay } from "./resource-mutation-overlay.js";
+import { EmployeeMutationOverlay } from "./employee-mutation-overlay.js";
 
 export type CreateFormKind =
   | "company-create"
@@ -19,6 +19,7 @@ export type CreateFormKind =
   | "organization"
   | "strategy"
   | "task"
+  | "employee-hire"
   | "agent-profile"
   | "message"
   | "meeting"
@@ -62,19 +63,8 @@ export function CreateOverlay(props: CreateOverlayProps) {
         finish={finish}
       />
     );
-  if (props.kind === "agent-profile")
-    return (
-      <AgentProfileForm
-        companyId={props.company.id}
-        terminalWidth={props.terminalWidth}
-        onCancel={props.onClose}
-        onSubmit={(input) => {
-          finish(() => {
-            props.store.agentProfiles.update(input);
-          }, `Instruction revision activated for ${input.employeeId}`);
-        }}
-      />
-    );
+  if (props.kind === "employee-hire" || props.kind === "agent-profile")
+    return <EmployeeMutationOverlay {...props} kind={props.kind} finish={finish} />;
   if (props.kind === "message")
     return (
       <MessageForm
@@ -244,7 +234,7 @@ export function createFormForSection(section: string): CreateFormKind | null {
     return "organization";
   if (["Projects", "Objectives", "Initiatives", "Goals", "Milestones"].includes(section))
     return "strategy";
-  if (section === "Employees") return "agent-profile";
+  if (section === "Employees") return "employee-hire";
   if (section === "CEO office" || section === "Conversations") return "message";
   if (section === "Meetings") return "meeting";
   if (section === "MCP servers") return "mcp-server";

@@ -132,6 +132,8 @@ export class EmploymentRepository {
     if (employeeId === "ceo" || employeeId === "arm")
       throw new Error("Durable CEO and ARM identities cannot be transitioned by this workflow");
     const next = nextEmploymentStatus(employee.status, event);
+    if (next === "terminated" || next === "archived")
+      this.requireNoActiveAttempt(companyId, employeeId);
     const manager = assignment?.managerId ?? employee.manager;
     if (manager) this.requireEmployee(companyId, manager);
     const department = assignment?.department ?? employee.department;
@@ -142,6 +144,14 @@ export class EmploymentRepository {
           "UPDATE employees SET status=?, manager_id=?, department=? WHERE company_id=? AND id=?",
         )
         .run(next, manager, department, companyId, employeeId);
+      const releasedTasks =
+        next === "terminated" || next === "archived"
+          ? this.releaseAssignments(companyId, employeeId, now)
+          : 0;
+      const reassignedReports =
+        next === "terminated" || next === "archived"
+          ? this.reassignReports(companyId, employeeId, employee.manager ?? "arm")
+          : 0;
       this.database.connection
         .prepare("INSERT INTO employment_transitions VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)")
         .run(companyId, employeeId, employee.status, next, event, actorId, rationale, now);
@@ -151,6 +161,8 @@ export class EmploymentRepository {
         to: next,
         event,
         rationale,
+        releasedTasks,
+        reassignedReports,
       });
     });
     return this.requireEmployee(companyId, employeeId);
@@ -175,6 +187,34 @@ export class EmploymentRepository {
     const employee = this.companies.employees(companyId).find((item) => item.id === id);
     if (!employee) throw new Error(`Unknown employee in company: ${id}`);
     return employee;
+  }
+
+  private requireNoActiveAttempt(companyId: string, employeeId: string): void {
+    const attempt = this.database.connection
+      .prepare(
+        `SELECT id FROM attempts WHERE company_id=? AND employee_id=?
+         AND status IN ('queued','starting','running') LIMIT 1`,
+      )
+      .get(companyId, employeeId);
+    if (attempt) throw new Error("Stop active employee attempts before offboarding");
+  }
+
+  private releaseAssignments(companyId: string, employeeId: string, now: string): number {
+    const result = this.database.connection
+      .prepare(
+        `UPDATE tasks SET assignee_id=NULL,updated_at=? WHERE company_id=? AND assignee_id=?
+         AND status NOT IN ('completed','rejected','failed','cancelled','archived')`,
+      )
+      .run(now, companyId, employeeId);
+    return Number(result.changes);
+  }
+
+  private reassignReports(companyId: string, employeeId: string, managerId: string): number {
+    const replacement = managerId === employeeId ? "arm" : managerId;
+    const result = this.database.connection
+      .prepare("UPDATE employees SET manager_id=? WHERE company_id=? AND manager_id=?")
+      .run(replacement, companyId, employeeId);
+    return Number(result.changes);
   }
 
   private insertEmployee(companyId: string, employee: Employee): void {

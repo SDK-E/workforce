@@ -43,6 +43,8 @@ test("XState governance machines reject invalid decisions and cover employment r
   assert.equal(nextEmploymentStatus("active", "SUSPEND"), "suspended");
   assert.equal(nextEmploymentStatus("suspended", "TERMINATE"), "terminated");
   assert.equal(nextEmploymentStatus("terminated", "REINSTATE"), "probation");
+  assert.equal(nextEmploymentStatus("terminated", "ARCHIVE"), "archived");
+  assert.equal(nextEmploymentStatus("archived", "REINSTATE"), "probation");
   assert.throws(() => nextEmploymentStatus("active", "REINSTATE"), /cannot handle/);
   assert.equal(nextMeetingStatus("planned", "START"), "active");
   assert.equal(nextIncidentStatus("reported", "TRIAGE"), "triaged");
@@ -85,14 +87,17 @@ test("gap analysis precedes probationary hiring and offboarding preserves histor
       department: "platform",
     });
     store.employment.transition("acme", employeeId, "ACTIVATE", "ceo", "Reassignment accepted");
+    const assignedTask = createAssignedTask(store, employeeId);
     store.employment.transition("acme", employeeId, "SUSPEND", "arm", "Immediate risk");
     store.employment.transition("acme", employeeId, "TERMINATE", "ceo", "Policy decision");
     assert.equal(store.employees("acme").find(({ id }) => id === employeeId)?.status, "terminated");
     assert.ok(
       store.db.prepare("SELECT 1 FROM employment_transitions WHERE employee_id=?").get(employeeId),
     );
+    assert.equal(store.tasksRepository.get("acme", assignedTask.id)?.assigneeId, null);
     store.employment.transition("acme", employeeId, "REINSTATE", "ceo", "New evidence");
     assert.equal(store.employees("acme").find(({ id }) => id === employeeId)?.status, "probation");
+    archiveAndRestoreEmployee(store, employeeId);
     assert.equal(gap.jobId, job.id);
     assert.throws(
       () => store.employment.transition("acme", "arm", "SUSPEND", "ceo", "x"),
@@ -187,3 +192,21 @@ test("gap analysis precedes probationary hiring and offboarding preserves histor
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+function createAssignedTask(store: StateStore, employeeId: string) {
+  return store.createTask({
+    companyId: "acme",
+    objective: "Preserve and reassign unfinished work",
+    acceptanceCriteria: ["A new owner is assigned"],
+    risk: "medium",
+    dataSensitivity: "internal",
+    managerId: "ceo",
+    assigneeId: employeeId,
+  });
+}
+
+function archiveAndRestoreEmployee(store: StateStore, employeeId: string): void {
+  store.employment.transition("acme", employeeId, "TERMINATE", "ceo", "Role ended");
+  store.employment.transition("acme", employeeId, "ARCHIVE", "arm", "Retention archive");
+  store.employment.transition("acme", employeeId, "REINSTATE", "ceo", "Return approved");
+}

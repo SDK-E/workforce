@@ -34,6 +34,7 @@ export function useFormController(onStatus: (message: string) => void) {
 function requiresSelection(kind: CreateFormKind | null): boolean {
   return [
     "company-edit",
+    "agent-profile",
     "organization",
     "strategy",
     "task",

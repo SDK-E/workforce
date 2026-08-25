@@ -153,6 +153,7 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         employees={props.employees}
         profiles={props.agentProfiles}
         compact={props.compact}
+        selectedRow={props.selectedRow}
       />
     );
   if (props.section === "Agent Resources")
