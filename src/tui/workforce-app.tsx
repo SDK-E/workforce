@@ -28,6 +28,7 @@ interface WorkforceAppProps {
   onStartTask: (companyId: string, taskId: string) => Promise<void>;
   onVerifyMcp: (companyId: string, serverId: string) => Promise<void>;
   onVerifyModel: (companyId: string, modelId: string) => Promise<void>;
+  onDiscoverModels?: (engine: "opencode" | "kilo") => Promise<string[]>;
 }
 
 const READY_STATUS = "Ready — no agent work starts without an approved task";
@@ -40,6 +41,7 @@ export function WorkforceApp({
   onStartTask,
   onVerifyMcp,
   onVerifyModel,
+  onDiscoverModels,
 }: WorkforceAppProps) {
   const { stdout } = useStdout();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -98,7 +100,7 @@ export function WorkforceApp({
     setExecutionTaskId,
     setCompany,
     cycleTheme: () => {
-      setTheme((current) => nextTheme(current));
+      setTheme(nextTheme);
     },
   });
   return (
@@ -109,30 +111,23 @@ export function WorkforceApp({
         flexDirection="column"
         backgroundColor={theme.colors.canvas}
       >
-        <WorkforceHeader
-          {...{ company, docker, data, section: selectedSection, focus: effectiveFocus }}
-        />
-        <WorkforceContent
-          selectedIndex={selectedIndex}
-          section={selectedSection}
-          store={store}
-          company={company}
-          docker={docker}
-          compact={compact}
-          height={height}
-          data={data}
-          rowIndex={lifecycle.rowIndex}
-          sidebarVisible={effectiveSidebarVisible}
-          focus={effectiveFocus}
-          contentInteractive={
-            effectiveFocus === "content" && !inputBlocked && !helpVisible && !paletteVisible
-          }
-        />
-        <StatusBar
-          message={statusMessage}
-          focus={effectiveFocus}
-          sidebarVisible={effectiveSidebarVisible}
-          section={selectedSection}
+        <AppBody
+          {...{
+            company,
+            docker,
+            data,
+            section: selectedSection,
+            focus: effectiveFocus,
+            selectedIndex,
+            store,
+            compact,
+            height,
+            rowIndex: lifecycle.rowIndex,
+            sidebarVisible: effectiveSidebarVisible,
+            contentInteractive:
+              effectiveFocus === "content" && !inputBlocked && !helpVisible && !paletteVisible,
+            statusMessage,
+          }}
         />
         <WorkforceOverlays
           paletteVisible={paletteVisible}
@@ -164,10 +159,10 @@ export function WorkforceApp({
           onCancelLifecycle={lifecycle.cancel}
           onConfirmLifecycle={lifecycle.confirm}
           onConfirmExecution={() => {
-            const taskId = executionTaskId;
             setExecutionTaskId(null);
-            startTaskExecution(taskId, company.id, onStartTask, setStatusMessage);
+            startTaskExecution(executionTaskId, company.id, onStartTask, setStatusMessage);
           }}
+          {...(onDiscoverModels ? { onDiscoverModels } : {})}
         />
       </Box>
     </WorkforceThemeProvider>
@@ -190,6 +185,81 @@ function WorkforceHeader(props: {
         {...attemptMetricsFor(props.data)}
       />
       <Breadcrumbs section={props.section} focus={props.focus} />
+    </>
+  );
+}
+
+/** Header, workspace content, and status bar share one layout row group. */
+function AppBody(props: {
+  company: CompanyRecord;
+  docker: DockerStatus;
+  data: WorkspaceData;
+  section: string;
+  focus: "sidebar" | "content";
+  selectedIndex: number;
+  store: StateStore;
+  compact: boolean;
+  height: number;
+  rowIndex: number;
+  sidebarVisible: boolean;
+  contentInteractive: boolean;
+  statusMessage: string;
+}) {
+  return (
+    <>
+      <WorkforceHeader
+        {...{
+          company: props.company,
+          docker: props.docker,
+          data: props.data,
+          section: props.section,
+          focus: props.focus,
+        }}
+      />
+      <Box flexGrow={1} flexDirection="row">
+        {props.sidebarVisible && (
+          <Sidebar
+            compact={props.compact}
+            height={props.height}
+            selectedIndex={props.selectedIndex}
+            focused={props.focus === "sidebar"}
+          />
+        )}
+        {props.selectedIndex === 0 ? (
+          <ExecutiveOverview
+            company={props.company}
+            docker={props.docker}
+            compact={props.compact}
+            activeEmployees={
+              props.data.employees.filter(({ status }) => status === "active").length
+            }
+            {...attemptMetricsFor(props.data)}
+            pendingApprovals={props.data.pendingApprovals}
+            acceptedDeliverables={props.data.artifacts.length}
+            eventCount={props.store.audit.count(props.company.id)}
+            auditVerified={props.store.verifyAuditChain()}
+            strategyItems={props.data.strategyItems}
+            onboarding={onboardingSteps(props.data)}
+            active={props.contentInteractive}
+          />
+        ) : (
+          <WorkspaceView
+            section={props.section}
+            company={props.company}
+            auditVerified={props.store.verifyAuditChain()}
+            docker={props.docker}
+            compact={props.compact}
+            selectedRow={props.rowIndex}
+            {...props.data}
+          />
+        )}
+      </Box>
+      <StatusBar
+        message={props.statusMessage}
+        focus={props.focus}
+        sidebarVisible={props.sidebarVisible}
+        section={props.section}
+      />
     </>
   );
 }
@@ -218,58 +288,4 @@ function attemptMetricsFor(data: WorkspaceData) {
     queuedAttempts: data.attempts.filter(({ status }) => status === "queued").length,
     capacity: data.runtime?.maxConcurrentAttempts ?? 2,
   };
-}
-
-function WorkforceContent(props: {
-  selectedIndex: number;
-  section: string;
-  store: StateStore;
-  company: CompanyRecord;
-  docker: DockerStatus;
-  compact: boolean;
-  height: number;
-  data: WorkspaceData;
-  rowIndex: number;
-  sidebarVisible: boolean;
-  focus: "sidebar" | "content";
-  contentInteractive: boolean;
-}) {
-  return (
-    <Box flexGrow={1} flexDirection="row">
-      {props.sidebarVisible && (
-        <Sidebar
-          compact={props.compact}
-          height={props.height}
-          selectedIndex={props.selectedIndex}
-          focused={props.focus === "sidebar"}
-        />
-      )}
-      {props.selectedIndex === 0 ? (
-        <ExecutiveOverview
-          company={props.company}
-          docker={props.docker}
-          compact={props.compact}
-          activeEmployees={props.data.employees.filter(({ status }) => status === "active").length}
-          {...attemptMetricsFor(props.data)}
-          pendingApprovals={props.data.pendingApprovals}
-          acceptedDeliverables={props.data.artifacts.length}
-          eventCount={props.store.audit.count(props.company.id)}
-          auditVerified={props.store.verifyAuditChain()}
-          strategyItems={props.data.strategyItems}
-          onboarding={onboardingSteps(props.data)}
-          active={props.contentInteractive}
-        />
-      ) : (
-        <WorkspaceView
-          section={props.section}
-          company={props.company}
-          auditVerified={props.store.verifyAuditChain()}
-          docker={props.docker}
-          compact={props.compact}
-          selectedRow={props.rowIndex}
-          {...props.data}
-        />
-      )}
-    </Box>
-  );
 }

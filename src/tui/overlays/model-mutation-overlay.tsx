@@ -9,6 +9,7 @@ export function ModelMutationOverlay(props: {
   store: StateStore;
   terminalWidth: number;
   selectedTarget: LifecycleTarget | null;
+  onDiscoverModels?: (engine: "opencode" | "kilo") => Promise<string[]>;
   onClose: () => void;
   finish: (action: () => void, success: string) => void;
 }) {
@@ -22,6 +23,7 @@ export function ModelMutationOverlay(props: {
     <ModelForm
       terminalWidth={props.terminalWidth}
       {...(minimal ? { minimal: true } : {})}
+      {...(props.onDiscoverModels ? { onDiscoverModels: props.onDiscoverModels } : {})}
       {...(current ? { initial: current } : {})}
       onCancel={props.onClose}
       onSubmit={(input) => {

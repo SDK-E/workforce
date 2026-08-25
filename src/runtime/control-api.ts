@@ -33,6 +33,15 @@ export class ControlApi {
             response.end(JSON.stringify({ status: "ready" }));
             return;
           }
+          if (request.method === "GET" && request.url?.startsWith("/model-catalog")) {
+            const engine = new URL(request.url, "http://localhost").searchParams.get("engine");
+            if (engine !== "opencode" && engine !== "kilo")
+              throw new Error("engine must be opencode or kilo");
+            const models = await this.runtime.modelCatalog.catalog(engine);
+            response.writeHead(200, { "content-type": "application/json" });
+            response.end(JSON.stringify({ engine, models }));
+            return;
+          }
           if (request.method !== "POST" || request.url !== "/actions") {
             response.writeHead(404).end();
             return;

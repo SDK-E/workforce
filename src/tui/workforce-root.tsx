@@ -14,6 +14,7 @@ export function WorkforceRoot(props: {
   onStartTask: (companyId: string, taskId: string) => Promise<void>;
   onVerifyMcp: (companyId: string, serverId: string) => Promise<void>;
   onVerifyModel: (companyId: string, modelId: string) => Promise<void>;
+  onDiscoverModels?: (engine: "opencode" | "kilo") => Promise<string[]>;
 }) {
   const { stdout } = useStdout();
   const { width, height } = terminalLayout(stdout.columns, stdout.rows);

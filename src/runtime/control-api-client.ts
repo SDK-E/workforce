@@ -16,6 +16,14 @@ export class ControlApiClient {
   verifyModel(companyId: string, modelId: string): Promise<void> {
     return this.action({ action: "verify-model", companyId, modelId });
   }
+  async discoverModels(engine: "opencode" | "kilo"): Promise<string[]> {
+    const response = await fetch(`${this.endpoint}/model-catalog?engine=${engine}`, {
+      headers: { authorization: `Bearer ${this.token}` },
+    });
+    if (!response.ok) throw new Error(`Model catalog unavailable (${response.status})`);
+    const payload = (await response.json()) as { models?: string[] };
+    return payload.models ?? [];
+  }
 
   private async action(input: Record<string, string>): Promise<void> {
     const response = await fetch(`${this.endpoint}/actions`, {

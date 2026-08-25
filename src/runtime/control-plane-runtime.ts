@@ -5,6 +5,7 @@ import { AutomationService } from "../automations/automation-service.js";
 import { AttemptCapabilityResolver } from "../integrations/attempt-capability-resolver.js";
 import { MailAttemptBridge } from "../integrations/mail-attempt-bridge.js";
 import { DockerMcpProbeRunner, McpHealthVerifier } from "../integrations/mcp-health-verifier.js";
+import { DockerModelCatalogRunner } from "../engines/model-catalog.js";
 import { createControlPlaneLogger } from "../observability/control-plane-logger.js";
 import { DockerModelProbeRunner, ModelVerifier } from "../registries/model-verifier.js";
 import { resolveAttemptSecrets } from "../secrets/attempt-secret-provider.js";
@@ -21,6 +22,7 @@ export class ControlPlaneRuntime {
   readonly taskExecution: TaskExecutionService;
   readonly mcpVerifier: McpHealthVerifier;
   readonly modelVerifier: ModelVerifier;
+  readonly modelCatalog = new DockerModelCatalogRunner();
   readonly supervisor: DockerSupervisor;
   readonly attemptMcpTokens = new AttemptMcpTokenService();
   readonly secrets: EncryptedSecretStore;

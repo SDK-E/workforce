@@ -62,6 +62,7 @@ interface CreateOverlayProps {
   onClose: () => void;
   onStatus: (message: string) => void;
   selectedTarget: LifecycleTarget | null;
+  onDiscoverModels?: (engine: "opencode" | "kilo") => Promise<string[]>;
 }
 
 export function CreateOverlay(props: CreateOverlayProps) {

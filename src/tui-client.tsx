@@ -23,6 +23,7 @@ const application = render(
     onStartTask={(companyId, taskId) => api.startTask(companyId, taskId)}
     onVerifyMcp={(companyId, serverId) => api.verifyMcp(companyId, serverId)}
     onVerifyModel={(companyId, modelId) => api.verifyModel(companyId, modelId)}
+    onDiscoverModels={(engine) => api.discoverModels(engine)}
   />,
 );
 await application.waitUntilExit();

@@ -156,6 +156,14 @@ deferred item unless the user says "STOP"; defer new requests here until your to
 
 ## Observations (accepted behavior, revisit only if requirements change)
 
+### OBS-018 Model discovery runs `<engine> models` inside the agent image (2026-08-25)
+User-directed capability. `DockerModelCatalogRunner` executes `opencode models` / `kilo models`
+in a hardened container (read-only root + ephemeral /work and /tmp tmpfs, no network), parses
+canonical identities, drops ones the engine adapter would refuse to run (kilo "~provider" latest
+aliases), caches per engine for 10 minutes, and serves them via GET /model-catalog (bearer token).
+The first-run model form lists discovered models with a manual-entry fallback and derives the
+provider field. Verified live: 7 opencode and 347 kilo identities.
+
 ### OBS-006 Mail markRead has no TUI key
 Service supports read state; page shows status column but cannot flip it. Viable-release scope keeps
 mail lifecycle to archive/restore. Add a key only if operators ask.

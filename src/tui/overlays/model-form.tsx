@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { NamedSelect } from "../components/named-select.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { bindingsFor, matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import type { ModelRecord } from "../../registries/registry-types.js";
+import { providerForIdentity } from "../../engines/model-catalog.js";
 import { FormFrame } from "./form-frame.js";
 import {
   formFooter,
@@ -33,6 +35,12 @@ const OPTIONAL_STEPS = [4, 6];
 /** Defaults applied when the first-run form finishes without expanding advanced fields. */
 const FIRST_RUN_DEFAULTS = ["60", "", "general", ""];
 
+type CatalogState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; models: string[] }
+  | { status: "unavailable"; reason: string };
+
 export interface ModelFormInput {
   id: string;
   engine: ModelRecord["engine"];
@@ -48,6 +56,8 @@ export function ModelForm(props: {
   terminalWidth: number;
   /** First-run mode: only essential fields until the operator explicitly asks for advanced ones. */
   minimal?: boolean;
+  /** Runs `<engine> models` inside the agent image and returns usable provider/model ids. */
+  onDiscoverModels?: (engine: ModelRecord["engine"]) => Promise<string[]>;
   initial?: ModelRecord;
   onCancel: () => void;
   onSubmit: (input: ModelFormInput) => void;
@@ -64,6 +74,37 @@ export function ModelForm(props: {
     props.initial?.supportedRoles.join(", ") ?? "general",
     props.initial?.secretRequirements.join(", ") ?? "",
   ]);
+  const [catalog, setCatalog] = useState<CatalogState>({ status: "idle" });
+  const [manualModel, setManualModel] = useState(Boolean(props.initial));
+  const engineValue = values[0]?.trim();
+  const discoveryEngine =
+    engineValue === "opencode" || engineValue === "kilo" ? engineValue : undefined;
+  const discoverable = props.onDiscoverModels !== undefined && discoveryEngine !== undefined;
+  useEffect(() => {
+    if (steps.step !== 1 || !discoverable || catalog.status !== "idle") return;
+    let cancelled = false;
+    setCatalog({ status: "loading" });
+    props
+      .onDiscoverModels?.(discoveryEngine)
+      .then((models) => {
+        if (!cancelled)
+          setCatalog(
+            models.length > 0
+              ? { status: "ready", models }
+              : { status: "unavailable", reason: "no models reported" },
+          );
+      })
+      .catch((error: unknown) => {
+        if (!cancelled)
+          setCatalog({
+            status: "unavailable",
+            reason: error instanceof Error ? error.message : "discovery failed",
+          });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [steps.step, discoverable, catalog.status]);
   const updateAt = (value: string): void => {
     setValues((current) => current.map((item, index) => (index === steps.step ? value : item)));
   };
@@ -71,14 +112,17 @@ export function ModelForm(props: {
     if ((values[steps.step] ?? "").trim() || OPTIONAL_STEPS.includes(steps.step)) steps.advance();
     else steps.fail(`${FIELDS[steps.step]} is required`);
   };
+  // While the discovered-model list is shown, ink-select owns ↑/↓/Enter; ← still goes back.
+  const modelSelectActive =
+    !steps.confirming && steps.step === 1 && !manualModel && catalog.status === "ready";
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
     if (!expanded && matchesKeybinding("showAdvanced", input, key)) {
       setExpanded(true);
       return;
     }
-    if (isFieldBack(input, key, false)) steps.retreat();
-    if (!steps.confirming && isFieldForward(input, key, false)) tryAdvance();
+    if (isFieldBack(input, key, modelSelectActive)) steps.retreat();
+    if (!steps.confirming && !modelSelectActive && isFieldForward(input, key, false)) tryAdvance();
     if (steps.confirming && matchesKeybinding("activate", input, key))
       props.onSubmit(parseModelInput(values, expanded, props.initial?.id));
   });
@@ -88,8 +132,12 @@ export function ModelForm(props: {
       terminalWidth={props.terminalWidth}
       footer={
         expanded
-          ? formFooter(steps.confirming, steps.step, FIELDS.length)
-          : `${formFooter(steps.confirming, steps.step, fieldCount)} · ${bindingsFor("showAdvanced")} advanced fields`
+          ? formFooter(steps.confirming, steps.step, FIELDS.length, {
+              selectStep: modelSelectActive,
+            })
+          : `${formFooter(steps.confirming, steps.step, fieldCount, {
+              selectStep: modelSelectActive,
+            })} · ${bindingsFor("showAdvanced")} advanced fields`
       }
     >
       {steps.error && <Text color="red">{steps.error}</Text>}
@@ -101,13 +149,65 @@ export function ModelForm(props: {
             <Text dimColor>Essential setup — ctrl+a opens priority, roles, and secrets</Text>
           )}
           <Text>{FIELDS[steps.step]}</Text>
-          <Box>
-            <PromptMarker />
-            <TextInput value={values[steps.step] ?? ""} onChange={updateAt} onSubmit={tryAdvance} />
-          </Box>
+          {modelSelectActive ? (
+            <NamedSelect
+              label={`Discovered ${engineValue} models — pick one or choose manual entry`}
+              items={[
+                ...catalog.models.map((model) => ({ label: model, value: model })),
+                { label: "Type manually…", value: "__manual__" },
+              ]}
+              onSelect={(value) => {
+                if (value === "__manual__") {
+                  setManualModel(true);
+                  return;
+                }
+                if (!discoveryEngine) return;
+                setValues((current) =>
+                  current.map((item, index) =>
+                    index === 1
+                      ? value
+                      : index === 2 && !current[2]?.trim()
+                        ? providerForIdentity(discoveryEngine, value)
+                        : item,
+                  ),
+                );
+                steps.advance();
+              }}
+            />
+          ) : steps.step === 1 && catalog.status === "loading" ? (
+            <>
+              <Text dimColor>Discovering models from {engineValue} inside the agent image…</Text>
+              <ModelInputStep {...{ values, steps, updateAt, tryAdvance }} />
+            </>
+          ) : (
+            <ModelInputStep {...{ values, steps, updateAt, tryAdvance }} />
+          )}
+          {steps.step === 1 && catalog.status === "unavailable" && (
+            <Text dimColor>
+              Discovery unavailable ({catalog.reason}) — enter the identifier manually
+            </Text>
+          )}
         </>
       )}
     </FormFrame>
+  );
+}
+
+function ModelInputStep(props: {
+  values: string[];
+  steps: ReturnType<typeof useFormSteps>;
+  updateAt: (value: string) => void;
+  tryAdvance: () => void;
+}) {
+  return (
+    <Box>
+      <PromptMarker />
+      <TextInput
+        value={props.values[props.steps.step] ?? ""}
+        onChange={props.updateAt}
+        onSubmit={props.tryAdvance}
+      />
+    </Box>
   );
 }
 

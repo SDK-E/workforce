@@ -31,6 +31,7 @@ export function WorkforceOverlays(props: {
   onCancelExecution: () => void;
   onConfirmLifecycle: () => void;
   onCancelLifecycle: () => void;
+  onDiscoverModels?: (engine: "opencode" | "kilo") => Promise<string[]>;
 }) {
   return (
     <>
@@ -55,6 +56,7 @@ export function WorkforceOverlays(props: {
           onClose={props.onCloseForm}
           onStatus={props.onStatus}
           selectedTarget={props.selectedTarget}
+          {...(props.onDiscoverModels ? { onDiscoverModels: props.onDiscoverModels } : {})}
         />
       )}
       {props.emergencyVisible && (
