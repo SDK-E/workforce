@@ -39,11 +39,11 @@
       "src/secrets-cli.ts",
       "src/tui-client.tsx",
       "src/workforce-mcp/workforce-mcp-stdio.ts",
-      "test/**/*.test.ts"
+      "test/**/*.{test.ts,test.tsx}"
     ],
     "project": [
       "src/**/*.{ts,tsx}",
-      "test/**/*.ts"
+      "test/**/*.{ts,tsx}"
     ],
     "ignoreDependencies": [
       "ink-testing-library"

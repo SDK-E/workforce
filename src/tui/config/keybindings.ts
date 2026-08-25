@@ -28,4 +28,5 @@ export const KEYBINDING_CONFIG = {
   previousRecord: ["["],
   nextRecord: ["]"],
   confirm: ["y"],
+  showAdvanced: ["ctrl+a"],
 } as const;

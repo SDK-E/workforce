@@ -16,9 +16,12 @@ export function ModelMutationOverlay(props: {
     props.selectedTarget?.kind === "model"
       ? props.store.models.get(props.company.id, props.selectedTarget.id)
       : undefined;
+  // First run: nothing registered yet, so onboarding asks only for the essentials.
+  const minimal = !current && props.store.models.list(props.company.id).length === 0;
   return (
     <ModelForm
       terminalWidth={props.terminalWidth}
+      {...(minimal ? { minimal: true } : {})}
       {...(current ? { initial: current } : {})}
       onCancel={props.onClose}
       onSubmit={(input) => {

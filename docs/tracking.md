@@ -13,6 +13,14 @@ deferred item unless the user says "STOP"; defer new requests here until your to
 
 ## OPEN
 
+### OBS-017 TUI interaction tests fail under high machine load
+- Evidence (2026-08-25): with load average ~9, `pnpm test` intermittently fails different
+  ink-testing-library tests per run ("operator journey", "navigation", "task form", "Conversations")
+  on both the working tree and a stashed baseline; the same suite is green with
+  `node --test --test-concurrency=1` and green when the machine is idle.
+- Impact: CI/local false failures; masks real regressions.
+- Next: consider serializing TUI tests or raising per-step timeouts in the shared test helpers.
+
 ### BUG-001 Universal agent image exceeds the 500 MiB release gate — FIXED (2026-08-25)
 - Was: local `workforce-agent:0.1.0` reported ~1.83 GB; limit is 524,288,000 bytes
   (`scripts/verify-image-sizes.sh`).
@@ -24,12 +32,18 @@ deferred item unless the user says "STOP"; defer new requests here until your to
 - Reported 2026-08-25 with screenshot; investigated 2026-08-25 with a scripted keystroke harness
   against the compiled app (empty store): a 104-char instant flood is fully processed; sustained
   ~40 chars/s for 6s processes all 239 keys with mostly-idle CPU; verifyAuditChain/loadWorkspaceData
-  measure ~0ms per render at this scale. NOT REPRODUCED.
+  measure ~0ms per render at this scale. NOT REPRODUCED in that harness.
+- New lead (2026-08-25, from OBS-005 test work): in ink 6.3.1 + ink-testing-library, stdin writes
+  arriving faster than the render loop processes them lose characters or mis-parse Enter
+  ("kilo\r" in one chunk appended text without submitting; rapid per-char writes produced
+  "zhipu/glm-5" → "hp/g5m"). If the operator's terminal batches keystrokes similarly, this matches
+  "drops letters under fast typing". Real-terminal repro still needed before changing input code.
 - Note (architecture observation): form values live in useFormController at the app root
   (`workforce-app.tsx`), so each typed character re-renders the whole app including workspace data
   loading. Cheap today; will scale poorly with larger stores. Cache/memoize if it ever shows up.
-- Next: still needs reporter environment details (terminal app, OS, Node version, overlays open,
-  NO_COLOR). Do not guess-fix.
+- Next: confirm against a real terminal (reporter environment details: terminal app, OS, Node,
+  overlays open, NO_COLOR). Do not guess-fix.
+- Related: OBS-017 — TUI interaction tests are load-sensitive (see below).
 
 ### BUG-004 No real-Docker boundary evidence in test suite — FIXED (2026-08-25)
 - Was: `test/docker-supervisor.test.ts` used FakeDockerClient exclusively; hardening flags, volume
@@ -42,11 +56,13 @@ deferred item unless the user says "STOP"; defer new requests here until your to
   evidence staying failed via the completion processor. Tests skip cleanly when Docker or the agent
   image is unavailable.
 
-### OBS-005 Model creation form exposes registry-level fields during onboarding
-- Evidence: model form requests engine/model/provider plus capabilities, roles, secrets, context
-  limit, priority… all before the operator has any working agent.
-- Impact: friction; contradicts "easy and seamless" goal.
-- Next: minimal first-run variant with advanced fields hidden behind an explicit toggle.
+### OBS-005 Model creation form exposes registry-level fields during onboarding — FIXED (2026-08-25)
+- Was: model form asked engine/model/provider plus priority, capabilities, roles, and secrets before
+  the operator had any working agent.
+- Fix: first-run variant (`minimal` on `ModelForm`, enabled by `ModelMutationOverlay` when the
+  company registry is empty) asks only engine/model/provider; ctrl+a (`showAdvanced` keybinding)
+  expands the full field set. Non-expanded submits default priority 60, roles ["general"], no
+  capabilities/secrets. Covered by test/model-tui.test.tsx (defaults submit + advanced toggle).
 
 ### BUG-010 Performance page renders a literal placeholder line — FIXED (2026-08-25)
 - Was: `performance-view.tsx` printed "n record evidence-backed …" — a hardcoded string with a
@@ -157,9 +173,8 @@ guide documents it. TUI surfaces repeat this so operators stop expecting persist
 
 ## Deferred / user-reported follow-ups (pick up only when told)
 
-### D1. Simplified model form
-Hide advanced registry fields (capabilities, roles, secrets, context limit, priority) behind an
-advanced toggle; first-run variant asks engine/model/provider only. See OBS-005 and BUG-013.
+### D1. Simplified model form — DONE via OBS-005 (2026-08-25)
+First-run variant asks engine/model/provider only; advanced fields behind ctrl+a toggle. See OBS-005.
 
 ### D2. Pre-configured free/local model option
 Would seed a provider template; requires explicit user approval because of the
