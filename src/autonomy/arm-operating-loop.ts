@@ -3,13 +3,20 @@ import { analyzeWorkforceGap } from "../governance/gap-analysis.js";
 import type { StateStore } from "../storage/state-store.js";
 import { taskJobRequirements } from "../tasks/task-job-requirements.js";
 import type { TaskRecord } from "../tasks/task-types.js";
+import { ArmReinforcementService } from "./arm-reinforcement-service.js";
 
 export class ArmOperatingLoop {
-  constructor(private readonly store: StateStore) {}
+  private readonly reinforcement: ArmReinforcementService;
+
+  constructor(private readonly store: StateStore) {
+    this.reinforcement = new ArmReinforcementService(store);
+  }
 
   tick(): void {
-    for (const company of this.store.companies().filter(({ status }) => status === "active"))
+    for (const company of this.store.companies().filter(({ status }) => status === "active")) {
+      this.reinforcement.evaluateCompany(company.id);
       for (const task of this.unassignedWork(company.id)) this.staff(task);
+    }
   }
 
   private unassignedWork(companyId: string): TaskRecord[] {

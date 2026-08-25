@@ -31,6 +31,7 @@ export class TaskExecutionService {
     if (!task) throw new Error(`Unknown task: ${taskId}`);
     if (!task.assigneeId) throw new Error("Task execution requires an assignee");
     const employeeId = task.assigneeId;
+    this.tasks.requireExecutableAssignee(companyId, employeeId);
     if (task.status === "ready")
       task = this.tasks.transition(companyId, taskId, "ASSIGN", actorId, "Execution assigned");
     if (task.status !== "assigned")

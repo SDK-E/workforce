@@ -49,6 +49,7 @@ import { MailRepository } from "../integrations/mail-repository.js";
 import { TaskCheckpointRepository } from "../tasks/task-checkpoint-repository.js";
 import { TaskHandoffRepository } from "../tasks/task-handoff-repository.js";
 import { ArtifactReferenceRepository } from "./artifact-reference-repository.js";
+import { WorkforceAdaptationRepository } from "../governance/workforce-adaptation-repository.js";
 
 export class StateStore {
   readonly database: WorkforceDatabase;
@@ -64,6 +65,7 @@ export class StateStore {
   readonly meetingContributions: MeetingContributionRepository;
   readonly incidents: IncidentRepository;
   readonly performance: PerformanceRepository;
+  readonly workforceAdaptation: WorkforceAdaptationRepository;
   readonly opportunities: OpportunityRepository;
   readonly leads: LeadRepository;
   readonly clients: ClientRepository;
@@ -134,6 +136,11 @@ export class StateStore {
       this.companiesRepository,
       this.audit,
     );
+    this.workforceAdaptation = new WorkforceAdaptationRepository(
+      this.database,
+      this.companiesRepository,
+      this.audit,
+    );
     this.opportunities = new OpportunityRepository(
       this.database,
       this.companiesRepository,
@@ -181,9 +188,6 @@ export class StateStore {
   get root(): string {
     return this.database.root;
   }
-  get path(): string {
-    return this.database.path;
-  }
   get db(): DatabaseSync {
     return this.database.connection;
   }
@@ -218,10 +222,6 @@ export class StateStore {
   }
   employees(companyId: string): Employee[] {
     return this.companiesRepository.employees(companyId);
-  }
-  bootstrapOrganization(id: string, name: string): Employee[] {
-    if (!this.company(id)) this.createCompany({ id, name });
-    return this.employees(id);
   }
   addMessage(
     companyId: string,
@@ -280,9 +280,6 @@ export class StateStore {
   }
   strategyItems(companyId: string, kind?: StrategyItemKind): StrategyItem[] {
     return this.strategyRepository.list(companyId, kind);
-  }
-  eventCount(companyId: string): number {
-    return this.audit.count(companyId);
   }
   append(
     type: string,

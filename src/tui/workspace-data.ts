@@ -17,6 +17,8 @@ export function loadWorkspaceData(store: StateStore, companyId: string) {
     rooms,
     threads: primaryRoom ? store.conversations.threads.list(companyId, primaryRoom.id) : [],
     hiringProposals: store.employment.proposalList(companyId),
+    reinforcementPlans: store.workforceAdaptation.plans(companyId),
+    armDecisions: store.workforceAdaptation.decisions(companyId),
     approvals: store.approvalsRepository.list(companyId),
     meetings: store.meetings.list(companyId),
     performanceRecords: store.performance.listPerformance(companyId),

@@ -173,6 +173,13 @@ export class TaskRepository {
     return { ...current, assigneeId: employeeId, updatedAt: now };
   }
 
+  requireExecutableAssignee(companyId: string, employeeId: string): void {
+    const employee = this.companies
+      .employees(companyId)
+      .find(({ id, status }) => id === employeeId && ["active", "probation"].includes(status));
+    if (!employee) throw new Error(`Task assignee is not eligible for execution: ${employeeId}`);
+  }
+
   setRisk(
     companyId: string,
     taskId: string,

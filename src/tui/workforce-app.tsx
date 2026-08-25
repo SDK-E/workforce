@@ -258,7 +258,7 @@ function WorkforceContent(props: {
           activeEmployees={props.data.employees.filter(({ status }) => status === "active").length}
           {...attemptMetricsFor(props.data)}
           pendingApprovals={props.data.pendingApprovals}
-          eventCount={props.store.eventCount(props.company.id)}
+          eventCount={props.store.audit.count(props.company.id)}
           auditVerified={props.store.verifyAuditChain()}
           strategyItems={props.data.strategyItems}
           active={props.contentInteractive}

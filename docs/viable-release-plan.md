@@ -72,6 +72,8 @@ The durable CEO performs a continuous, non-conversational operating cycle: reads
 
 ## Slice 3 — Viable ARM adaptation and reinforcement
 
+**Implementation status:** complete in the current repository; retain the acceptance requirements below as regression gates.
+
 ### Outcome
 
 The ARM continuously evaluates verified capacity, capability, and performance evidence; tries reassignment or reinforcement first; proposes or performs policy-authorized probationary hiring; and preserves work and records during suspension or offboarding.

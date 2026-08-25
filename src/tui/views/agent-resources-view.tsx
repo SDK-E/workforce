@@ -1,11 +1,21 @@
 import { Box, Text } from "ink";
 import type { HiringProposal } from "../../governance/governance-types.js";
+import type {
+  ArmDecision,
+  ReinforcementPlan,
+} from "../../governance/workforce-adaptation-types.js";
+import { Panel } from "../components/panel.js";
+import { truncate } from "../navigation.js";
 
 export function AgentResourcesView({
   proposals,
+  plans,
+  decisions,
   selectedRow,
 }: {
   proposals: HiringProposal[];
+  plans: ReinforcementPlan[];
+  decisions: ArmDecision[];
   selectedRow: number;
 }) {
   return (
@@ -14,6 +24,31 @@ export function AgentResourcesView({
       <Text dimColor>
         Gap-led hiring, probation, reassignment, and preserved offboarding records
       </Text>
+      <Box marginTop={1} gap={1} flexWrap="wrap">
+        <Panel title="REINFORCEMENT" width={48}>
+          {plans.length === 0 ? (
+            <Text dimColor>No evidence-backed reinforcement plans.</Text>
+          ) : (
+            plans.slice(0, 4).map((plan) => (
+              <Text key={plan.id}>
+                [{plan.status}] {plan.employeeId} · review {plan.reviewAt.slice(0, 10)}
+              </Text>
+            ))
+          )}
+        </Panel>
+        <Panel title="LATEST ARM DECISIONS" width={58}>
+          {decisions.length === 0 ? (
+            <Text dimColor>No autonomous workforce decision recorded.</Text>
+          ) : (
+            decisions.slice(0, 4).map((decision) => (
+              <Text key={decision.id}>
+                {decision.action} · {decision.subjectId} · {truncate(decision.rationale, 46)}
+              </Text>
+            ))
+          )}
+        </Panel>
+      </Box>
+      <Text bold>Hiring proposals</Text>
       {proposals.length === 0 ? (
         <Text>No hiring proposals.</Text>
       ) : (

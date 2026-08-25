@@ -132,7 +132,7 @@ export class EmploymentRepository {
     if (employeeId === "ceo" || employeeId === "arm")
       throw new Error("Durable CEO and ARM identities cannot be transitioned by this workflow");
     const next = nextEmploymentStatus(employee.status, event);
-    if (next === "terminated" || next === "archived")
+    if (next === "suspended" || next === "terminated" || next === "archived")
       this.requireNoActiveAttempt(companyId, employeeId);
     const manager = assignment?.managerId ?? employee.manager;
     if (manager) this.requireEmployee(companyId, manager);
@@ -145,7 +145,7 @@ export class EmploymentRepository {
         )
         .run(next, manager, department, companyId, employeeId);
       const releasedTasks =
-        next === "terminated" || next === "archived"
+        next === "suspended" || next === "terminated" || next === "archived"
           ? this.releaseAssignments(companyId, employeeId, now)
           : 0;
       const reassignedReports =

@@ -4,7 +4,10 @@ import type {
   RoomRecord,
 } from "../../conversations/conversation-types.js";
 import type { CompanyRecord } from "../../storage/records.js";
-import type { OrganizationUnit } from "../../organizations/organization-types.js";
+import type {
+  OrganizationUnit,
+  OrganizationUnitKind,
+} from "../../organizations/organization-types.js";
 import type { StrategyItem, StrategyItemKind } from "../../strategy/strategy-types.js";
 import type { TaskRecord } from "../../tasks/task-types.js";
 import type { Employee } from "../../domain.js";
@@ -64,6 +67,10 @@ import type {
 } from "../../business/business-types.js";
 import { BusinessPipelineView } from "./business-pipeline-view.js";
 import { CeoOfficeView } from "./ceo-office-view.js";
+import type {
+  ArmDecision,
+  ReinforcementPlan,
+} from "../../governance/workforce-adaptation-types.js";
 
 interface WorkspaceViewProps {
   section: string;
@@ -80,6 +87,8 @@ interface WorkspaceViewProps {
   threads: ConversationThread[];
   employees: Employee[];
   hiringProposals: HiringProposal[];
+  reinforcementPlans: ReinforcementPlan[];
+  armDecisions: ArmDecision[];
   approvals: ApprovalRecord[];
   meetings: MeetingRecord[];
   performanceRecords: PerformanceRecord[];
@@ -118,6 +127,8 @@ const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
 export function WorkspaceView(props: WorkspaceViewProps) {
   const business = businessView(props);
   if (business) return business;
+  const organization = organizationView(props);
+  if (organization) return organization;
   if (props.section === "Execution readiness") return executionReadinessView(props);
   if (props.section === "Companies")
     return (
@@ -125,32 +136,6 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         company={props.company}
         companies={props.companies}
         compact={props.compact}
-        selectedRow={props.selectedRow}
-      />
-    );
-  if (props.section === "Organization")
-    return <OrganizationView units={props.organizationUnits} selectedRow={props.selectedRow} />;
-  if (props.section === "Departments")
-    return (
-      <OrganizationView
-        units={props.organizationUnits}
-        kind="department"
-        selectedRow={props.selectedRow}
-      />
-    );
-  if (props.section === "Teams")
-    return (
-      <OrganizationView
-        units={props.organizationUnits}
-        kind="team"
-        selectedRow={props.selectedRow}
-      />
-    );
-  if (props.section === "Offices & rooms")
-    return (
-      <OrganizationView
-        units={props.organizationUnits}
-        kind={["office", "room"]}
         selectedRow={props.selectedRow}
       />
     );
@@ -177,7 +162,14 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       />
     );
   if (props.section === "Agent Resources")
-    return <AgentResourcesView proposals={props.hiringProposals} selectedRow={props.selectedRow} />;
+    return (
+      <AgentResourcesView
+        proposals={props.hiringProposals}
+        plans={props.reinforcementPlans}
+        decisions={props.armDecisions}
+        selectedRow={props.selectedRow}
+      />
+    );
   if (props.section === "Approvals")
     return <ApprovalView approvals={props.approvals} selectedRow={props.selectedRow} />;
   if (props.section === "Meetings")
@@ -261,6 +253,24 @@ function businessView(props: WorkspaceViewProps) {
     <BusinessPipelineView
       {...props}
       section={props.section as "Opportunities" | "Leads" | "Clients" | "Engagements"}
+    />
+  );
+}
+
+function organizationView(props: WorkspaceViewProps) {
+  const kinds = {
+    Organization: undefined,
+    Departments: "department",
+    Teams: "team",
+    "Offices & rooms": ["office", "room"] as OrganizationUnitKind[],
+  } as const;
+  if (!(props.section in kinds)) return null;
+  const kind = kinds[props.section as keyof typeof kinds];
+  return (
+    <OrganizationView
+      units={props.organizationUnits}
+      selectedRow={props.selectedRow}
+      {...(kind === undefined ? {} : { kind })}
     />
   );
 }
