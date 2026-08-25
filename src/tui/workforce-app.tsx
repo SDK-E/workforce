@@ -24,6 +24,7 @@ interface WorkforceAppProps {
   initialCompany: CompanyRecord;
   onEmergencyStop: () => Promise<void>;
   onStartTask: (companyId: string, taskId: string) => Promise<void>;
+  onVerifyMcp: (companyId: string, serverId: string) => Promise<void>;
 }
 
 function loadWorkspaceData(store: StateStore, companyId: string) {
@@ -67,6 +68,7 @@ export function WorkforceApp({
   initialCompany,
   onEmergencyStop,
   onStartTask,
+  onVerifyMcp,
 }: WorkforceAppProps) {
   const { stdout } = useStdout();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -109,6 +111,9 @@ export function WorkforceApp({
       const task = data.tasks.find(({ status }) => status === "ready" || status === "assigned");
       if (task) setExecutionTaskId(task.id);
       else setStatusMessage("No ready or assigned task is available to run");
+    }
+    if (input === "v" && selectedSection === "MCP servers") {
+      verifyFirstMcp(data.mcpServers, company.id, onVerifyMcp, setStatusMessage);
     }
     if (input === "?") setHelpVisible(true);
     else if (input === "p" || input === "/") setPaletteVisible(true);
@@ -197,6 +202,27 @@ export function WorkforceApp({
       />
     </Box>
   );
+}
+
+function verifyFirstMcp(
+  servers: ReturnType<typeof loadWorkspaceData>["mcpServers"],
+  companyId: string,
+  verify: (companyId: string, serverId: string) => Promise<void>,
+  status: (message: string) => void,
+): void {
+  const server = servers.find((candidate) => candidate.status === "active");
+  if (!server) {
+    status("No active MCP server is available to verify");
+    return;
+  }
+  status(`Verifying ${server.name} in Docker…`);
+  void verify(companyId, server.id)
+    .then(() => {
+      status(`${server.name} passed its Docker MCP probe`);
+    })
+    .catch((error: unknown) => {
+      status(error instanceof Error ? error.message : "MCP verification failed");
+    });
 }
 
 interface PaletteKey {

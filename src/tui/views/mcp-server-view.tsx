@@ -16,7 +16,7 @@ export function McpServerView({ servers }: { servers: McpServerRecord[] }) {
           </Text>
         ))
       )}
-      <Text dimColor>n register · e edit · d archive · u restore</Text>
+      <Text dimColor>n register · e edit · d archive · u restore · v verify in Docker</Text>
     </Box>
   );
 }

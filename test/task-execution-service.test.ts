@@ -81,10 +81,12 @@ test("approved task contracts queue verified inference-capable Docker execution"
         secretRequirements: [],
         credentialBindings: [],
         status: "active",
-        health: "healthy",
+        health: "unknown",
+        healthReceiptId: null,
       },
       "arm",
     );
+    store.mcpServers.recordHealth("acme", "quality", "healthy", { protocol: "mcp" }, "probe");
     const task = store.createTask({
       id: "build-api",
       companyId: "acme",

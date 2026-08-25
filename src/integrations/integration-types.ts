@@ -17,6 +17,7 @@ export interface McpServerRecord {
   credentialBindings: CredentialBinding[];
   status: ManagedStatus;
   health: "unknown" | "healthy" | "degraded" | "unavailable";
+  healthReceiptId: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -13,6 +13,7 @@ import { CeoOperatingLoop } from "./autonomy/ceo-operating-loop.js";
 import { AttemptCapabilityResolver } from "./integrations/attempt-capability-resolver.js";
 import { AutomationService } from "./automations/automation-service.js";
 import { MailAttemptBridge } from "./integrations/mail-attempt-bridge.js";
+import { DockerMcpProbeRunner, McpHealthVerifier } from "./integrations/mcp-health-verifier.js";
 
 const store = new StateStore();
 store.initialize();
@@ -29,6 +30,18 @@ const dockerClient = new ExecaDockerClient({
 });
 const artifactPipeline = new ArtifactPipeline(store.root, store.artifacts, dockerClient);
 const mailBridge = new MailAttemptBridge(store.mail);
+const mcpVerifier = new McpHealthVerifier(store.mcpServers, new DockerMcpProbeRunner(), (server) =>
+  Object.fromEntries(
+    server.secretRequirements.map((name) => [
+      name,
+      secrets.get(name, {
+        companyId: server.companyId,
+        employeeId: "arm",
+        taskId: `mcp-health:${server.id}`,
+      }),
+    ]),
+  ),
+);
 const supervisor = new DockerSupervisor(
   store.attempts,
   dockerClient,
@@ -74,6 +87,9 @@ render(
     onEmergencyStop={() => supervisor.emergencyStop("human")}
     onStartTask={async (companyId, taskId) => {
       await taskExecution.start(companyId, taskId, "human");
+    }}
+    onVerifyMcp={async (companyId, serverId) => {
+      await mcpVerifier.verify(companyId, serverId, "human");
     }}
   />,
 );

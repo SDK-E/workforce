@@ -7,6 +7,7 @@ import { AttemptCapabilityResolver } from "../src/integrations/attempt-capabilit
 import { MailAttemptBridge } from "../src/integrations/mail-attempt-bridge.js";
 import type { ArtifactRecord } from "../src/acceptance/artifact-types.js";
 import type { AttemptRecord } from "../src/supervision/attempt-types.js";
+import { McpHealthVerifier } from "../src/integrations/mcp-health-verifier.js";
 import { StateStore } from "../src/storage/state-store.js";
 
 test("MCP, Beads, and mail capabilities are scoped, audited, and reversible", () => {
@@ -29,10 +30,12 @@ test("MCP, Beads, and mail capabilities are scoped, audited, and reversible", ()
         secretRequirements: ["MCP_TOKEN"],
         credentialBindings: [{ target: "Authorization", secretName: "MCP_TOKEN" }],
         status: "active",
-        health: "healthy",
+        health: "unknown",
+        healthReceiptId: null,
       },
       "arm",
     );
+    store.mcpServers.recordHealth("alpha", "research", "healthy", { protocol: "mcp" }, "probe");
     const beads = store.projectIntegrations.save(
       {
         companyId: "alpha",
@@ -159,6 +162,49 @@ test("agent attempts receive scoped inbox snapshots and import validated outboxe
   }
 });
 
+test("MCP health requires a persisted sandbox probe receipt", async () => {
+  const root = mkdtempSync(join(tmpdir(), "workforce-mcp-health-"));
+  const store = new StateStore(root);
+  try {
+    store.initialize();
+    store.createCompany({ id: "acme", name: "Acme" });
+    store.mcpServers.save(
+      {
+        companyId: "acme",
+        id: "docs",
+        name: "Documentation MCP",
+        transport: "http",
+        endpoint: "https://mcp.example.test",
+        command: [],
+        toolAllowlist: ["search"],
+        secretRequirements: [],
+        credentialBindings: [],
+        status: "active",
+        health: "unknown",
+        healthReceiptId: null,
+      },
+      "arm",
+    );
+    const unverified = store.mcpServers.get("acme", "docs");
+    assert.ok(unverified);
+    assert.throws(
+      () => store.mcpServers.save({ ...unverified, health: "healthy" }, "human"),
+      /verified probe/,
+    );
+    const verifier = new McpHealthVerifier(
+      store.mcpServers,
+      { probe: () => Promise.resolve({ healthy: true, details: { protocol: "mcp" } }) },
+      () => ({}),
+    );
+    const verified = await verifier.verify("acme", "docs", "health-worker");
+    assert.equal(verified.health, "healthy");
+    assert.ok(verified.healthReceiptId);
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 function assertUnsafeConfigurationsAreRejected(store: StateStore, projectId: string): void {
   assert.throws(
     () =>
@@ -174,7 +220,8 @@ function assertUnsafeConfigurationsAreRejected(store: StateStore, projectId: str
           secretRequirements: [],
           credentialBindings: [],
           status: "active",
-          health: "healthy",
+          health: "unknown",
+          healthReceiptId: null,
         },
         "human",
       ),

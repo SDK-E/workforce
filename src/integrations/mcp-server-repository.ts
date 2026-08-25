@@ -5,6 +5,7 @@ import { sanitizeTerminal } from "../storage/sanitize-terminal.js";
 import { parseJson } from "../storage/serialization.js";
 import { validateSecretName } from "./integration-config-policy.js";
 import type { ManagedStatus, McpServerRecord } from "./integration-types.js";
+import { randomUUID } from "node:crypto";
 
 export class McpServerRepository {
   constructor(
@@ -17,6 +18,8 @@ export class McpServerRepository {
     this.companies.require(input.companyId);
     validateMcp(input);
     const existing = this.get(input.companyId, input.id);
+    if (input.health !== "unknown" && input.health !== existing?.health)
+      throw new Error("MCP health can only be changed by a verified probe");
     const now = new Date().toISOString();
     const record: McpServerRecord = {
       ...input,
@@ -29,13 +32,14 @@ export class McpServerRepository {
         .prepare(
           `INSERT INTO mcp_servers
            (company_id,id,name,transport,endpoint,command_json,tool_allowlist_json,
-            secret_requirements_json,status,health,created_at,updated_at,credential_bindings_json)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+            secret_requirements_json,status,health,created_at,updated_at,credential_bindings_json,
+            health_receipt_id)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
            ON CONFLICT(company_id,id) DO UPDATE SET name=excluded.name,transport=excluded.transport,
            endpoint=excluded.endpoint,command_json=excluded.command_json,
            tool_allowlist_json=excluded.tool_allowlist_json,
            secret_requirements_json=excluded.secret_requirements_json,status=excluded.status,
-           health=excluded.health,credential_bindings_json=excluded.credential_bindings_json,
+           credential_bindings_json=excluded.credential_bindings_json,
            updated_at=excluded.updated_at`,
         )
         .run(
@@ -52,6 +56,7 @@ export class McpServerRepository {
           record.createdAt,
           record.updatedAt,
           JSON.stringify(record.credentialBindings),
+          record.healthReceiptId,
         );
       this.audit.append("mcp-server.saved", actorId, record.companyId, {
         serverId: record.id,
@@ -87,6 +92,37 @@ export class McpServerRepository {
     const current = this.get(companyId, id);
     if (!current) throw new Error(`Unknown MCP server: ${id}`);
     return this.save({ ...current, status }, actorId);
+  }
+
+  recordHealth(
+    companyId: string,
+    id: string,
+    status: "healthy" | "degraded" | "unavailable",
+    details: Record<string, unknown>,
+    actorId: string,
+  ): McpServerRecord {
+    const current = this.get(companyId, id);
+    if (!current) throw new Error(`Unknown MCP server: ${id}`);
+    const receiptId = randomUUID();
+    const now = new Date().toISOString();
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare("INSERT INTO mcp_health_receipts VALUES (?,?,?,?,?,?,?)")
+        .run(receiptId, companyId, id, status, current.transport, JSON.stringify(details), now);
+      this.database.connection
+        .prepare(
+          "UPDATE mcp_servers SET health=?,health_receipt_id=?,updated_at=? WHERE company_id=? AND id=?",
+        )
+        .run(status, receiptId, now, companyId, id);
+      this.audit.append("mcp-server.health-verified", actorId, companyId, {
+        serverId: id,
+        status,
+        receiptId,
+      });
+    });
+    const updated = this.get(companyId, id);
+    if (!updated) throw new Error(`MCP server disappeared after health update: ${id}`);
+    return updated;
   }
 }
 
@@ -134,6 +170,7 @@ function mapMcp(row: Record<string, unknown>): McpServerRecord {
     credentialBindings: parseJson(row.credential_bindings_json),
     status: String(row.status) as ManagedStatus,
     health: String(row.health) as McpServerRecord["health"],
+    healthReceiptId: typeof row.health_receipt_id === "string" ? row.health_receipt_id : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };

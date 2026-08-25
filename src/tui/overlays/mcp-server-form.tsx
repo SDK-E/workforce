@@ -42,6 +42,7 @@ export function McpServerForm(props: {
       credentialBindings: parseBindings(values[6]),
       status: "active",
       health: "unknown",
+      healthReceiptId: null,
     });
   }
   return (

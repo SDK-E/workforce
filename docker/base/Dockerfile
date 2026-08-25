@@ -16,6 +16,7 @@ RUN test -n "$KILO_VERSION" && test -n "$OPENCODE_VERSION" \
 
 COPY --chmod=0555 workforce-entrypoint /usr/local/bin/workforce-entrypoint
 COPY --chmod=0555 workforce-toolchain /usr/local/bin/workforce-toolchain
+COPY --chmod=0555 workforce-mcp-probe /usr/local/bin/workforce-mcp-probe
 RUN mkdir -p /work && chown 10001:10001 /work
 WORKDIR /work
 ENV CHROME_BIN=/usr/bin/chromium

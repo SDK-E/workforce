@@ -1,0 +1,77 @@
+#!/usr/bin/env node
+import { spawn } from "node:child_process";
+
+const config = JSON.parse(process.env.WORKFORCE_MCP_PROBE_CONFIG ?? "null");
+if (!config || !["stdio", "http", "sse"].includes(config.transport)) process.exit(64);
+const initialize = {
+  jsonrpc: "2.0",
+  id: "workforce-health",
+  method: "initialize",
+  params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "workforce", version: "1" } },
+};
+
+function credentials() {
+  return Object.fromEntries(
+    config.credentialBindings.map(({ target, secretName }) => {
+      const value = process.env[secretName];
+      if (!value) throw new Error(`Missing scoped credential: ${secretName}`);
+      return [target, value];
+    }),
+  );
+}
+
+async function probeRemote() {
+  const response = await fetch(config.endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json, text/event-stream", ...credentials() },
+    body: JSON.stringify(initialize),
+    signal: AbortSignal.timeout(10_000),
+  });
+  const body = await response.text();
+  if (!response.ok || (!body.includes('"result"') && !body.includes("event:")))
+    throw new Error(`MCP initialize failed with HTTP ${response.status}`);
+}
+
+async function probeStdio() {
+  const [executable, ...args] = config.command;
+  const child = spawn(executable, args, {
+    stdio: ["pipe", "pipe", "ignore"],
+    shell: false,
+    env: { ...process.env, ...credentials() },
+  });
+  let output = "";
+  child.stdout.on("data", (chunk) => {
+    output = (output + String(chunk)).slice(-262_144);
+  });
+  child.stdin.end(`${JSON.stringify(initialize)}\n`);
+  await new Promise((resolve, reject) => {
+    let settled = false;
+    const done = (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      clearInterval(inspect);
+      if (error) reject(error);
+      else resolve();
+    };
+    const timeout = setTimeout(() => done(new Error("MCP initialize timed out")), 10_000);
+    const inspect = setInterval(() => {
+      if (output.includes('"result"') && output.includes('"jsonrpc"')) {
+        done();
+      }
+    }, 25);
+    child.once("error", done);
+    child.once("exit", (code) => {
+      if (!output.includes('"result"')) done(new Error(`MCP process exited ${code ?? 1}`));
+    });
+  }).finally(() => child.kill("SIGTERM"));
+}
+
+try {
+  if (config.transport === "stdio") await probeStdio();
+  else await probeRemote();
+  process.stdout.write(JSON.stringify({ status: "healthy", protocol: "mcp" }));
+} catch (error) {
+  process.stderr.write(error instanceof Error ? error.message : "MCP probe failed");
+  process.exitCode = 1;
+}
