@@ -80,6 +80,8 @@ Create measurable objectives, initiatives, projects, goals, and milestones under
 
 The ARM evaluates whether an existing employee can do the work before proposing a probationary hire. A human can also create a governed hire from **Organization → Employees**. Dynamic persona, system prompt, instructions, sandbox, and probation criteria derive from the job rather than a hard-coded template.
 
+Every agent attempt also receives a freshly generated organizational briefing. Configure mission, vision, values, shareholder/governance information, and company policies from Companies; maintain managers and organization units under Organization; and keep objectives, goals, milestones, projects, and task ownership current. Workforce combines that live state with the employee's versioned persona, responsibilities, reporting line, collaboration protocol, business-pipeline status, and task boundaries. The resulting digest is stored on the attempt so operators can prove which organizational context guided a run.
+
 ## 5. Execute and inspect
 
 An approved assigned task flows through the execution service into a durable Docker attempt. The supervisor provisions a private volume, injects only authorized secrets, routes network traffic through audited egress, starts the selected engine, captures bounded output, exports artifacts, and independently evaluates acceptance.

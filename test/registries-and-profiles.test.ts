@@ -36,6 +36,19 @@ test("registries and dynamic agent instructions are company scoped and versioned
     store.initialize();
     store.createCompany({ id: "acme", name: "Acme" });
     store.createCompany({ id: "other", name: "Other" });
+    store.updateCompany({
+      companyId: "acme",
+      mission: "Build dependable autonomous operations",
+      policies: { shareholders: ["Founder voting control", "Employee option pool"] },
+    });
+    store.createStrategyItem({
+      companyId: "acme",
+      kind: "objective",
+      name: "First validated client delivery",
+      ownerId: "ceo",
+      managerId: "ceo",
+      successMeasures: ["Client acceptance recorded"],
+    });
     assert.equal(store.tools.list("acme").length, 6);
     assert.equal(store.environments.list("acme").length, 1);
     assert.equal(store.environments.list("acme")[0]?.id, "universal");
@@ -81,6 +94,21 @@ test("registries and dynamic agent instructions are company scoped and versioned
     assert.equal(attempt.instructionDigest?.length, 64);
     assert.match(attempt.command.at(-1) ?? "", /durable company CEO/);
     assert.match(attempt.command.at(-1) ?? "", /Prepare an evidenced operating review/);
+    assert.match(attempt.command.at(-1) ?? "", /ORGANIZATIONAL BRIEFING/);
+    assert.match(attempt.command.at(-1) ?? "", /Build dependable autonomous operations/);
+    assert.match(attempt.command.at(-1) ?? "", /Founder voting control/);
+    assert.match(attempt.command.at(-1) ?? "", /First validated client delivery/);
+    assert.match(attempt.command.at(-1) ?? "", /Use Workforce MCP/);
+    const firstDigest = attempt.instructionDigest;
+    store.updateCompany({ companyId: "acme", vision: "An always-on evidence-led company" });
+    const refreshed = store.attemptFactory.create({
+      task,
+      employeeId: "ceo",
+      sandbox,
+      model: "openai/gpt-5",
+    });
+    assert.notEqual(refreshed.instructionDigest, firstDigest);
+    assert.match(refreshed.command.at(-1) ?? "", /always-on evidence-led company/);
   } finally {
     store.close();
     rmSync(root, { recursive: true, force: true });

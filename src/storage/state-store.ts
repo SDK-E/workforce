@@ -30,6 +30,7 @@ import { OpportunityRepository } from "../business/opportunity-repository.js";
 import { LeadRepository } from "../business/lead-repository.js";
 import { ClientRepository } from "../business/client-repository.js";
 import { EngagementRepository } from "../business/engagement-repository.js";
+import { OrganizationalBriefingService } from "../employees/organizational-briefing-service.js";
 import { AttemptRepository } from "../supervision/attempt-repository.js";
 import { ArtifactRepository } from "./artifact-repository.js";
 import { ExecutionEvidenceRepository } from "./execution-evidence-repository.js";
@@ -49,7 +50,6 @@ import { TaskCheckpointRepository } from "../tasks/task-checkpoint-repository.js
 import { TaskHandoffRepository } from "../tasks/task-handoff-repository.js";
 import { ArtifactReferenceRepository } from "./artifact-reference-repository.js";
 
-/** Composition facade used by the application while feature services are introduced. */
 export class StateStore {
   readonly database: WorkforceDatabase;
   readonly audit: AuditRepository;
@@ -68,6 +68,7 @@ export class StateStore {
   readonly leads: LeadRepository;
   readonly clients: ClientRepository;
   readonly engagements: EngagementRepository;
+  readonly organizationalBriefings: OrganizationalBriefingService;
   readonly attempts: AttemptRepository;
   readonly artifacts: ArtifactRepository;
   readonly executionEvidence: ExecutionEvidenceRepository;
@@ -117,7 +118,6 @@ export class StateStore {
     );
     this.agentProfiles = new AgentProfileRepository(this.database, this.audit);
     this.defaultAgentProfiles = new DefaultAgentProfiles(this.agentProfiles);
-    this.attemptFactory = new AttemptFactory(this.agentProfiles);
     this.employment = new EmploymentRepository(
       this.database,
       this.companiesRepository,
@@ -146,6 +146,16 @@ export class StateStore {
       this.companiesRepository,
       this.audit,
     );
+    this.organizationalBriefings = new OrganizationalBriefingService(
+      this.companiesRepository,
+      this.organizationRepository,
+      this.strategyRepository,
+      this.opportunities,
+      this.leads,
+      this.clients,
+      this.engagements,
+    );
+    this.attemptFactory = new AttemptFactory(this.agentProfiles, this.organizationalBriefings);
     this.attempts = new AttemptRepository(this.database, this.audit);
     this.artifacts = new ArtifactRepository(this.database);
     this.executionEvidence = new ExecutionEvidenceRepository(this.database);
@@ -287,8 +297,5 @@ export class StateStore {
   }
   verifyAuditChain(): boolean {
     return this.audit.verifyChain();
-  }
-  backup(target: string): void {
-    this.database.backup(target);
   }
 }
