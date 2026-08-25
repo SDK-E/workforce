@@ -12,7 +12,7 @@ export function AutomationView({ automations }: { automations: AutomationRecord[
         automations.map((automation) => (
           <Text key={automation.id}>
             [{automation.status}] {automation.title} · requested by {automation.requestedBy} · saves{" "}
-            {automation.estimatedRunsSaved} runs
+            {automation.estimatedRunsSaved} runs · next {automation.nextRunAt ?? "not scheduled"}
           </Text>
         ))
       )}

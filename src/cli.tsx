@@ -11,6 +11,7 @@ import { ArtifactPipeline } from "./acceptance/artifact-pipeline.js";
 import { TaskExecutionService } from "./tasks/task-execution-service.js";
 import { CeoOperatingLoop } from "./autonomy/ceo-operating-loop.js";
 import { AttemptCapabilityResolver } from "./integrations/attempt-capability-resolver.js";
+import { AutomationService } from "./automations/automation-service.js";
 
 const store = new StateStore();
 store.initialize();
@@ -45,12 +46,19 @@ const taskExecution = new TaskExecutionService(
   new AttemptCapabilityResolver(store.mcpServers, store.projectIntegrations),
 );
 const operatingLoop = new CeoOperatingLoop(store, store.autonomy, taskExecution);
+const automationService = new AutomationService(store, taskExecution);
 const recovery = await supervisor.reconcile();
 await supervisor.tick();
 await operatingLoop.tick();
+await automationService.tick();
 setInterval(() => {
   void operatingLoop.tick().catch((error: unknown) => {
     logger.error({ error }, "CEO operating cycle failed");
+  });
+}, 10_000);
+setInterval(() => {
+  void automationService.tick().catch((error: unknown) => {
+    logger.error({ error }, "Automation scheduler tick failed");
   });
 }, 10_000);
 logger.info({ dockerAvailable: docker.available }, "control plane started");

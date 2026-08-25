@@ -46,6 +46,10 @@ Kilo and OpenCode have separate command adapters. The supervisor rejects command
 
 Container completion is only an attempt result. Independent control-plane validation checks required outputs, manifests, tests, policy violations, step exhaustion, permission failures, and acceptance criteria before a task can close.
 
+## Automations
+
+Agents may propose validated interval or strict cron automations, but proposals do not execute until approved. Approved actions are typed task templates rather than arbitrary commands. The scheduler calculates occurrences with `cron-parser`, creates ordinary audited company-scoped tasks, and dispatches them through the same Docker execution and acceptance path as human-created work. Each scheduled occurrence has a unique durable run record, preventing duplicate execution after repeated ticks or restarts; disable, archive, and restore preserve history.
+
 Task creation validates company-scoped project, parent-task, manager, assignee, and reviewer relationships. Requirements begin at version 1 and every objective, non-goal, acceptance, capability, network, or resource change creates an immutable version with actor and rationale. If an attempt is starting or running, a change is rejected unless it names an explicit safe checkpoint. Task dependencies are company-scoped and cannot self-reference.
 
 ## Workforce governance

@@ -47,6 +47,7 @@
     ]
   },
   "dependencies": {
+    "cron-parser": "^5.10.0",
     "execa": "10.0.1",
     "ink": "6.3.1",
     "ink-select-input": "6.2.0",

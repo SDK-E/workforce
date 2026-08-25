@@ -7,8 +7,10 @@ import { FormFrame } from "./form-frame.js";
 const FIELDS = [
   "Requester agent ID",
   "Title",
-  "Schedule or event",
-  "Action service",
+  "Cron schedule (UTC)",
+  "Task objective",
+  "Acceptance criteria (comma separated)",
+  "Assignee agent ID",
   "Rationale",
   "Estimated agent runs saved",
 ];
@@ -20,7 +22,7 @@ export function AutomationForm(props: {
   onCancel: () => void;
 }) {
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(["ceo", "", "", "", "", "1"]);
+  const [values, setValues] = useState(["ceo", "", "0 8 * * *", "", "", "ceo", "", "1"]);
   const confirming = step === FIELDS.length;
   useInput((_input, key) => {
     if (key.escape) props.onCancel();
@@ -31,10 +33,15 @@ export function AutomationForm(props: {
       companyId: props.companyId,
       requestedBy: values[0]?.trim() ?? "",
       title: values[1]?.trim() ?? "",
-      trigger: { expression: values[2]?.trim() ?? "" },
-      action: { service: values[3]?.trim() ?? "" },
-      rationale: values[4]?.trim() ?? "",
-      estimatedRunsSaved: Number(values[5]),
+      trigger: { kind: "cron", expression: values[2]?.trim() ?? "", timezone: "UTC" },
+      action: {
+        kind: "task",
+        objective: values[3]?.trim() ?? "",
+        acceptanceCriteria: splitList(values[4]),
+        assigneeId: values[5]?.trim() ?? "ceo",
+      },
+      rationale: values[6]?.trim() ?? "",
+      estimatedRunsSaved: Number(values[7]),
     });
   }
   return (
@@ -70,4 +77,11 @@ export function AutomationForm(props: {
       )}
     </FormFrame>
   );
+}
+
+function splitList(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
