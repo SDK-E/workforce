@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { sanitizeTerminal } from "../storage/sanitize-terminal.js";
 import { NAVIGATION_SECTIONS } from "./navigation.js";
+import { matchesKeybinding } from "./keybindings.js";
 
 export interface PaletteKey {
   escape: boolean;
@@ -22,11 +23,11 @@ export function processPaletteInput(
     query: Dispatch<SetStateAction<string>>;
   },
 ): void {
-  if (key.escape) {
+  if (matchesKeybinding("cancel", input, key)) {
     actions.close();
     return;
   }
-  if (key.return) {
+  if (matchesKeybinding("activate", input, key)) {
     const match = NAVIGATION_SECTIONS.findIndex((section) =>
       section.toLowerCase().includes(searchQuery.toLowerCase()),
     );

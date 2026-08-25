@@ -1,9 +1,11 @@
 import { Box, Text } from "ink";
+import { useWorkforceTheme } from "../themes/theme-context.js";
 import type { ArtifactRecord } from "../../acceptance/artifact-types.js";
 import type { AttemptRecord } from "../../supervision/attempt-types.js";
 import { truncate } from "../navigation.js";
 
 export function LiveWorkView({ attempts }: { attempts: AttemptRecord[] }) {
+  const theme = useWorkforceTheme();
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>Live work and execution queue</Text>
@@ -12,7 +14,10 @@ export function LiveWorkView({ attempts }: { attempts: AttemptRecord[] }) {
         <Text>No execution attempts have been queued.</Text>
       ) : (
         attempts.slice(0, 20).map((attempt) => (
-          <Text key={attempt.id} color={attempt.status === "failed" ? "red" : "white"}>
+          <Text
+            key={attempt.id}
+            color={attempt.status === "failed" ? theme.colors.danger : theme.colors.text}
+          >
             [{attempt.status}] {attempt.taskId} · {attempt.sandbox.engine} ·{" "}
             {attempt.sandbox.profile}
           </Text>

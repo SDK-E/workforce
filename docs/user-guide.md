@@ -35,8 +35,10 @@ printf '%s' "$VERCEL_TOKEN" | pnpm secrets:import -- vercel COMPANY_ID EMPLOYEE_
 
 ## 3. Navigate the TUI
 
-- `Tab` / `Shift-Tab`: switch focused area.
-- `j` / `k` or arrow keys: move between pages in the focused area.
+- `Tab` / `Shift-Tab`: move focus between the visible sidebar and dashboard content.
+- `Ctrl-Tab` / `Ctrl-Shift-Tab`: switch navigation area.
+- `j` / `k` or `Up` / `Down`: move within whichever surface is focused.
+- `Right` or `Enter`: enter dashboard content from the sidebar; `Escape` returns.
 - `[` / `]`: select the previous or next record on a page.
 - `n`: create a record where supported.
 - `e`: edit or decide the selected record.
@@ -52,6 +54,10 @@ The familiar VS Code-style bindings work too:
 - `Ctrl-P`: open the command palette (as does `Ctrl-Shift-P`).
 - `Ctrl-B`: show or hide the navigation sidebar.
 - `Ctrl-,`: open settings.
+
+Collapsing the sidebar with `Ctrl-B` transfers focus to dashboard content. Hidden navigation never receives arrow keys or mutation commands.
+
+Themes are listed under **System → Settings**. Press `t` there to select the next registered theme, or set `WORKFORCE_THEME=high-contrast` before startup. See the [TUI customization guide](tui-customization.md) when adding themes or changing bindings.
 
 Terminal applications cannot reliably distinguish every platform shortcut, so these bindings are additive: the single-key alternatives remain available and all text-entry dialogs retain normal editing behavior.
 

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { PromptMarker } from "../components/prompt-marker.js";
+import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import type {
   CreateStrategyItemInput,
@@ -26,9 +28,9 @@ export function StrategyForm(props: {
     props.initial?.successMeasures.join(", ") ?? "",
   ]);
   const confirming = step === FIELDS.length;
-  useInput((_input, key) => {
-    if (key.escape) props.onCancel();
-    if (confirming && key.return) submit();
+  useInput((input, key) => {
+    if (matchesKeybinding("cancel", input, key)) props.onCancel();
+    if (confirming && matchesKeybinding("activate", input, key)) submit();
   });
   function advance(): void {
     if ([0, 2, 3].includes(step) && !values[step]?.trim()) return;
@@ -61,7 +63,7 @@ export function StrategyForm(props: {
         <>
           <Text>{FIELDS[step]}</Text>
           <Box>
-            <Text color="cyan">› </Text>
+            <PromptMarker />
             <TextInput
               value={values[step] ?? ""}
               onChange={(value) => {

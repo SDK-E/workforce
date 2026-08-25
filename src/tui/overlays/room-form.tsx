@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { PromptMarker } from "../components/prompt-marker.js";
+import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import type { RoomRecord } from "../../conversations/conversation-types.js";
 import { FormFrame } from "./form-frame.js";
@@ -27,9 +29,9 @@ export function RoomForm(props: {
     props.initial?.announcement ?? "",
   ]);
   const confirming = step === FIELDS.length;
-  useInput((_input, key) => {
-    if (key.escape) props.onCancel();
-    if (confirming && key.return)
+  useInput((input, key) => {
+    if (matchesKeybinding("cancel", input, key)) props.onCancel();
+    if (confirming && matchesKeybinding("activate", input, key))
       props.onSubmit({
         name: values[0]?.trim() ?? "",
         kind: values[1]?.trim() ?? "",
@@ -53,7 +55,7 @@ export function RoomForm(props: {
         <>
           <Text>{FIELDS[step]}</Text>
           <Box>
-            <Text color="cyan">› </Text>
+            <PromptMarker />
             <TextInput
               value={values[step] ?? ""}
               onChange={(value) => {

@@ -33,6 +33,7 @@ Workforce is organized by product capability. Put new domain behavior beside the
 | `supervision/` | Docker attempts, leases, capacity, recovery, and logs |
 | `tasks/` | Task lifecycle, requirements, persistence, and execution service |
 | `tui/` | Terminal shell, organized into `components/`, `overlays/`, and `views/` |
+| `tui/themes/` | Discoverable theme definitions and the runtime theme registry |
 
 ## Placement rules
 
@@ -41,4 +42,6 @@ Workforce is organized by product capability. Put new domain behavior beside the
 - Keep SQL out of TypeScript migrations; add the next `src/storage/migrations/NNN.sql` file and let `schema_migrations` record the applied version.
 - Delete superseded files and update this map in the same change that replaces them.
 - A module over 300 lines fails lint and should be split by responsibility.
+- Declare application shortcuts only in `tui/keybindings.ts`; duplicate chords fail tests.
+- Consume colors from a registered `WorkforceTheme`, not literal component colors.
 - The host control plane coordinates work but never runs agent-authored commands or agent engines.

@@ -72,7 +72,7 @@ The practical readiness dependency is intentional: a company must have a configu
 ### TUI quality
 
 - Forms use opaque `FormFrame`/modal backdrops, so text behind a popup is not exposed.
-- Navigation uses seven focused areas, arrow-key page movement, Tab area movement, VS Code-style `Ctrl-P`/`Ctrl-B`/`Ctrl-,` bindings, selected rows, confirmations, command palette, help, no-color-compatible Ink rendering, and responsive compact behavior.
+- Navigation has explicit sidebar/content focus: arrows operate only on the focused surface, collapsed navigation transfers focus to content, and hidden regions cannot mutate state. One validated keybinding registry drives input and help text. Registered theme files drive shell/modal/status colors and appear in Settings.
 - Company, organization, strategy, task, employee, agent profile, conversation room, MCP, integration, mail, automation, and meeting creation forms exist to varying degrees of completeness. Meeting create/edit/archive/restore is complete and tested.
 
 ### Project foundation

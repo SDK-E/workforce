@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { PromptMarker } from "../components/prompt-marker.js";
+import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import SelectInput from "ink-select-input";
 import type { ApprovalEvent } from "../../governance/approval-machine.js";
@@ -14,9 +16,10 @@ export function ApprovalDecisionForm(props: {
   const [approvalId, setApprovalId] = useState("");
   const [event, setEvent] = useState<ApprovalEvent>("APPROVE");
   const [rationale, setRationale] = useState("");
-  useInput((_input, key) => {
-    if (key.escape) props.onCancel();
-    if (step === 3 && key.return) props.onSubmit({ approvalId, event, rationale });
+  useInput((input, key) => {
+    if (matchesKeybinding("cancel", input, key)) props.onCancel();
+    if (step === 3 && matchesKeybinding("activate", input, key))
+      props.onSubmit({ approvalId, event, rationale });
   });
   return (
     <FormFrame
@@ -30,7 +33,7 @@ export function ApprovalDecisionForm(props: {
         <>
           <Text>Approval ID</Text>
           <Box>
-            <Text color="cyan">› </Text>
+            <PromptMarker />
             <TextInput
               value={approvalId}
               onChange={setApprovalId}
@@ -60,7 +63,7 @@ export function ApprovalDecisionForm(props: {
         <>
           <Text>Evidence-based rationale</Text>
           <Box>
-            <Text color="cyan">› </Text>
+            <PromptMarker />
             <TextInput
               value={rationale}
               onChange={setRationale}

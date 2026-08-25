@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { NAVIGATION_SECTIONS } from "../navigation.js";
 import { ModalBackdrop } from "../components/modal-backdrop.js";
+import { useWorkforceTheme } from "../themes/theme-context.js";
 
 interface CommandPaletteProps {
   query: string;
@@ -8,6 +9,7 @@ interface CommandPaletteProps {
 }
 
 export function CommandPalette({ query, terminalWidth }: CommandPaletteProps) {
+  const theme = useWorkforceTheme();
   const matches = NAVIGATION_SECTIONS.filter((section) =>
     section.toLowerCase().includes(query.toLowerCase()),
   ).slice(0, 6);
@@ -16,9 +18,9 @@ export function CommandPalette({ query, terminalWidth }: CommandPaletteProps) {
     <ModalBackdrop width={Math.max(36, Math.floor(terminalWidth / 2))}>
       <Box
         width="100%"
-        backgroundColor="black"
+        backgroundColor={theme.colors.canvas}
         borderStyle="double"
-        borderColor="cyan"
+        borderColor={theme.colors.accent}
         flexDirection="column"
         paddingX={1}
       >

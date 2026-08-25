@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { PromptMarker } from "../components/prompt-marker.js";
+import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import type { MailRecord } from "../../integrations/integration-types.js";
 import { FormFrame } from "./form-frame.js";
@@ -27,9 +29,9 @@ export function MailForm(props: {
   const [step, setStep] = useState(0);
   const [values, setValues] = useState(["human", "human", "agent", "ceo", "", ""]);
   const confirming = step === FIELDS.length;
-  useInput((_input, key) => {
-    if (key.escape) props.onCancel();
-    if (confirming && key.return) submit();
+  useInput((input, key) => {
+    if (matchesKeybinding("cancel", input, key)) props.onCancel();
+    if (confirming && matchesKeybinding("activate", input, key)) submit();
   });
   function submit(): void {
     props.onSubmit({
@@ -60,7 +62,7 @@ export function MailForm(props: {
         <>
           <Text>{FIELDS[step]}</Text>
           <Box>
-            <Text color="cyan">› </Text>
+            <PromptMarker />
             <TextInput
               value={values[step] ?? ""}
               onChange={(value) => {

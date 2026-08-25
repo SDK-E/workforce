@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import type { CompanyRecord, UpdateCompanyInput } from "../../storage/records.js";
 import { FormFrame } from "./form-frame.js";
+import { PromptMarker } from "../components/prompt-marker.js";
 
 interface CompanyFormProps {
   company: CompanyRecord;
@@ -22,8 +24,8 @@ export function CompanyForm({ company, terminalWidth, onSubmit, onCancel }: Comp
     (company.budgetCents / 100).toFixed(2),
   ]);
 
-  useInput((_input, key) => {
-    if (key.escape) onCancel();
+  useInput((input, key) => {
+    if (matchesKeybinding("cancel", input, key)) onCancel();
   });
 
   const currentValue = values[step] ?? "";
@@ -58,7 +60,7 @@ export function CompanyForm({ company, terminalWidth, onSubmit, onCancel }: Comp
     >
       <Text>{FIELDS[step]}</Text>
       <Box>
-        <Text color="cyan">› </Text>
+        <PromptMarker />
         <TextInput value={currentValue} onChange={updateCurrent} onSubmit={submitCurrent} />
       </Box>
     </FormFrame>

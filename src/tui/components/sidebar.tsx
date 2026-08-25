@@ -1,13 +1,17 @@
 import { Box, Text } from "ink";
 import { DEFAULT_SECTION, NAVIGATION_SECTIONS, navigationGroup, truncate } from "../navigation.js";
+import { useWorkforceTheme } from "../themes/theme-context.js";
+import { bindingsFor } from "../keybindings.js";
 
 interface SidebarProps {
   compact: boolean;
   height: number;
   selectedIndex: number;
+  focused: boolean;
 }
 
-export function Sidebar({ compact, height, selectedIndex }: SidebarProps) {
+export function Sidebar({ compact, height, selectedIndex, focused }: SidebarProps) {
+  const theme = useWorkforceTheme();
   const width = compact ? 24 : 28;
   const labelWidth = compact ? 18 : 22;
   const selected = NAVIGATION_SECTIONS[selectedIndex] ?? DEFAULT_SECTION;
@@ -19,15 +23,25 @@ export function Sidebar({ compact, height, selectedIndex }: SidebarProps) {
   const visibleItems = group.sections.slice(start, start + capacity);
 
   return (
-    <Box width={width} borderStyle="single" borderColor="gray" flexDirection="column" paddingX={1}>
-      <Text bold color="cyan">
+    <Box
+      width={width}
+      borderStyle="single"
+      borderColor={theme.colors.border}
+      flexDirection="column"
+      paddingX={1}
+    >
+      <Text bold color={theme.colors.accent}>
         {truncate(group.label.toUpperCase(), labelWidth)}
       </Text>
-      <Text dimColor>Tab change area</Text>
+      {focused ? (
+        <Text color={theme.colors.success}>● FOCUSED</Text>
+      ) : (
+        <Text>○ {bindingsFor("focusNext")} to focus</Text>
+      )}
       {start > 0 && <Text dimColor> ↑ more</Text>}
       {visibleItems.map((item) =>
         item === selected ? (
-          <Text key={item} inverse color="cyan">
+          <Text key={item} inverse color={theme.colors.accent}>
             › {truncate(item, labelWidth).padEnd(labelWidth)}
           </Text>
         ) : (

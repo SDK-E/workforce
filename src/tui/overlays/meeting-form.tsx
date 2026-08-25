@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { PromptMarker } from "../components/prompt-marker.js";
+import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import { FormFrame } from "./form-frame.js";
 import type { MeetingRecord } from "../../governance/meeting-repository.js";
@@ -35,9 +37,9 @@ export function MeetingForm(props: {
     props.initial?.scheduledAt ?? new Date().toISOString(),
   ]);
   const confirming = step === FIELDS.length;
-  useInput((_input, key) => {
-    if (key.escape) props.onCancel();
-    if (confirming && key.return)
+  useInput((input, key) => {
+    if (matchesKeybinding("cancel", input, key)) props.onCancel();
+    if (confirming && matchesKeybinding("activate", input, key))
       props.onSubmit({
         title: values[0] ?? "",
         organizerId: values[1] ?? "",
@@ -60,7 +62,7 @@ export function MeetingForm(props: {
         <>
           <Text>{FIELDS[step]}</Text>
           <Box>
-            <Text color="cyan">› </Text>
+            <PromptMarker />
             <TextInput
               value={values[step] ?? ""}
               onChange={(value) => {

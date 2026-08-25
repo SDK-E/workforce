@@ -1,5 +1,7 @@
 import { Box, Text } from "ink";
 import { ModalBackdrop } from "../components/modal-backdrop.js";
+import { useWorkforceTheme } from "../themes/theme-context.js";
+import { bindingsFor } from "../keybindings.js";
 
 interface HelpOverlayProps {
   compact: boolean;
@@ -7,32 +9,43 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ compact, terminalWidth }: HelpOverlayProps) {
+  const theme = useWorkforceTheme();
   return (
     <ModalBackdrop
       width={compact ? Math.max(40, terminalWidth - 8) : Math.floor(terminalWidth / 2)}
     >
       <Box
         width="100%"
-        backgroundColor="black"
+        backgroundColor={theme.colors.canvas}
         borderStyle="double"
-        borderColor="cyan"
+        borderColor={theme.colors.accent}
         flexDirection="column"
         paddingX={2}
       >
         <Text bold>Keyboard help</Text>
-        <Text>Tab / Shift-Tab Change area</Text>
-        <Text>↑/k, ↓/j Navigate within area</Text>
-        <Text>[ / ] Select previous / next record</Text>
-        <Text>←/→ Change page or detail panel</Text>
-        <Text>Ctrl-P Command palette (VS Code)</Text>
-        <Text>Ctrl-B Toggle sidebar (VS Code)</Text>
-        <Text>Ctrl-, Open settings (VS Code)</Text>
-        <Text>n New record where available</Text>
-        <Text>e Edit or decide where available</Text>
-        <Text>! Global emergency stop</Text>
-        <Text>/ or p Command palette / search</Text>
-        <Text>? Toggle this help</Text>
-        <Text>q Quit safely</Text>
+        <Text>{bindingsFor("focusNext")} Move focus between navigation and content</Text>
+        <Text>
+          {bindingsFor("areaNext")} / {bindingsFor("areaPrevious")} Change area
+        </Text>
+        <Text>
+          {bindingsFor("previous")} / {bindingsFor("next")} Move in focused surface
+        </Text>
+        <Text>
+          {bindingsFor("previousRecord")} / {bindingsFor("nextRecord")} Select record
+        </Text>
+        <Text>
+          {bindingsFor("previousPanel")} / {bindingsFor("nextPanel")} Change panel
+        </Text>
+        <Text>{bindingsFor("commandPalette")} Command palette</Text>
+        <Text>{bindingsFor("toggleSidebar")} Toggle sidebar</Text>
+        <Text>{bindingsFor("openSettings")} Open settings</Text>
+        <Text>
+          {bindingsFor("create")} New · {bindingsFor("edit")} Edit
+        </Text>
+        <Text>{bindingsFor("emergencyStop")} Global emergency stop</Text>
+        <Text>
+          {bindingsFor("help")} Help · {bindingsFor("quit")} Quit safely
+        </Text>
         <Text dimColor>Consequential actions always require confirmation.</Text>
       </Box>
     </ModalBackdrop>

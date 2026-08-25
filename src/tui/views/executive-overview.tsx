@@ -6,6 +6,8 @@ import type { StrategyItem } from "../../strategy/strategy-types.js";
 import { Panel } from "../components/panel.js";
 import { truncate } from "../navigation.js";
 import { SectionTabs } from "../components/section-tabs.js";
+import { matchesKeybinding } from "../keybindings.js";
+import { useWorkforceTheme } from "../themes/theme-context.js";
 
 interface ExecutiveOverviewProps {
   company: CompanyRecord;
@@ -16,15 +18,22 @@ interface ExecutiveOverviewProps {
   eventCount: number;
   auditVerified: boolean;
   strategyItems: StrategyItem[];
+  active: boolean;
 }
 
 export function ExecutiveOverview(props: ExecutiveOverviewProps) {
+  const theme = useWorkforceTheme();
   const tabs = ["Priorities", "System & risk", "Decisions"];
   const [selectedTab, setSelectedTab] = useState(0);
-  useInput((_input, key) => {
-    if (key.leftArrow) setSelectedTab((current) => (current + tabs.length - 1) % tabs.length);
-    if (key.rightArrow) setSelectedTab((current) => (current + 1) % tabs.length);
-  });
+  useInput(
+    (input, key) => {
+      if (matchesKeybinding("previousPanel", input, key))
+        setSelectedTab((current) => (current + tabs.length - 1) % tabs.length);
+      if (matchesKeybinding("nextPanel", input, key))
+        setSelectedTab((current) => (current + 1) % tabs.length);
+    },
+    { isActive: props.active },
+  );
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>Executive overview</Text>
@@ -34,11 +43,13 @@ export function ExecutiveOverview(props: ExecutiveOverviewProps) {
 
       <Box marginTop={1} gap={1} flexWrap="wrap">
         <Panel title="WORKFORCE" width={props.compact ? 24 : 28}>
-          <Text color="green">● {props.activeEmployees} durable identities healthy</Text>
+          <Text color={theme.colors.success}>
+            ● {props.activeEmployees} durable identities healthy
+          </Text>
           <Text>0 working · 0 blocked · 0 stale</Text>
         </Panel>
         <Panel title="EXECUTION" width={props.compact ? 24 : 30}>
-          <Text color={props.docker.available ? "green" : "yellow"}>
+          <Text color={props.docker.available ? theme.colors.success : theme.colors.warning}>
             {props.docker.available ? "● Docker available" : "! Docker unavailable"}
           </Text>
           <Text>Host execution disabled</Text>

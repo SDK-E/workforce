@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, useInput, useStdout } from "ink";
+import { Box, useStdout } from "ink";
 import type { DockerStatus } from "../docker-runtime.js";
 import type { CompanyRecord } from "../storage/records.js";
 import type { StateStore } from "../storage/state-store.js";
@@ -7,15 +7,16 @@ import { Breadcrumbs } from "./components/breadcrumbs.js";
 import { Sidebar } from "./components/sidebar.js";
 import { StatusBar } from "./components/status-bar.js";
 import { TopBar } from "./components/top-bar.js";
-import { DEFAULT_SECTION, moveGroup, moveWithinGroup, NAVIGATION_SECTIONS } from "./navigation.js";
+import { DEFAULT_SECTION, NAVIGATION_SECTIONS } from "./navigation.js";
 import { ExecutiveOverview } from "./views/executive-overview.js";
 import { WorkspaceView } from "./views/workspace-view.js";
 import { WorkforceOverlays } from "./overlays/workforce-overlays.js";
 import { useLifecycleController } from "./use-lifecycle-controller.js";
 import { loadWorkspaceData, type WorkspaceData } from "./workspace-data.js";
 import { useFormController } from "./use-form-controller.js";
-import { processPaletteInput } from "./command-palette-input.js";
-import { applicationShortcut } from "./application-shortcuts.js";
+import { nextTheme, themeById } from "./themes/index.js";
+import { WorkforceThemeProvider } from "./themes/theme-context.js";
+import { useWorkforceInput } from "./use-workforce-input.js";
 
 interface WorkforceAppProps {
   store: StateStore;
@@ -40,6 +41,8 @@ export function WorkforceApp({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [paletteVisible, setPaletteVisible] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [focus, setFocus] = useState<"sidebar" | "content">("sidebar");
+  const [theme, setTheme] = useState(() => themeById(process.env.WORKFORCE_THEME));
   const [helpVisible, setHelpVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusMessage, setStatusMessage] = useState(READY_STATUS);
@@ -61,141 +64,114 @@ export function WorkforceApp({
   });
   const forms = useFormController(setStatusMessage);
 
-  useInput((input, key) => {
-    if (emergencyVisible) return;
-    if (executionTaskId) return;
-    if (lifecycle.target) return;
-    if (forms.active) return;
-    if (helpVisible) {
-      if (input === "?" || key.escape) setHelpVisible(false);
-      return;
-    }
-
-    if (paletteVisible) {
-      processPaletteInput(input, key, searchQuery, {
-        close: () => {
-          setPaletteVisible(false);
-          setSearchQuery("");
-        },
-        select: setSelectedIndex,
-        status: setStatusMessage,
-        query: setSearchQuery,
-      });
-      return;
-    }
-
-    const shortcut = applicationShortcut(input, key);
-    if (shortcut === "toggle-sidebar") setSidebarVisible((visible) => !visible);
-    else if (shortcut === "open-settings")
-      setSelectedIndex(NAVIGATION_SECTIONS.indexOf("Settings"));
-    else if (shortcut === "open-palette") setPaletteVisible(true);
-    if (shortcut) return;
-
-    if (input === "q" && !key.ctrl && !key.meta) process.exit(0);
-    if (input === "n") forms.openCreate(selectedSection);
-    if (input === "e") forms.openEdit(selectedSection, Boolean(lifecycle.selected));
-    lifecycle.handleKey(input);
-    if (input === "!") setEmergencyVisible(true);
-    if (input === "r" && selectedSection === "Tasks") {
-      const task = data.tasks.find(({ status }) => status === "ready" || status === "assigned");
-      if (task) setExecutionTaskId(task.id);
-      else setStatusMessage("No ready or assigned task is available to run");
-    }
-    if (input === "v" && selectedSection === "MCP servers") {
-      verifyFirstMcp(data.mcpServers, company.id, onVerifyMcp, setStatusMessage);
-    }
-    if (input === "?") setHelpVisible(true);
-    else if (input === "p" || input === "/") setPaletteVisible(true);
-    else if (key.tab) setSelectedIndex((current) => moveGroup(current, key.shift ? -1 : 1));
-    else if (key.upArrow || input === "k")
-      setSelectedIndex((current) => moveWithinGroup(current, -1));
-    else if (key.downArrow || input === "j")
-      setSelectedIndex((current) => moveWithinGroup(current, 1));
-    else if (key.return && selectedSection === "Companies")
-      activateSelectedCompany(data.companies[lifecycle.rowIndex], setCompany, setStatusMessage);
-    else if (key.return) setStatusMessage(`Opened ${selectedSection}`);
+  useWorkforceInput({
+    blocked:
+      emergencyVisible ||
+      executionTaskId !== null ||
+      lifecycle.target !== null ||
+      forms.active !== null,
+    helpVisible,
+    paletteVisible,
+    searchQuery,
+    sidebarVisible,
+    focus,
+    selectedSection,
+    lifecycle,
+    forms,
+    data,
+    company,
+    onVerifyMcp,
+    setSelectedIndex,
+    setPaletteVisible,
+    setSidebarVisible,
+    setFocus,
+    setHelpVisible,
+    setSearchQuery,
+    setStatusMessage,
+    setEmergencyVisible,
+    setExecutionTaskId,
+    setCompany,
+    cycleTheme: () => {
+      setTheme((current) => nextTheme(current));
+    },
   });
 
   return (
-    <Box width={width} height={height} flexDirection="column">
-      <TopBar
-        companyName={company.displayName}
-        docker={docker}
-        pendingApprovals={data.pendingApprovals}
-      />
-      <Breadcrumbs section={selectedSection} />
-
-      <WorkforceContent
-        selectedIndex={selectedIndex}
-        section={selectedSection}
-        store={store}
-        company={company}
-        docker={docker}
-        compact={compact}
+    <WorkforceThemeProvider theme={theme}>
+      <Box
+        width={width}
         height={height}
-        data={data}
-        rowIndex={lifecycle.rowIndex}
-        sidebarVisible={sidebarVisible}
-      />
+        flexDirection="column"
+        backgroundColor={theme.colors.canvas}
+      >
+        <TopBar
+          companyName={company.displayName}
+          docker={docker}
+          pendingApprovals={data.pendingApprovals}
+        />
+        <Breadcrumbs section={selectedSection} focus={focus} />
 
-      <StatusBar message={statusMessage} />
-      <WorkforceOverlays
-        paletteVisible={paletteVisible}
-        helpVisible={helpVisible}
-        emergencyVisible={emergencyVisible}
-        executionTask={data.tasks.find(({ id }) => id === executionTaskId) ?? null}
-        lifecycleTarget={lifecycle.target}
-        activeForm={forms.active}
-        selectedTarget={forms.editing ? lifecycle.selected : null}
-        query={searchQuery}
-        compact={compact}
-        terminalWidth={width}
-        section={selectedSection}
-        company={company}
-        store={store}
-        onCompanyChange={setCompany}
-        onCloseForm={() => {
-          forms.close();
-        }}
-        onCloseEmergency={() => {
-          setEmergencyVisible(false);
-        }}
-        onStatus={setStatusMessage}
-        onEmergencyStop={onEmergencyStop}
-        onCancelExecution={() => {
-          setExecutionTaskId(null);
-        }}
-        onCancelLifecycle={lifecycle.cancel}
-        onConfirmLifecycle={lifecycle.confirm}
-        onConfirmExecution={() => {
-          const taskId = executionTaskId;
-          setExecutionTaskId(null);
-          startTaskExecution(taskId, company.id, onStartTask, setStatusMessage);
-        }}
-      />
-    </Box>
+        <WorkforceContent
+          selectedIndex={selectedIndex}
+          section={selectedSection}
+          store={store}
+          company={company}
+          docker={docker}
+          compact={compact}
+          height={height}
+          data={data}
+          rowIndex={lifecycle.rowIndex}
+          sidebarVisible={sidebarVisible}
+          focus={focus}
+          contentInteractive={
+            focus === "content" &&
+            !emergencyVisible &&
+            !executionTaskId &&
+            !lifecycle.target &&
+            !forms.active &&
+            !helpVisible &&
+            !paletteVisible
+          }
+        />
+
+        <StatusBar message={statusMessage} />
+        <WorkforceOverlays
+          paletteVisible={paletteVisible}
+          helpVisible={helpVisible}
+          emergencyVisible={emergencyVisible}
+          executionTask={data.tasks.find(({ id }) => id === executionTaskId) ?? null}
+          lifecycleTarget={lifecycle.target}
+          activeForm={forms.active}
+          selectedTarget={forms.editing ? lifecycle.selected : null}
+          query={searchQuery}
+          compact={compact}
+          terminalWidth={width}
+          section={selectedSection}
+          company={company}
+          store={store}
+          onCompanyChange={setCompany}
+          onCloseForm={() => {
+            forms.close();
+          }}
+          onCloseEmergency={() => {
+            setEmergencyVisible(false);
+          }}
+          onStatus={setStatusMessage}
+          onEmergencyStop={onEmergencyStop}
+          onCancelExecution={() => {
+            setExecutionTaskId(null);
+          }}
+          onCancelLifecycle={lifecycle.cancel}
+          onConfirmLifecycle={lifecycle.confirm}
+          onConfirmExecution={() => {
+            const taskId = executionTaskId;
+            setExecutionTaskId(null);
+            startTaskExecution(taskId, company.id, onStartTask, setStatusMessage);
+          }}
+        />
+      </Box>
+    </WorkforceThemeProvider>
   );
-}
-
-function verifyFirstMcp(
-  servers: ReturnType<typeof loadWorkspaceData>["mcpServers"],
-  companyId: string,
-  verify: (companyId: string, serverId: string) => Promise<void>,
-  status: (message: string) => void,
-): void {
-  const server = servers.find((candidate) => candidate.status === "active");
-  if (!server) {
-    status("No active MCP server is available to verify");
-    return;
-  }
-  status(`Verifying ${server.name} in Docker…`);
-  void verify(companyId, server.id)
-    .then(() => {
-      status(`${server.name} passed its Docker MCP probe`);
-    })
-    .catch((error: unknown) => {
-      status(error instanceof Error ? error.message : "MCP verification failed");
-    });
 }
 
 function startTaskExecution(
@@ -226,6 +202,8 @@ function WorkforceContent(props: {
   data: WorkspaceData;
   rowIndex: number;
   sidebarVisible: boolean;
+  focus: "sidebar" | "content";
+  contentInteractive: boolean;
 }) {
   return (
     <Box flexGrow={1} flexDirection="row">
@@ -234,6 +212,7 @@ function WorkforceContent(props: {
           compact={props.compact}
           height={props.height}
           selectedIndex={props.selectedIndex}
+          focused={props.focus === "sidebar"}
         />
       )}
       {props.selectedIndex === 0 ? (
@@ -246,6 +225,7 @@ function WorkforceContent(props: {
           eventCount={props.store.eventCount(props.company.id)}
           auditVerified={props.store.verifyAuditChain()}
           strategyItems={props.data.strategyItems}
+          active={props.contentInteractive}
         />
       ) : (
         <WorkspaceView
@@ -260,17 +240,4 @@ function WorkforceContent(props: {
       )}
     </Box>
   );
-}
-
-function activateSelectedCompany(
-  selected: CompanyRecord | undefined,
-  activate: (company: CompanyRecord) => void,
-  status: (message: string) => void,
-): void {
-  if (!selected) status("No company is selected");
-  else if (selected.status !== "active") status("Restore the company before activating it");
-  else {
-    activate(selected);
-    status(`Activated ${selected.displayName}`);
-  }
 }

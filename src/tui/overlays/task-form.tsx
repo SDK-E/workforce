@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { PromptMarker } from "../components/prompt-marker.js";
+import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import SelectInput from "ink-select-input";
 import type { CreateTaskInput, TaskRecord } from "../../tasks/task-types.js";
@@ -23,9 +25,9 @@ export function TaskForm(props: {
   const [objective, setObjective] = useState(props.initial?.objective ?? "");
   const [criteria, setCriteria] = useState(props.initial?.acceptanceCriteria.join(", ") ?? "");
   const [risk, setRisk] = useState<TaskRecord["risk"]>(props.initial?.risk ?? "medium");
-  useInput((_input, key) => {
-    if (key.escape) props.onCancel();
-    if (step === 3 && key.return) submit();
+  useInput((input, key) => {
+    if (matchesKeybinding("cancel", input, key)) props.onCancel();
+    if (step === 3 && matchesKeybinding("activate", input, key)) submit();
   });
   function submit(): void {
     props.onSubmit({
@@ -50,7 +52,7 @@ export function TaskForm(props: {
         <>
           <Text>Objective</Text>
           <Box>
-            <Text color="cyan">› </Text>
+            <PromptMarker />
             <TextInput
               value={objective}
               onChange={setObjective}
@@ -65,7 +67,7 @@ export function TaskForm(props: {
         <>
           <Text>Acceptance criteria (comma separated)</Text>
           <Box>
-            <Text color="cyan">› </Text>
+            <PromptMarker />
             <TextInput
               value={criteria}
               onChange={setCriteria}

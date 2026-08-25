@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { PromptMarker } from "../components/prompt-marker.js";
+import { matchesKeybinding } from "../keybindings.js";
+import { useWorkforceTheme } from "../themes/theme-context.js";
 import TextInput from "ink-text-input";
 import type { ProjectIntegrationRecord } from "../../integrations/integration-types.js";
 import { FormFrame } from "./form-frame.js";
@@ -13,6 +16,7 @@ export function ProjectIntegrationForm(props: {
   onCancel: () => void;
   initial?: ProjectIntegrationRecord | undefined;
 }) {
+  const theme = useWorkforceTheme();
   const [step, setStep] = useState(0);
   const [values, setValues] = useState(
     props.initial
@@ -26,9 +30,9 @@ export function ProjectIntegrationForm(props: {
   );
   const [error, setError] = useState("");
   const confirming = step === FIELDS.length;
-  useInput((_input, key) => {
-    if (key.escape) props.onCancel();
-    if (confirming && key.return) submit();
+  useInput((input, key) => {
+    if (matchesKeybinding("cancel", input, key)) props.onCancel();
+    if (confirming && matchesKeybinding("activate", input, key)) submit();
   });
   function submit(): void {
     try {
@@ -56,7 +60,7 @@ export function ProjectIntegrationForm(props: {
           : `Enter next · Esc cancel · ${step + 1}/${FIELDS.length}`
       }
     >
-      {error && <Text color="red">{error}</Text>}
+      {error && <Text color={theme.colors.danger}>{error}</Text>}
       {confirming ? (
         <Text>
           Activate {values[1]} only for project {values[0]}?
@@ -65,7 +69,7 @@ export function ProjectIntegrationForm(props: {
         <>
           <Text>{FIELDS[step]}</Text>
           <Box>
-            <Text color="cyan">› </Text>
+            <PromptMarker />
             <TextInput
               value={values[step] ?? ""}
               onChange={(value) => {

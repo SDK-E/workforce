@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import type { DockerStatus } from "../../docker-runtime.js";
 import { truncate } from "../navigation.js";
+import { useWorkforceTheme } from "../themes/theme-context.js";
 
 interface TopBarProps {
   companyName: string;
@@ -9,8 +10,9 @@ interface TopBarProps {
 }
 
 export function TopBar({ companyName, docker, pendingApprovals }: TopBarProps) {
+  const theme = useWorkforceTheme();
   return (
-    <Box paddingX={1} justifyContent="space-between" backgroundColor="blue">
+    <Box paddingX={1} justifyContent="space-between" backgroundColor={theme.colors.primary}>
       <Text bold> WORKFORCE {truncate(companyName, 22)}</Text>
       <Text>
         Docker {docker.available ? "● ready" : "! blocked"} Agents 0/2 Decisions {pendingApprovals}{" "}

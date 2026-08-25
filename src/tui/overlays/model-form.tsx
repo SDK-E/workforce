@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { PromptMarker } from "../components/prompt-marker.js";
+import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import type { ModelRecord } from "../../registries/registry-types.js";
 import { FormFrame } from "./form-frame.js";
@@ -41,9 +43,9 @@ export function ModelForm(props: {
     props.initial?.supportedRoles.join(", ") ?? "general",
   ]);
   const confirming = step === FIELDS.length;
-  useInput((_input, key) => {
-    if (key.escape) props.onCancel();
-    if (confirming && key.return) props.onSubmit(parse(values));
+  useInput((input, key) => {
+    if (matchesKeybinding("cancel", input, key)) props.onCancel();
+    if (confirming && matchesKeybinding("activate", input, key)) props.onSubmit(parse(values));
   });
   return (
     <FormFrame
@@ -61,7 +63,7 @@ export function ModelForm(props: {
         <>
           <Text>{FIELDS[step]}</Text>
           <Box>
-            <Text color="cyan">› </Text>
+            <PromptMarker />
             <TextInput
               value={values[step] ?? ""}
               onChange={(value) => {

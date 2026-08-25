@@ -1,11 +1,13 @@
 import { Box, Text } from "ink";
+import { useWorkforceTheme } from "../themes/theme-context.js";
 import type { WorkforceEvent } from "../../domain.js";
 
 export function AuditView({ events, verified }: { events: WorkforceEvent[]; verified: boolean }) {
+  const theme = useWorkforceTheme();
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>Audit ledger</Text>
-      <Text color={verified ? "green" : "red"}>
+      <Text color={verified ? theme.colors.success : theme.colors.danger}>
         Hash chain {verified ? "verified" : "FAILED"} · {events.length} recent events
       </Text>
       {events
