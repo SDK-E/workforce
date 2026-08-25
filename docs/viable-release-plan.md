@@ -51,6 +51,8 @@ CEO-authorized sessions can search, create, update, archive, and restore opportu
 
 ## Slice 2 — Viable CEO commercial autonomy
 
+**Implementation status:** complete in the current repository; retain the acceptance requirements below as regression gates.
+
 ### Outcome
 
 The durable CEO performs a continuous, non-conversational operating cycle: reads company mission and current evidence, chooses an allowed strategic action, maintains the business pipeline, creates measurable objectives or work, delegates execution, and records why it acted or why it safely did nothing.

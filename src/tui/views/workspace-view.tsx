@@ -49,7 +49,7 @@ import type {
   ProjectIntegrationRecord,
 } from "../../integrations/integration-types.js";
 import type { AutomationRecord } from "../../automations/automation-types.js";
-import type { CompanyRuntime } from "../../autonomy/autonomy-types.js";
+import type { CompanyRuntime, OperatingCycle } from "../../autonomy/autonomy-types.js";
 import { McpServerView } from "./mcp-server-view.js";
 import { ProjectIntegrationView } from "./project-integration-view.js";
 import { MailView } from "./mail-view.js";
@@ -63,6 +63,7 @@ import type {
   OpportunityRecord,
 } from "../../business/business-types.js";
 import { BusinessPipelineView } from "./business-pipeline-view.js";
+import { CeoOfficeView } from "./ceo-office-view.js";
 
 interface WorkspaceViewProps {
   section: string;
@@ -100,6 +101,7 @@ interface WorkspaceViewProps {
   mail: MailRecord[];
   automations: AutomationRecord[];
   runtime: CompanyRuntime | undefined;
+  latestCeoCycle: OperatingCycle | undefined;
   compact: boolean;
   companies: CompanyRecord[];
   selectedRow: number;
@@ -194,7 +196,16 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     );
   if (props.section === "Critics & reviews")
     return <ClaimView claims={props.claims} selectedRow={props.selectedRow} />;
-  if (["CEO office", "Conversations"].includes(props.section)) {
+  if (props.section === "CEO office")
+    return (
+      <CeoOfficeView
+        runtime={props.runtime}
+        cycle={props.latestCeoCycle}
+        rooms={props.rooms}
+        messages={props.messages}
+      />
+    );
+  if (props.section === "Conversations") {
     return (
       <ConversationView
         messages={props.messages}

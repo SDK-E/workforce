@@ -36,6 +36,7 @@ export function loadWorkspaceData(store: StateStore, companyId: string) {
     mail: store.mail.listCompany(companyId),
     automations: store.automations.list(companyId),
     runtime: store.autonomy.get(companyId),
+    latestCeoCycle: store.autonomy.latestCycle(companyId),
     companies: store.companies(),
   };
 }

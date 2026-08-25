@@ -3,15 +3,22 @@ import type { StateStore } from "../storage/state-store.js";
 import type { TaskExecutionService } from "../tasks/task-execution-service.js";
 import type { TaskRecord } from "../tasks/task-types.js";
 import type { AutonomyRepository } from "./autonomy-repository.js";
+import { CeoCommercialPlanner } from "./ceo-commercial-planner.js";
+import { CeoTaskFactory } from "./ceo-task-factory.js";
 
 export class CeoOperatingLoop {
   readonly ownerId = randomUUID();
+  private readonly planner: CeoCommercialPlanner;
+  private readonly tasks: CeoTaskFactory;
 
   constructor(
     private readonly store: StateStore,
     private readonly autonomy: AutonomyRepository,
     private readonly execution: TaskExecutionService,
-  ) {}
+  ) {
+    this.planner = new CeoCommercialPlanner(store);
+    this.tasks = new CeoTaskFactory(store);
+  }
 
   async tick(): Promise<void> {
     this.autonomy.recoverExpired();
@@ -25,45 +32,76 @@ export class CeoOperatingLoop {
     const cycle = this.autonomy.acquire(runtime, this.ownerId, observation);
     if (!cycle) return;
     try {
-      const runnable = this.store
-        .tasks(companyId)
-        .find((task) => task.assigneeId === "ceo" && ["ready", "assigned"].includes(task.status));
+      const runnable = this.runnableTask(companyId) ?? this.resolveGovernedTask(companyId);
       if (runnable) {
-        const attempt = await this.execution.start(companyId, runnable.id, "ceo");
+        await this.execute(cycle.id, companyId, runnable);
         this.autonomy.finish(
           cycle,
           "completed",
           { action: "execute", taskId: runnable.id },
           runnable.id,
         );
-        this.store.append("ceo.delegated-execution", "ceo", companyId, {
-          cycleId: cycle.id,
-          taskId: runnable.id,
-          attemptId: attempt.id,
-        });
         return;
       }
       if (Number(observation.activeTasks) > 0 || Number(observation.activeAttempts) > 0) {
         this.autonomy.finish(cycle, "completed", { action: "monitor-existing-work" }, null);
         return;
       }
-      const task = this.createDirectionTask(companyId, observation);
-      const attempt = await this.execution.start(companyId, task.id, "ceo");
-      this.autonomy.finish(
-        cycle,
-        "completed",
-        { action: "set-company-direction", taskId: task.id },
-        task.id,
-      );
-      this.store.append("ceo.direction-cycle-started", "ceo", companyId, {
-        cycleId: cycle.id,
-        taskId: task.id,
-        attemptId: attempt.id,
-      });
+      const decision = this.planner.decide(companyId);
+      if (decision.authority === "none") {
+        this.autonomy.finish(cycle, "completed", { ...decision }, null);
+        this.store.append("ceo.no-safe-action", "ceo", companyId, {
+          cycleId: cycle.id,
+          ...decision,
+        });
+        return;
+      }
+      const task = this.tasks.create(companyId, decision);
+      if (task.status === "awaiting-approval") {
+        this.autonomy.finish(cycle, "completed", { ...decision, taskId: task.id }, task.id);
+        this.store.append("ceo.governance-requested", "ceo", companyId, {
+          cycleId: cycle.id,
+          taskId: task.id,
+          action: decision.action,
+        });
+        return;
+      }
+      await this.execute(cycle.id, companyId, task);
+      this.autonomy.finish(cycle, "completed", { ...decision, taskId: task.id }, task.id);
     } catch (error) {
       const reason = error instanceof Error ? error.message : "Unknown CEO cycle failure";
       this.autonomy.finish(cycle, "blocked", { action: "retry-after-blockage" }, null, reason);
     }
+  }
+
+  private runnableTask(companyId: string): TaskRecord | undefined {
+    return this.store
+      .tasks(companyId)
+      .find((task) => task.assigneeId === "ceo" && ["ready", "assigned"].includes(task.status));
+  }
+
+  private resolveGovernedTask(companyId: string): TaskRecord | undefined {
+    const waiting = this.store
+      .tasks(companyId)
+      .find((task) => task.assigneeId === "ceo" && task.status === "awaiting-approval");
+    if (!waiting) return undefined;
+    const approval = this.store.approvalsRepository
+      .list(companyId)
+      .find(({ subjectType, subjectId }) => subjectType === "ceo-task" && subjectId === waiting.id);
+    if (approval?.status === "approved")
+      return this.store.transitionTask(companyId, waiting.id, "APPROVE", "ceo", approval.rationale);
+    if (approval?.status === "rejected")
+      this.store.transitionTask(companyId, waiting.id, "REJECT", "ceo", approval.rationale);
+    return undefined;
+  }
+
+  private async execute(cycleId: string, companyId: string, task: TaskRecord): Promise<void> {
+    const attempt = await this.execution.start(companyId, task.id, "ceo");
+    this.store.append("ceo.delegated-execution", "ceo", companyId, {
+      cycleId,
+      taskId: task.id,
+      attemptId: attempt.id,
+    });
   }
 
   private observe(companyId: string): Record<string, unknown> {
@@ -98,51 +136,5 @@ export class CeoOperatingLoop {
         .filter(({ status }) => status === "active").length,
       evidenceActivities: this.store.executionEvidence.activityCount(companyId),
     };
-  }
-
-  private createDirectionTask(companyId: string, observation: Record<string, unknown>): TaskRecord {
-    const company = this.store.companiesRepository.require(companyId);
-    const task = this.store.createTask({
-      companyId,
-      objective: [
-        `Lead ${company.displayName} as its CEO.`,
-        `Mission: ${company.mission || "Mission is not configured; establish one from available evidence."}`,
-        `Vision: ${company.vision || "Vision is not configured; propose a measurable direction."}`,
-        `Current operating observation: ${JSON.stringify(observation)}.`,
-        "Choose the highest-value safe direction, create or revise measurable company objectives, and delegate concrete work through Workforce services.",
-      ].join("\n"),
-      nonGoals: [
-        "Conversational small talk",
-        "Unverified claims",
-        "Actions outside company policy",
-      ],
-      acceptanceCriteria: [
-        "A measurable objective or maintenance decision is persisted",
-        "Every delegated task has an owner and independently verifiable exit criteria",
-        "The decision cites current company evidence and respects configured budget and policy",
-      ],
-      outputs: [{ path: "ceo-decision.json", required: true, validator: "json" }],
-      risk: "medium",
-      dataSensitivity: "internal",
-      capabilities: ["strategy", "delegation"],
-      managerId: "ceo",
-      assigneeId: "ceo",
-      reviewerId: "arm",
-      escalationPath: ["ceo", "human"],
-    });
-    this.store.transitionTask(
-      companyId,
-      task.id,
-      "REQUEST_APPROVAL",
-      "ceo",
-      "CEO operating mandate",
-    );
-    return this.store.transitionTask(
-      companyId,
-      task.id,
-      "APPROVE",
-      "ceo",
-      "Within delegated CEO authority",
-    );
   }
 }

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { AuditRepository } from "../storage/audit-repository.js";
 import type { WorkforceDatabase } from "../storage/database.js";
+import { parseJson } from "../storage/serialization.js";
 import type { CompanyRuntime, OperatingCycle } from "./autonomy-types.js";
 
 export class AutonomyRepository {
@@ -56,6 +57,13 @@ export class AutonomyRepository {
       .prepare("SELECT * FROM company_runtime WHERE company_id=?")
       .get(companyId) as Record<string, unknown> | undefined;
     return row ? mapRuntime(row) : undefined;
+  }
+
+  latestCycle(companyId: string): OperatingCycle | undefined {
+    const row = this.database.connection
+      .prepare("SELECT * FROM operating_cycles WHERE company_id=? ORDER BY started_at DESC LIMIT 1")
+      .get(companyId) as Record<string, unknown> | undefined;
+    return row ? mapCycle(row) : undefined;
   }
 
   private require(companyId: string): CompanyRuntime {
@@ -209,5 +217,22 @@ function mapRuntime(row: Record<string, unknown>): CompanyRuntime {
     lastCycleAt: typeof row.last_cycle_at === "string" ? row.last_cycle_at : null,
     nextCycleAt: String(row.next_cycle_at),
     updatedAt: String(row.updated_at),
+  };
+}
+
+function mapCycle(row: Record<string, unknown>): OperatingCycle {
+  return {
+    id: String(row.id),
+    companyId: String(row.company_id),
+    leaderId: String(row.leader_id),
+    status: String(row.status) as OperatingCycle["status"],
+    leaseOwner: String(row.lease_owner),
+    leaseExpiresAt: String(row.lease_expires_at),
+    observation: parseJson(row.observation_json),
+    decision: typeof row.decision_json === "string" ? parseJson(row.decision_json) : null,
+    spawnedTaskId: typeof row.spawned_task_id === "string" ? row.spawned_task_id : null,
+    startedAt: String(row.started_at),
+    finishedAt: typeof row.finished_at === "string" ? row.finished_at : null,
+    failureReason: typeof row.failure_reason === "string" ? row.failure_reason : null,
   };
 }
