@@ -46,6 +46,7 @@ export function editFormForSection(section: string): CreateFormKind | null {
     "MCP servers": "mcp-server",
     "Project integrations": "project-integration",
     Automations: "automation-decision",
+    "Warnings & incidents": "incident-decision",
   };
   return routes[section] ?? null;
 }

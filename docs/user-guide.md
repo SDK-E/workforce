@@ -111,6 +111,8 @@ Company management authority can create and configure rooms, add validated compa
 
 The **Governance** pages accept human evidence without bypassing policy. Press `n` in Performance, Recognition, Warnings & incidents, or Critics & reviews to record an evidence-backed performance observation, recognition, incident, or claim. Every form requires evidence IDs, writes through the company-scoped governance repository, and appends an audit event. Conflicting claims are retained and marked disputed rather than silently overwritten.
 
+Select an incident and press `e` to advance it through only the transitions allowed by its XState lifecycle. Claim-ledger entries remain immutable evidence records: `d` retracts the selected claim and `u` restores it after confirmation. Workforce then reconciles all active claims for the same subject and predicate, so removing a contradiction returns the remaining claim to asserted status while restoring it marks both sides disputed again.
+
 In the TUI, approval, automation, and hiring-proposal decisions operate on the highlighted row: move focus to content, use `[` and `]` or the configured record-navigation arrows, then press `e`. The decision dialog is pre-bound to that record, requires an evidence-based rationale, and confirms before mutation. Users never need to copy opaque record IDs from the screen.
 
 ## 7. Recovery and safety

@@ -43,6 +43,7 @@ function requiresSelection(kind: CreateFormKind | null): boolean {
     "approval-decision",
     "automation-decision",
     "hiring-decision",
+    "incident-decision",
     "tool",
     "environment",
   ].includes(kind ?? "");

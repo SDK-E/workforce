@@ -18,12 +18,15 @@ export interface LifecycleTarget {
     | "approval"
     | "hiring-proposal"
     | "mail"
+    | "incident"
+    | "claim"
     | "tool"
     | "environment";
   id: string;
   label: string;
   status: string;
   projectId?: string;
+  lifecycleMutable?: boolean;
 }
 
 export interface LifecycleData {
@@ -41,6 +44,8 @@ export interface LifecycleData {
   approvals: ReturnType<StateStore["approvalsRepository"]["list"]>;
   hiringProposals: ReturnType<StateStore["employment"]["proposalList"]>;
   mail: ReturnType<StateStore["mail"]["listCompany"]>;
+  incidents: ReturnType<StateStore["incidents"]["listIncidents"]>;
+  claims: ReturnType<StateStore["performance"]["listClaims"]>;
   tools: ReturnType<StateStore["tools"]["list"]>;
   environments: ReturnType<StateStore["environments"]["list"]>;
 }
@@ -93,6 +98,21 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       kind: "mail",
       id: item.id,
       label: `${item.subject} · ${item.recipientId}`,
+      status: item.status,
+    }));
+  if (section === "Warnings & incidents")
+    return data.incidents.map((item) => ({
+      kind: "incident",
+      id: item.id,
+      label: `${item.severity} · ${item.title}`,
+      status: item.status,
+      lifecycleMutable: false,
+    }));
+  if (section === "Critics & reviews")
+    return data.claims.map((item) => ({
+      kind: "claim",
+      id: item.id,
+      label: `${item.subjectId} · ${item.predicate}`,
       status: item.status,
     }));
   if (section === "Models & engines")
@@ -167,7 +187,7 @@ export function lifecycleVerb(target: LifecycleTarget): "archive" | "restore" {
   if (target.kind === "employee" && ["terminated", "archived"].includes(target.status))
     return "restore";
   if (target.kind === "meeting" && target.status === "archived") return "restore";
-  return target.status === "archived" || target.status === "disabled" ? "restore" : "archive";
+  return ["archived", "disabled", "retracted"].includes(target.status) ? "restore" : "archive";
 }
 
 export function applyLifecycleAction(
@@ -249,6 +269,8 @@ export function applyLifecycleAction(
   } else if (target.kind === "mail") {
     if (restore) store.mail.restore(companyId, target.id, actorId);
     else store.mail.archive(companyId, target.id, actorId);
+  } else if (target.kind === "claim") {
+    store.performance.setClaimRetraction(companyId, target.id, !restore, actorId);
   } else throw new Error(`Lifecycle action is not supported for ${target.kind}`);
 }
 

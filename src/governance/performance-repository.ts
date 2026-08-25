@@ -167,6 +167,25 @@ export class PerformanceRepository {
     return rows.map((row) => this.mapClaim(row));
   }
 
+  setClaimRetraction(
+    companyId: string,
+    id: string,
+    retracted: boolean,
+    actorId: string,
+  ): ClaimRecord {
+    const claim = this.requireClaim(companyId, id);
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare("UPDATE claims SET status=? WHERE company_id=? AND id=?")
+        .run(retracted ? "retracted" : "asserted", companyId, id);
+      this.reconcileClaims(companyId, claim.subjectId, claim.predicate);
+      this.audit.append(retracted ? "claim.retracted" : "claim.restored", actorId, companyId, {
+        claimId: id,
+      });
+    });
+    return this.requireClaim(companyId, id);
+  }
+
   private mapClaim(row: Record<string, unknown>): ClaimRecord {
     return {
       id: String(row.id),
@@ -181,6 +200,31 @@ export class PerformanceRepository {
       contradictedBy: typeof row.contradicted_by === "string" ? row.contradicted_by : null,
       createdAt: String(row.created_at),
     };
+  }
+
+  private requireClaim(companyId: string, id: string): ClaimRecord {
+    const row = this.database.connection
+      .prepare("SELECT * FROM claims WHERE company_id=? AND id=?")
+      .get(companyId, id) as Record<string, unknown> | undefined;
+    if (!row) throw new Error(`Unknown claim in company: ${id}`);
+    return this.mapClaim(row);
+  }
+
+  private reconcileClaims(companyId: string, subjectId: string, predicate: string): void {
+    const claims = this.activeClaims(companyId, subjectId, predicate);
+    for (const claim of claims) {
+      const contradiction = claims.find(
+        (candidate) => JSON.stringify(candidate.value) !== JSON.stringify(claim.value),
+      );
+      this.database.connection
+        .prepare("UPDATE claims SET status=?, contradicted_by=? WHERE company_id=? AND id=?")
+        .run(
+          contradiction ? "disputed" : "asserted",
+          contradiction?.id ?? null,
+          companyId,
+          claim.id,
+        );
+    }
   }
 
   private requireEmployee(companyId: string, employeeId: string): void {

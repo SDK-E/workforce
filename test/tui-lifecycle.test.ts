@@ -189,5 +189,7 @@ function workspaceData(store: StateStore, companyId: string) {
     approvals: store.approvalsRepository.list(companyId),
     hiringProposals: store.employment.proposalList(companyId),
     mail: store.mail.listCompany(companyId),
+    incidents: store.incidents.listIncidents(companyId),
+    claims: store.performance.listClaims(companyId),
   };
 }

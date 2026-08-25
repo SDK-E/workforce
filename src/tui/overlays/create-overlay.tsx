@@ -16,6 +16,7 @@ import { ConversationMutationOverlay } from "./conversation-mutation-overlay.js"
 import { ModelMutationOverlay } from "./model-mutation-overlay.js";
 import { RegistryMutationOverlay } from "./registry-mutation-overlay.js";
 import { GovernanceMutationOverlay } from "./governance-mutation-overlay.js";
+import { IncidentDecisionForm } from "./incident-decision-form.js";
 
 export type CreateFormKind =
   | "company-create"
@@ -41,6 +42,7 @@ export type CreateFormKind =
   | "performance"
   | "recognition"
   | "incident"
+  | "incident-decision"
   | "claim";
 
 interface CreateOverlayProps {
@@ -97,6 +99,25 @@ export function CreateOverlay(props: CreateOverlayProps) {
         finish={finish}
       />
     );
+  if (props.kind === "incident-decision" && props.selectedTarget?.kind === "incident") {
+    const current = props.store.incidents
+      .listIncidents(props.company.id)
+      .find(({ id }) => id === props.selectedTarget?.id);
+    if (!current) return null;
+    return (
+      <IncidentDecisionForm
+        incidentId={current.id}
+        status={current.status}
+        terminalWidth={props.terminalWidth}
+        onCancel={props.onClose}
+        onSubmit={(event) => {
+          finish(() => {
+            props.store.incidents.transition(props.company.id, current.id, event, "human");
+          }, `Incident advanced through ${event.toLowerCase()} and audited`);
+        }}
+      />
+    );
+  }
   if (props.kind === "message")
     return (
       <MessageForm

@@ -2,7 +2,7 @@ import { Box, Text } from "ink";
 import { useWorkforceTheme } from "../themes/theme-context.js";
 import type { ClaimRecord } from "../../governance/performance-repository.js";
 
-export function ClaimView({ claims }: { claims: ClaimRecord[] }) {
+export function ClaimView({ claims, selectedRow }: { claims: ClaimRecord[]; selectedRow: number }) {
   const theme = useWorkforceTheme();
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
@@ -10,9 +10,13 @@ export function ClaimView({ claims }: { claims: ClaimRecord[] }) {
       {claims.length === 0 ? (
         <Text dimColor>No review claims.</Text>
       ) : (
-        claims.map((claim) => (
+        claims.map((claim, index) => (
           <Box key={claim.id} flexDirection="column" marginTop={1}>
-            <Text color={claim.status === "disputed" ? theme.colors.warning : theme.colors.text}>
+            <Text
+              inverse={index === selectedRow}
+              color={claim.status === "disputed" ? theme.colors.warning : theme.colors.text}
+              dimColor={claim.status === "retracted"}
+            >
               [{claim.status}] {claim.subjectId} · {claim.predicate}
             </Text>
             <Text dimColor>
@@ -22,7 +26,7 @@ export function ClaimView({ claims }: { claims: ClaimRecord[] }) {
           </Box>
         ))
       )}
-      <Text dimColor>n assert an evidence-backed claim</Text>
+      <Text dimColor>n assert · [ ] select · d retract · u restore</Text>
     </Box>
   );
 }

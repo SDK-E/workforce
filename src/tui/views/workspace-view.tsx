@@ -181,8 +181,15 @@ export function WorkspaceView(props: WorkspaceViewProps) {
   if (props.section === "Recognition")
     return <PerformanceView records={props.performanceRecords} kind="recognition" />;
   if (props.section === "Warnings & incidents")
-    return <IncidentView incidents={props.incidents} actions={props.correctiveActions} />;
-  if (props.section === "Critics & reviews") return <ClaimView claims={props.claims} />;
+    return (
+      <IncidentView
+        incidents={props.incidents}
+        actions={props.correctiveActions}
+        selectedRow={props.selectedRow}
+      />
+    );
+  if (props.section === "Critics & reviews")
+    return <ClaimView claims={props.claims} selectedRow={props.selectedRow} />;
   if (["CEO office", "Conversations"].includes(props.section)) {
     return (
       <ConversationView
