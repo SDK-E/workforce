@@ -13,13 +13,12 @@ deferred item unless the user says "STOP"; defer new requests here until your to
 
 ## OPEN
 
-### BUG-001 Universal agent image exceeds the 500 MiB release gate
-- Evidence: `docker image inspect workforce-agent:0.1.0` reports ~1.83 GB locally; limit is
-  524,288,000 bytes (`scripts/verify-image-sizes.sh`). Architecture doc records a prior verified
-  build at 471,129,730 bytes, so cleanup regressed or was skipped in the last local build.
-- Impact: release blocker for Slice 2; every boundary test inherits the oversized image.
-- Next: rebuild via `scripts/build-images.sh`, run `scripts/verify-image-cleanup.sh`, inspect layer
-  caches if still large, re-run size gate (`pnpm images:verify-size`).
+### BUG-001 Universal agent image exceeds the 500 MiB release gate — FIXED (2026-08-25)
+- Was: local `workforce-agent:0.1.0` reported ~1.83 GB; limit is 524,288,000 bytes
+  (`scripts/verify-image-sizes.sh`).
+- Fix: stale/incomplete local build. Full rebuild via `scripts/build-images.sh` produced
+  471,129,730 bytes (matching the prior verified build in the architecture doc); cleanup and size
+  gates pass. No code change required.
 
 ### BUG-003 TUI input drops letters / overlaps / lags under fast typing
 - Reported 2026-08-25 with screenshot; not reproduced locally yet.
