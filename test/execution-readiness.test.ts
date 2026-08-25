@@ -40,6 +40,35 @@ test("execution readiness requires model and environment verification receipts",
   assert.ok(readiness.checks.every(({ status }) => status === "ready"));
 });
 
+test("blocked autonomy surfaces the latest cycle failure reason", () => {
+  const now = new Date().toISOString();
+  const readiness = executionReadiness({
+    docker: { available: true, version: "28.0.0" },
+    environments: [environment("healthy", "environment-receipt")],
+    models: [model("provider/model", "healthy", "model-receipt")],
+    attempts: [],
+    runtime: {
+      companyId: "acme",
+      enabled: true,
+      cadenceSeconds: 60,
+      monthlyBudgetCents: 0,
+      maxConcurrentAttempts: 2,
+      state: "blocked",
+      lastCycleAt: now,
+      nextCycleAt: now,
+      updatedAt: now,
+    },
+    blockedReason: "No verified configured model is available for this task",
+  });
+  const autonomy = readiness.checks.find(({ id }) => id === "autonomy");
+  assert.ok(autonomy);
+  assert.equal(autonomy.status, "warning");
+  assert.match(
+    autonomy.detail,
+    /Blocked · No verified configured model is available for this task · retrying every 60s/,
+  );
+});
+
 function environment(
   health: EnvironmentRecord["health"],
   healthReceiptId: string | null,

@@ -285,6 +285,7 @@ function executionReadinessView(props: WorkspaceViewProps) {
         models: props.models,
         attempts: props.attempts,
         runtime: props.runtime,
+        blockedReason: props.latestCeoCycle?.failureReason ?? null,
       })}
     />
   );

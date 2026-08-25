@@ -66,7 +66,10 @@ Workforce asks for confirmation before consequential actions. Deleting from the 
 4. Open **Execution readiness**. Resolve every blocker shown there before expecting agents to start.
 5. Open **Organization** to review the CEO, ARM, departments, teams, reporting structure, policies, and agent profiles.
 
-If the overview shows CEO and ARM identities but Docker shows no containers, that is normal: identities are permanent company records; containers exist only while an assigned task is actually running.
+If the overview shows CEO and ARM identities but Docker shows no containers, that is normal:
+identities are permanent company records; containers exist only while an assigned task is actually
+running. Until the company has a verified model and a delivered task, the overview also shows a
+**Getting started** checklist naming the exact page and key for the next step.
 
 ## Give the company work
 

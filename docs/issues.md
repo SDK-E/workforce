@@ -18,14 +18,14 @@ Statuses: OPEN · IN PROGRESS · FIXED (<commit>) · WONTFIX (reason) · DEFERRE
 - Next: rebuild via `scripts/build-images.sh`, run `scripts/verify-image-cleanup.sh`, inspect layer
   caches if still large, re-run size gate.
 
-### BUG-002 First operating cycle blocks forever without actionable guidance
-- Evidence chain: autonomy defaults enabled=1 cadence=60s (`autonomy-repository.ensure`);
-  seeded models are `model: "unconfigured"` placeholders; `TaskExecutionService.resolveModel`
-  throws "No verified configured model"; `CeoOperatingLoop.runCompany` catches and finishes each
-  cycle `blocked`; operator sees "blocked · 60s cadence" with no reason and no next step.
-- Impact: first-run appears broken; retry loop never converges until manual model configuration.
-- Next: surface latest-cycle failureReason wherever runtime state renders; add first-run checklist
-  to executive overview; consider bootstrap task (tracked separately, see WORKFORWARD.md).
+### BUG-002 First operating cycle blocks forever without actionable guidance — FIXED (2026-08-25)
+- Was: blocked autonomy rendered "blocked · 60s cadence" with no reason; no first-run guidance after
+  company creation; operator could not tell why nothing executed.
+- Fix: readiness autonomy check now renders the latest CEO cycle failureReason ("Blocked · <reason> ·
+  retrying every Ns"); executive overview shows a Getting started checklist until model configured,
+  verified, work described, and a deliverable produced; overview and CEO office state that
+  identities persist while containers run only during attempts. Bootstrap-task option remains
+  deferred in WORKFORWARD.md.
 
 ### BUG-003 TUI input drops letters / overlaps / lags under fast typing
 - Reported 2026-08-25 with screenshot; not reproduced locally yet.
@@ -55,7 +55,7 @@ Statuses: OPEN · IN PROGRESS · FIXED (<commit>) · WONTFIX (reason) · DEFERRE
   later failed re-verification.
 - Fix: receipt fields are stamped only for healthy probes and cleared otherwise; failure keeps
   `health="unavailable"` + classified `failureClass`. Test: failed probe clears prior receipts.
-- Commit: (pending — this slice)
+- Commit: 10bce95
 
 ### FIXED-102 Executive overview advertised a hardcoded deliverable count (2026-08-25)
 - Was: `executive-overview.tsx` rendered literal "0 deliverables ready".

@@ -12,25 +12,12 @@ probes and clears both on failure (stale receipts can no longer outlive their ev
 
 ## User-reported runtime issues (2026-08-25)
 
-### B. First-run experience is confusing
-Evidence chain confirmed by code reading:
-- Autonomy defaults to enabled=1, 60s cadence (autonomy-repository.ensure).
-- Default seeded models are `model: "unconfigured"` placeholders.
-- Execution readiness counts them as "READY · 1 configured model" while model verification stays
-  BLOCKED, so the CEO loop throws "No verified configured model", finishes every cycle as
-  `blocked`, and retries forever. User sees "▲ WARNING · blocked · 60s cadence" with no reason.
-- No TUI guidance after company creation tells the operator the next required step.
-Fixes agreed:
-1. Readiness must not count `unconfigured` placeholder models as usable.
-2. Blocked autonomy display must include the latest cycle failure reason.
-3. Executive overview should show a first-run checklist (configure model -> verify -> create task -> run).
-4. Surfaces should say CEO/ARM are durable identities whose containers appear only during execution.
-
-### C. CEO/ARM containers invisible after onboarding
-By design they are durable employees, not persistent daemons; attempt containers exist only while
-tasks execute. Architecture is correct; the UI/guide must make this explicit instead of leaving the
-operator to discover it. (Guide line "If the overview shows CEO and ARM identities but Docker shows
-no containers, that is normal" already exists; mirror it in the TUI.)
+### B. First-run experience is confusing — FIXED this session
+Readiness now explains blocked autonomy with the latest cycle reason and retry cadence; the
+executive overview shows a Getting started checklist (configure → verify → describe work → run) and
+states that identities persist while containers run only during attempts; guide updated. Tracked as
+FIXED in docs/issues.md (BUG-002). Remaining optional idea: bootstrap task on first company creation
+(deferred below).
 
 ### D. TUI input feels laggy/chaky when typing fast (overlaps, missed letters)
 Not reproduced locally yet. Needs terminal/environment details from the operator (terminal app,

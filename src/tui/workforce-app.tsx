@@ -13,6 +13,7 @@ import { WorkspaceView } from "./views/workspace-view.js";
 import { WorkforceOverlays } from "./overlays/workforce-overlays.js";
 import { useLifecycleController } from "./use-lifecycle-controller.js";
 import { loadWorkspaceData, type WorkspaceData } from "./workspace-data.js";
+import { onboardingSteps } from "./onboarding-steps.js";
 import { useFormController } from "./use-form-controller.js";
 import { nextTheme, themeById } from "./themes/index.js";
 import { WorkforceThemeProvider } from "./themes/theme-context.js";
@@ -255,6 +256,7 @@ function WorkforceContent(props: {
           eventCount={props.store.audit.count(props.company.id)}
           auditVerified={props.store.verifyAuditChain()}
           strategyItems={props.data.strategyItems}
+          onboarding={onboardingSteps(props.data)}
           active={props.contentInteractive}
         />
       ) : (

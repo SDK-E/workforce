@@ -23,6 +23,7 @@ export function executionReadiness(input: {
   models: ModelRecord[];
   attempts: AttemptRecord[];
   runtime: CompanyRuntime | undefined;
+  blockedReason?: string | null;
 }): ExecutionReadiness {
   const environment = input.environments.find(({ id }) => id === "universal");
   const configuredModels = input.models.filter(({ model }) => model !== "unconfigured");
@@ -75,9 +76,7 @@ export function executionReadiness(input: {
           ? "warning"
           : "ready"
         : "warning",
-      input.runtime?.enabled
-        ? `${input.runtime.state} · ${input.runtime.cadenceSeconds}s cadence`
-        : "Autonomy is stopped",
+      autonomyDetail(input.runtime, input.blockedReason ?? null),
     ),
   ];
   return {
@@ -87,6 +86,16 @@ export function executionReadiness(input: {
       .length,
     queuedAttempts: input.attempts.filter(({ status }) => status === "queued").length,
   };
+}
+
+function autonomyDetail(runtime: CompanyRuntime | undefined, blockedReason: string | null): string {
+  if (!runtime) return "Autonomy is stopped";
+  const cadence = `every ${runtime.cadenceSeconds}s`;
+  if (!runtime.enabled) return "Autonomy is stopped";
+  if (runtime.state === "blocked")
+    return `Blocked · ${blockedReason ?? "last operating cycle failed"} · retrying ${cadence}`;
+  if (runtime.state === "running") return `Operating cycle running · next check ${cadence}`;
+  return `Idle · cycles ${cadence}`;
 }
 
 function check(

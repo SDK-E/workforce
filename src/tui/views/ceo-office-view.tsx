@@ -15,7 +15,9 @@ export function CeoOfficeView(props: {
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>CEO office</Text>
       <Text dimColor>
-        The CEO operates continuously; this page shows its latest durable decision.
+        The CEO operates continuously; this page shows its latest durable decision. CEO and ARM are
+        durable identities, not persistent containers — agent containers appear only while a task
+        attempt is executing.
       </Text>
       <Box marginTop={1} gap={1} flexWrap="wrap">
         <Panel title="AUTONOMY" width={34}>

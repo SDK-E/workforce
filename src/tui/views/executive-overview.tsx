@@ -7,6 +7,8 @@ import { Panel } from "../components/panel.js";
 import { truncate } from "../navigation.js";
 import { SectionTabs } from "../components/section-tabs.js";
 import { matchesKeybinding } from "../keybindings.js";
+import type { OnboardingStep } from "../onboarding-steps.js";
+import { onboardingComplete } from "../onboarding-steps.js";
 import { useWorkforceTheme } from "../themes/theme-context.js";
 
 interface ExecutiveOverviewProps {
@@ -21,6 +23,7 @@ interface ExecutiveOverviewProps {
   eventCount: number;
   auditVerified: boolean;
   strategyItems: StrategyItem[];
+  onboarding: OnboardingStep[];
   active: boolean;
 }
 
@@ -50,6 +53,7 @@ export function ExecutiveOverview(props: ExecutiveOverviewProps) {
           <Text>
             {props.activeAttempts} active Docker attempts · {props.queuedAttempts} queued
           </Text>
+          <Text dimColor>Identities persist; containers run only during attempts.</Text>
         </Panel>
         <Panel title="EXECUTION" width={props.compact ? 24 : 30}>
           <Text color={props.docker.available ? theme.colors.success : theme.colors.warning}>
@@ -62,6 +66,19 @@ export function ExecutiveOverview(props: ExecutiveOverviewProps) {
           <Text>{props.acceptedDeliverables} validated deliverables</Text>
         </Panel>
       </Box>
+
+      {!onboardingComplete(props.onboarding) && (
+        <Box marginTop={1} flexDirection="column">
+          <Panel title="GETTING STARTED" width="100%">
+            {props.onboarding.map((step) => (
+              <Text key={step.label} {...(step.done ? { color: theme.colors.success } : {})}>
+                [{step.done ? "✓" : " "}] {step.label}
+                {step.done ? "" : ` — ${step.hint}`}
+              </Text>
+            ))}
+          </Panel>
+        </Box>
+      )}
 
       <Box marginTop={1} flexDirection="column">
         <SectionTabs labels={tabs} selected={selectedTab} />

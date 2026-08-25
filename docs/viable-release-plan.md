@@ -45,7 +45,11 @@ This is a reduced path to a viable release, not a reduction of the product ident
 
 - Business pipeline MCP, viable CEO commercial autonomy, and ARM reinforcement are implemented.
 - The full local quality gate currently passes formatting, typed lint, Knip dead-code analysis,
-  compilation, migrations, and **102 tests**.
+  compilation, migrations, and **105 tests**.
+- First-run guidance: execution readiness explains a blocked autonomy loop with the latest CEO cycle
+  failure reason and retry cadence; the executive overview shows a Getting started checklist
+  (configure model → verify → describe work → run task) until every step is done, and states that
+  identities persist while containers run only during attempts.
 - Human forms now generate company/model/MCP/tool/environment IDs; infer company, actor, timestamps,
   approval targets, and safe defaults; and select company-scoped relationships by readable names.
   This covers organization, strategy, business, governance, meetings, automations, project
