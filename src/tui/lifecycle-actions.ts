@@ -17,6 +17,7 @@ export interface LifecycleTarget {
     | "automation"
     | "approval"
     | "hiring-proposal"
+    | "mail"
     | "tool"
     | "environment";
   id: string;
@@ -39,6 +40,7 @@ export interface LifecycleData {
   models: ReturnType<StateStore["models"]["list"]>;
   approvals: ReturnType<StateStore["approvalsRepository"]["list"]>;
   hiringProposals: ReturnType<StateStore["employment"]["proposalList"]>;
+  mail: ReturnType<StateStore["mail"]["listCompany"]>;
   tools: ReturnType<StateStore["tools"]["list"]>;
   environments: ReturnType<StateStore["environments"]["list"]>;
 }
@@ -84,6 +86,13 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       kind: "hiring-proposal",
       id: item.id,
       label: `${item.blueprint.employee.title} · ${item.jobId}`,
+      status: item.status,
+    }));
+  if (section === "Mail")
+    return data.mail.map((item) => ({
+      kind: "mail",
+      id: item.id,
+      label: `${item.subject} · ${item.recipientId}`,
       status: item.status,
     }));
   if (section === "Models & engines")
@@ -237,6 +246,9 @@ export function applyLifecycleAction(
       actorId,
       "Archived through confirmed TUI action",
     );
+  } else if (target.kind === "mail") {
+    if (restore) store.mail.restore(companyId, target.id, actorId);
+    else store.mail.archive(companyId, target.id, actorId);
   } else throw new Error(`Lifecycle action is not supported for ${target.kind}`);
 }
 

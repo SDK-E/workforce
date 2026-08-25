@@ -139,6 +139,38 @@ test("selected TUI resources archive and restore without deleting records", () =
   }
 });
 
+test("selected mail archives and restores through the TUI lifecycle", () => {
+  const root = mkdtempSync(join(tmpdir(), "workforce-tui-mail-"));
+  const store = new StateStore(root);
+  try {
+    store.initialize();
+    store.createCompany({ id: "acme", name: "Acme" });
+    const mail = store.mail.send({
+      companyId: "acme",
+      senderKind: "agent",
+      senderId: "ceo",
+      recipientKind: "human",
+      recipientId: "human",
+      subject: "Decision required",
+      body: "Review the evidence.",
+    });
+    const target = lifecycleTargets("Mail", workspaceData(store, "acme"))[0];
+    assert.equal(target?.kind, "mail");
+    assert.ok(target);
+    applyLifecycleAction(store, "acme", target);
+    assert.equal(
+      store.mail.listCompany("acme").find(({ id }) => id === mail.id)?.status,
+      "archived",
+    );
+    applyLifecycleAction(store, "acme", { ...target, status: "archived" });
+    assert.equal(store.mail.listCompany("acme").find(({ id }) => id === mail.id)?.status, "sent");
+    assert.ok(store.verifyAuditChain());
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 function workspaceData(store: StateStore, companyId: string) {
   return {
     organizationUnits: store.organizationUnits(companyId),
@@ -156,5 +188,6 @@ function workspaceData(store: StateStore, companyId: string) {
     environments: store.environments.list(companyId),
     approvals: store.approvalsRepository.list(companyId),
     hiringProposals: store.employment.proposalList(companyId),
+    mail: store.mail.listCompany(companyId),
   };
 }

@@ -193,7 +193,8 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       />
     );
   }
-  if (props.section === "Mail") return <MailView mail={props.mail} />;
+  if (props.section === "Mail")
+    return <MailView mail={props.mail} selectedRow={props.selectedRow} />;
   if (props.section === "Live work") return <LiveWorkView attempts={props.attempts} />;
   if (props.section === "Deliverables") return <DeliverableView artifacts={props.artifacts} />;
   if (["Tools", "Environments", "Models & engines", "Docker & resources"].includes(props.section))
