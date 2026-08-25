@@ -11,9 +11,19 @@ export function ProjectIntegrationForm(props: {
   terminalWidth: number;
   onSubmit: (input: Omit<ProjectIntegrationRecord, "createdAt" | "updatedAt">) => void;
   onCancel: () => void;
+  initial?: ProjectIntegrationRecord | undefined;
 }) {
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(["", "beads", "{}", ""]);
+  const [values, setValues] = useState(
+    props.initial
+      ? [
+          props.initial.projectId,
+          props.initial.provider,
+          JSON.stringify(props.initial.config),
+          props.initial.secretRequirements.join(", "),
+        ]
+      : ["", "beads", "{}", ""],
+  );
   const [error, setError] = useState("");
   const confirming = step === FIELDS.length;
   useInput((_input, key) => {
@@ -26,11 +36,11 @@ export function ProjectIntegrationForm(props: {
       if (!config || typeof config !== "object" || Array.isArray(config)) throw new Error();
       props.onSubmit({
         companyId: props.companyId,
-        projectId: values[0]?.trim() ?? "",
-        provider: values[1]?.trim() ?? "",
+        projectId: props.initial?.projectId ?? values[0]?.trim() ?? "",
+        provider: props.initial?.provider ?? values[1]?.trim() ?? "",
         config: config as Record<string, unknown>,
         secretRequirements: splitList(values[3]),
-        status: "active",
+        status: props.initial?.status ?? "active",
       });
     } catch {
       setError("Configuration must be a JSON object");
@@ -38,7 +48,7 @@ export function ProjectIntegrationForm(props: {
   }
   return (
     <FormFrame
-      title="Configure project integration"
+      title={`${props.initial ? "Edit" : "Configure"} project integration`}
       terminalWidth={props.terminalWidth}
       footer={
         confirming

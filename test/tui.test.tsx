@@ -9,6 +9,9 @@ import { ConversationView } from "../src/tui/views/conversation-view.js";
 import { TaskForm } from "../src/tui/overlays/task-form.js";
 import type { CreateTaskInput } from "../src/tasks/task-types.js";
 import { ModalBackdrop } from "../src/tui/components/modal-backdrop.js";
+import { OrganizationForm } from "../src/tui/overlays/organization-form.js";
+import { McpServerForm } from "../src/tui/overlays/mcp-server-form.js";
+import { editFormForSection } from "../src/tui/overlays/create-overlay.js";
 
 const company: CompanyRecord = {
   id: "acme",
@@ -184,4 +187,66 @@ test("modal backdrop repaints the full terminal instead of exposing underlying c
   assert.match(frame, /Readable modal/);
   assert.doesNotMatch(frame, /CONTENT BEHIND MODAL/);
   view.unmount();
+});
+
+test("selected resource edit forms are prefilled and keep immutable integration identity", () => {
+  const organization = render(
+    <Box width={100} height={30}>
+      <OrganizationForm
+        companyId="acme"
+        kind="department"
+        terminalWidth={100}
+        initial={{
+          id: "engineering",
+          companyId: "acme",
+          kind: "department",
+          parentId: null,
+          name: "Engineering",
+          managerId: "arm",
+          status: "active",
+          data: {},
+          createdAt: company.createdAt,
+          updatedAt: company.createdAt,
+        }}
+        onSubmit={noop}
+        onCancel={noop}
+      />
+    </Box>,
+  );
+  assert.match(organization.lastFrame() ?? "", /Edit department/);
+  assert.match(organization.lastFrame() ?? "", /Engineering/);
+  organization.unmount();
+
+  const mcp = render(
+    <Box width={100} height={30}>
+      <McpServerForm
+        companyId="acme"
+        terminalWidth={100}
+        initial={{
+          companyId: "acme",
+          id: "research",
+          name: "Research MCP",
+          transport: "http",
+          endpoint: "https://mcp.example.test",
+          command: [],
+          toolAllowlist: ["search"],
+          secretRequirements: [],
+          credentialBindings: [],
+          status: "active",
+          health: "healthy",
+          healthReceiptId: "receipt-one",
+          createdAt: company.createdAt,
+          updatedAt: company.createdAt,
+        }}
+        onSubmit={noop}
+        onCancel={noop}
+      />
+    </Box>,
+  );
+  assert.match(mcp.lastFrame() ?? "", /Edit MCP server/);
+  assert.match(mcp.lastFrame() ?? "", /research/);
+  mcp.unmount();
+  assert.equal(editFormForSection("Departments"), "organization");
+  assert.equal(editFormForSection("Tasks"), "task");
+  assert.equal(editFormForSection("MCP servers"), "mcp-server");
 });

@@ -173,6 +173,28 @@ export class TaskRepository {
     return { ...current, assigneeId: employeeId, updatedAt: now };
   }
 
+  setRisk(
+    companyId: string,
+    taskId: string,
+    risk: TaskRecord["risk"],
+    actorId = "human",
+  ): TaskRecord {
+    const current = this.get(companyId, taskId);
+    if (!current) throw new Error(`Unknown task: ${taskId}`);
+    const now = new Date().toISOString();
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare("UPDATE tasks SET risk=?,updated_at=? WHERE company_id=? AND id=?")
+        .run(risk, now, companyId, taskId);
+      this.audit.append("task.risk-changed", actorId, companyId, {
+        taskId,
+        from: current.risk,
+        to: risk,
+      });
+    });
+    return { ...current, risk, updatedAt: now };
+  }
+
   private insert(task: TaskRecord): void {
     this.database.connection
       .prepare(

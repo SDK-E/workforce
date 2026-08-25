@@ -14,6 +14,7 @@ export function WorkforceOverlays(props: {
   executionTask: { id: string; objective: string } | null;
   lifecycleTarget: LifecycleTarget | null;
   activeForm: CreateFormKind | null;
+  selectedTarget: LifecycleTarget | null;
   query: string;
   compact: boolean;
   terminalWidth: number;
@@ -48,6 +49,7 @@ export function WorkforceOverlays(props: {
           onCompanyChange={props.onCompanyChange}
           onClose={props.onCloseForm}
           onStatus={props.onStatus}
+          selectedTarget={props.selectedTarget}
         />
       )}
       {props.emergencyVisible && (

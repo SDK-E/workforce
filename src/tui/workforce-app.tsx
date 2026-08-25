@@ -9,16 +9,12 @@ import { Sidebar } from "./components/sidebar.js";
 import { StatusBar } from "./components/status-bar.js";
 import { TopBar } from "./components/top-bar.js";
 import { NAVIGATION_SECTIONS } from "./navigation.js";
-import {
-  createFormForSection,
-  editFormForSection,
-  type CreateFormKind,
-} from "./overlays/create-overlay.js";
 import { ExecutiveOverview } from "./views/executive-overview.js";
 import { WorkspaceView } from "./views/workspace-view.js";
 import { WorkforceOverlays } from "./overlays/workforce-overlays.js";
 import { useLifecycleController } from "./use-lifecycle-controller.js";
 import { loadWorkspaceData, type WorkspaceData } from "./workspace-data.js";
+import { useFormController } from "./use-form-controller.js";
 
 interface WorkforceAppProps {
   store: StateStore;
@@ -46,7 +42,6 @@ export function WorkforceApp({
     "Ready — no agent work starts without an approved task",
   );
   const [company, setCompany] = useState(initialCompany);
-  const [activeForm, setActiveForm] = useState<CreateFormKind | null>(null);
   const [emergencyVisible, setEmergencyVisible] = useState(false);
   const [executionTaskId, setExecutionTaskId] = useState<string | null>(null);
 
@@ -62,12 +57,13 @@ export function WorkforceApp({
     store,
     onStatus: setStatusMessage,
   });
+  const forms = useFormController(setStatusMessage);
 
   useInput((input, key) => {
     if (emergencyVisible) return;
     if (executionTaskId) return;
     if (lifecycle.target) return;
-    if (activeForm) return;
+    if (forms.active) return;
     if (helpVisible) {
       if (input === "?" || key.escape) setHelpVisible(false);
       return;
@@ -79,8 +75,8 @@ export function WorkforceApp({
     }
 
     if (input === "q") process.exit(0);
-    if (input === "n") setActiveForm(createFormForSection(selectedSection));
-    if (input === "e") setActiveForm(editFormForSection(selectedSection));
+    if (input === "n") forms.openCreate(selectedSection);
+    if (input === "e") forms.openEdit(selectedSection, Boolean(lifecycle.selected));
     lifecycle.handleKey(input);
     if (input === "!") setEmergencyVisible(true);
     if (input === "r" && selectedSection === "Tasks") {
@@ -143,7 +139,8 @@ export function WorkforceApp({
         emergencyVisible={emergencyVisible}
         executionTask={data.tasks.find(({ id }) => id === executionTaskId) ?? null}
         lifecycleTarget={lifecycle.target}
-        activeForm={activeForm}
+        activeForm={forms.active}
+        selectedTarget={forms.editing ? lifecycle.selected : null}
         query={searchQuery}
         compact={compact}
         terminalWidth={width}
@@ -152,7 +149,7 @@ export function WorkforceApp({
         store={store}
         onCompanyChange={setCompany}
         onCloseForm={() => {
-          setActiveForm(null);
+          forms.close();
         }}
         onCloseEmergency={() => {
           setEmergencyVisible(false);

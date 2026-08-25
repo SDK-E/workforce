@@ -57,6 +57,7 @@ export function useLifecycleController(input: {
 
   return {
     rowIndex,
+    selected: targets[rowIndex] ?? null,
     target,
     handleKey,
     confirm,

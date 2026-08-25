@@ -1,11 +1,6 @@
 import type { CompanyRecord } from "../../storage/records.js";
 import type { StateStore } from "../../storage/state-store.js";
-import type { OrganizationUnitKind } from "../../organizations/organization-types.js";
-import type { StrategyItemKind } from "../../strategy/strategy-types.js";
 import { CompanyForm } from "./company-form.js";
-import { OrganizationForm } from "./organization-form.js";
-import { StrategyForm } from "./strategy-form.js";
-import { TaskForm } from "./task-form.js";
 import { AgentProfileForm } from "./agent-profile-form.js";
 import { CompanyCreateForm } from "./company-create-form.js";
 import { MessageForm } from "./message-form.js";
@@ -15,6 +10,8 @@ import { McpServerForm } from "./mcp-server-form.js";
 import { ProjectIntegrationForm } from "./project-integration-form.js";
 import { MailForm } from "./mail-form.js";
 import { AutomationForm } from "./automation-form.js";
+import type { LifecycleTarget } from "../lifecycle-actions.js";
+import { ResourceMutationOverlay } from "./resource-mutation-overlay.js";
 
 export type CreateFormKind =
   | "company-create"
@@ -40,6 +37,7 @@ interface CreateOverlayProps {
   onCompanyChange: (company: CompanyRecord) => void;
   onClose: () => void;
   onStatus: (message: string) => void;
+  selectedTarget: LifecycleTarget | null;
 }
 
 export function CreateOverlay(props: CreateOverlayProps) {
@@ -56,32 +54,12 @@ export function CreateOverlay(props: CreateOverlayProps) {
     return <CompanyMutationOverlay {...props} finish={finish} />;
   if (["mcp-server", "project-integration", "mail", "automation"].includes(props.kind))
     return <CapabilityMutationOverlay {...props} finish={finish} />;
-  if (props.kind === "organization")
+  if (["organization", "strategy", "task"].includes(props.kind))
     return (
-      <OrganizationForm
-        companyId={props.company.id}
-        kind={organizationKind(props.section)}
-        terminalWidth={props.terminalWidth}
-        onCancel={props.onClose}
-        onSubmit={(input) => {
-          finish(() => {
-            props.store.createOrganizationUnit(input);
-          }, `${input.kind} created and audited`);
-        }}
-      />
-    );
-  if (props.kind === "strategy")
-    return (
-      <StrategyForm
-        companyId={props.company.id}
-        kind={strategyKind(props.section)}
-        terminalWidth={props.terminalWidth}
-        onCancel={props.onClose}
-        onSubmit={(input) => {
-          finish(() => {
-            props.store.createStrategyItem(input);
-          }, `${input.kind} created and audited`);
-        }}
+      <ResourceMutationOverlay
+        {...props}
+        kind={props.kind as "organization" | "strategy" | "task"}
+        finish={finish}
       />
     );
   if (props.kind === "agent-profile")
@@ -145,18 +123,7 @@ export function CreateOverlay(props: CreateOverlayProps) {
         }}
       />
     );
-  return (
-    <TaskForm
-      companyId={props.company.id}
-      terminalWidth={props.terminalWidth}
-      onCancel={props.onClose}
-      onSubmit={(input) => {
-        finish(() => {
-          props.store.createTask(input);
-        }, "Task created and audited");
-      }}
-    />
-  );
+  return null;
 }
 
 type MutationOverlayProps = CreateOverlayProps & {
@@ -164,25 +131,43 @@ type MutationOverlayProps = CreateOverlayProps & {
 };
 
 function CapabilityMutationOverlay(props: MutationOverlayProps) {
-  if (props.kind === "mcp-server")
+  if (props.kind === "mcp-server") {
+    const current =
+      props.selectedTarget?.kind === "mcp"
+        ? props.store.mcpServers.get(props.company.id, props.selectedTarget.id)
+        : undefined;
     return (
       <McpServerForm
         companyId={props.company.id}
         terminalWidth={props.terminalWidth}
         onCancel={props.onClose}
+        initial={current}
         onSubmit={(input) => {
-          props.finish(() => {
-            props.store.mcpServers.save(input, "human");
-          }, "MCP server registered and awaiting verification");
+          props.finish(
+            () => {
+              props.store.mcpServers.save(input, "human");
+            },
+            `MCP server ${current ? "updated" : "registered"} and ${current ? "audited" : "awaiting verification"}`,
+          );
         }}
       />
     );
-  if (props.kind === "project-integration")
+  }
+  if (props.kind === "project-integration") {
+    const current =
+      props.selectedTarget?.kind === "integration"
+        ? props.store.projectIntegrations.get(
+            props.company.id,
+            props.selectedTarget.projectId ?? "",
+            props.selectedTarget.id,
+          )
+        : undefined;
     return (
       <ProjectIntegrationForm
         companyId={props.company.id}
         terminalWidth={props.terminalWidth}
         onCancel={props.onClose}
+        initial={current}
         onSubmit={(input) => {
           props.finish(() => {
             props.store.projectIntegrations.save(input, "human");
@@ -190,6 +175,7 @@ function CapabilityMutationOverlay(props: MutationOverlayProps) {
         }}
       />
     );
+  }
   if (props.kind === "mail")
     return (
       <MailForm
@@ -266,22 +252,12 @@ export function editFormForSection(section: string): CreateFormKind | null {
   if (section === "Companies") return "company-edit";
   if (section === "Employees") return "agent-profile";
   if (section === "Approvals") return "approval-decision";
+  if (["Organization", "Departments", "Teams", "Offices & rooms"].includes(section))
+    return "organization";
+  if (["Projects", "Objectives", "Initiatives", "Goals", "Milestones"].includes(section))
+    return "strategy";
+  if (section === "Tasks") return "task";
+  if (section === "MCP servers") return "mcp-server";
+  if (section === "Project integrations") return "project-integration";
   return null;
-}
-
-function organizationKind(section: string): OrganizationUnitKind {
-  if (section === "Teams") return "team";
-  if (section === "Offices & rooms") return "office";
-  return "department";
-}
-
-function strategyKind(section: string): StrategyItemKind {
-  const kinds: Record<string, StrategyItemKind> = {
-    Projects: "project",
-    Objectives: "objective",
-    Initiatives: "initiative",
-    Goals: "goal",
-    Milestones: "milestone",
-  };
-  return kinds[section] ?? "project";
 }

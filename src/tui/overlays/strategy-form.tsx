@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import TextInput from "ink-text-input";
-import type { CreateStrategyItemInput, StrategyItemKind } from "../../strategy/strategy-types.js";
+import type {
+  CreateStrategyItemInput,
+  StrategyItem,
+  StrategyItemKind,
+} from "../../strategy/strategy-types.js";
 import { FormFrame } from "./form-frame.js";
 
 const FIELDS = ["Name", "Parent ID (optional)", "Owner ID", "Success measures (comma separated)"];
@@ -12,9 +16,15 @@ export function StrategyForm(props: {
   terminalWidth: number;
   onSubmit: (input: CreateStrategyItemInput) => void;
   onCancel: () => void;
+  initial?: StrategyItem | undefined;
 }) {
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(["", "", "ceo", ""]);
+  const [values, setValues] = useState([
+    props.initial?.name ?? "",
+    props.initial?.parentId ?? "",
+    props.initial?.ownerId ?? "ceo",
+    props.initial?.successMeasures.join(", ") ?? "",
+  ]);
   const confirming = step === FIELDS.length;
   useInput((_input, key) => {
     if (key.escape) props.onCancel();
@@ -41,7 +51,7 @@ export function StrategyForm(props: {
   }
   return (
     <FormFrame
-      title={`Create ${props.kind}`}
+      title={`${props.initial ? "Edit" : "Create"} ${props.kind}`}
       terminalWidth={props.terminalWidth}
       footer={confirming ? "Enter confirm · Esc cancel" : `Enter next · Esc cancel · ${step + 1}/4`}
     >

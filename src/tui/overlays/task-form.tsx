@@ -17,11 +17,12 @@ export function TaskForm(props: {
   terminalWidth: number;
   onSubmit: (input: CreateTaskInput) => void;
   onCancel: () => void;
+  initial?: TaskRecord | undefined;
 }) {
   const [step, setStep] = useState(0);
-  const [objective, setObjective] = useState("");
-  const [criteria, setCriteria] = useState("");
-  const [risk, setRisk] = useState<TaskRecord["risk"]>("medium");
+  const [objective, setObjective] = useState(props.initial?.objective ?? "");
+  const [criteria, setCriteria] = useState(props.initial?.acceptanceCriteria.join(", ") ?? "");
+  const [risk, setRisk] = useState<TaskRecord["risk"]>(props.initial?.risk ?? "medium");
   useInput((_input, key) => {
     if (key.escape) props.onCancel();
     if (step === 3 && key.return) submit();
@@ -41,7 +42,7 @@ export function TaskForm(props: {
   }
   return (
     <FormFrame
-      title="Create task"
+      title={`${props.initial ? "Edit" : "Create"} task`}
       terminalWidth={props.terminalWidth}
       footer={step === 3 ? "Enter confirm · Esc cancel" : "Enter/select next · Esc cancel"}
     >
@@ -80,7 +81,10 @@ export function TaskForm(props: {
           <Text>Risk</Text>
           <SelectInput
             items={RISKS}
-            initialIndex={1}
+            initialIndex={Math.max(
+              0,
+              RISKS.findIndex(({ value }) => value === risk),
+            )}
             onSelect={(item) => {
               setRisk(item.value);
               setStep(3);

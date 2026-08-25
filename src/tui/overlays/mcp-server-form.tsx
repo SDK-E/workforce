@@ -19,9 +19,10 @@ export function McpServerForm(props: {
   terminalWidth: number;
   onSubmit: (input: Omit<McpServerRecord, "createdAt" | "updatedAt">) => void;
   onCancel: () => void;
+  initial?: McpServerRecord | undefined;
 }) {
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(["", "", "http", "", "", "", ""]);
+  const [values, setValues] = useState(initialValues(props.initial));
   const confirming = step === FIELDS.length;
   useInput((_input, key) => {
     if (key.escape) props.onCancel();
@@ -32,7 +33,7 @@ export function McpServerForm(props: {
     const target = values[3]?.trim() ?? "";
     props.onSubmit({
       companyId: props.companyId,
-      id: values[0]?.trim() ?? "",
+      id: props.initial?.id ?? values[0]?.trim() ?? "",
       name: values[1]?.trim() ?? "",
       transport,
       endpoint: transport === "stdio" ? null : target,
@@ -40,14 +41,14 @@ export function McpServerForm(props: {
       toolAllowlist: splitList(values[4]),
       secretRequirements: splitList(values[5]),
       credentialBindings: parseBindings(values[6]),
-      status: "active",
-      health: "unknown",
-      healthReceiptId: null,
+      status: props.initial?.status ?? "active",
+      health: props.initial?.health ?? "unknown",
+      healthReceiptId: props.initial?.healthReceiptId ?? null,
     });
   }
   return (
     <FormFrame
-      title="Register MCP server"
+      title={`${props.initial ? "Edit" : "Register"} MCP server`}
       terminalWidth={props.terminalWidth}
       footer={
         confirming
@@ -78,6 +79,21 @@ export function McpServerForm(props: {
       )}
     </FormFrame>
   );
+}
+
+function initialValues(initial?: McpServerRecord): string[] {
+  if (!initial) return ["", "", "http", "", "", "", ""];
+  return [
+    initial.id,
+    initial.name,
+    initial.transport,
+    initial.transport === "stdio" ? initial.command.join(" ") : (initial.endpoint ?? ""),
+    initial.toolAllowlist.join(", "),
+    initial.secretRequirements.join(", "),
+    initial.credentialBindings
+      .map(({ target, secretName }) => `${target}=${secretName}`)
+      .join(", "),
+  ];
 }
 
 function splitList(value: string | undefined): string[] {

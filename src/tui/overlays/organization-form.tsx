@@ -4,6 +4,7 @@ import TextInput from "ink-text-input";
 import type {
   CreateOrganizationUnitInput,
   OrganizationUnitKind,
+  OrganizationUnit,
 } from "../../organizations/organization-types.js";
 import { FormFrame } from "./form-frame.js";
 
@@ -15,9 +16,14 @@ export function OrganizationForm(props: {
   terminalWidth: number;
   onSubmit: (input: CreateOrganizationUnitInput) => void;
   onCancel: () => void;
+  initial?: OrganizationUnit | undefined;
 }) {
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(["", "", ""]);
+  const [values, setValues] = useState([
+    props.initial?.name ?? "",
+    props.initial?.parentId ?? "",
+    props.initial?.managerId ?? "",
+  ]);
   const confirming = step === FIELDS.length;
   useInput((_input, key) => {
     if (key.escape) props.onCancel();
@@ -38,12 +44,14 @@ export function OrganizationForm(props: {
   }
   return (
     <FormFrame
-      title={`Create ${props.kind}`}
+      title={`${props.initial ? "Edit" : "Create"} ${props.kind}`}
       terminalWidth={props.terminalWidth}
       footer={confirming ? "Enter confirm · Esc cancel" : `Enter next · Esc cancel · ${step + 1}/3`}
     >
       {confirming ? (
-        <Text>Confirm creation of {values[0]}? This mutation is audited.</Text>
+        <Text>
+          Confirm {props.initial ? "update" : "creation"} of {values[0]}? This mutation is audited.
+        </Text>
       ) : (
         <>
           <Text>{FIELDS[step]}</Text>
