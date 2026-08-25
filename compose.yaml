@@ -1,0 +1,48 @@
+services:
+  workforce-engine:
+    build:
+      context: .
+      dockerfile: docker/control-plane/Dockerfile
+    image: workforce-control-plane:0.1.0
+    container_name: workforce-engine
+    restart: unless-stopped
+    environment:
+      WORKFORCE_STATE_ROOT: /var/lib/workforce
+      WORKFORCE_MCP_URL: http://workforce-engine:7788/mcp
+    volumes:
+      - workforce-state:/var/lib/workforce
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - workforce-internal
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:7789/health').then(r=>process.exit(r.status===401?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    security_opt:
+      - no-new-privileges:true
+
+  workforce-tui:
+    image: workforce-control-plane:0.1.0
+    profiles: ["tools"]
+    environment:
+      WORKFORCE_STATE_ROOT: /var/lib/workforce
+      WORKFORCE_CONTROL_URL: http://workforce-engine:7789
+    volumes:
+      - workforce-state:/var/lib/workforce
+    networks:
+      - workforce-internal
+    command: ["node", "dist/src/tui-client.js"]
+    stdin_open: true
+    tty: true
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  workforce-state:
+    name: workforce-state
+
+networks:
+  workforce-internal:
+    name: workforce-egress-internal
+    external: true

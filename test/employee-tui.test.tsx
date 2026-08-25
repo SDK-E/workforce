@@ -64,6 +64,6 @@ test("human hiring form creates an approved probationary employee and dynamic id
 
 async function settle(): Promise<void> {
   await new Promise<void>((resolve) => {
-    setTimeout(resolve, 20);
+    setTimeout(resolve, 75);
   });
 }

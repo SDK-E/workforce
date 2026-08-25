@@ -55,8 +55,8 @@ Management tools, visible only with authority: `create_objective`, `create_task`
 2. **Complete:** agents can list joined rooms, read/send room messages, read/send internal mail, list and contribute to their meetings, and record checkpoints only on assigned tasks. These calls are separately MCP-audited. Claims, artifact submission, approvals, automation requests, and help/handoff tools remain.
 3. **Complete:** Docker attempts declare ephemeral secrets separately from encrypted persistent secrets. When `WORKFORCE_MCP_URL` is configured, the control plane injects that non-secret endpoint plus an HMAC-signed `WORKFORCE_MCP_TOKEN` through Docker's process environment. The token binds the company, employee, task, attempt, role grants, issue/expiry time, and nonce; it is never stored or placed in command arguments, is replaced on reissue, and is revoked when the attempt ends. Tampering, expiry, revocation, attempt mismatch, company mismatch, and role grants are tested.
 4. Add administrative mutation tools through application services with idempotency and approval enforcement.
-5. Add the authenticated internal Streamable HTTP transport, rate limiting, request/result bounds, and security tests. Token issuance is present, but containers cannot use Workforce MCP until this transport is running at the configured endpoint.
-6. Add MCP Inspector interoperability tests, malicious-client tests, cross-company denial tests, and operator documentation.
+5. **Complete:** the daemon serves authenticated stateless Streamable HTTP on the internal agent network. Every request verifies the bearer signature, active attempt, company and employee binding, Host header, request size, concurrency, and per-attempt rate. Official-SDK client tests cover successful tool use plus missing, forged, cross-company, ended, oversized, and hostile-host requests.
+6. Add MCP Inspector interoperability tests, deeper malicious-client/flood tests, and external authenticated HTTP operator access.
 
 ## Local stdio usage
 

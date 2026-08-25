@@ -2,7 +2,7 @@
 set -eu
 
 limit_bytes=$((500 * 1024 * 1024))
-images="workforce-agent:0.1.0 workforce-egress-proxy:0.1.0"
+images="workforce-agent:0.1.0 workforce-egress-proxy:0.1.0 workforce-control-plane:0.1.0"
 
 for image in $images; do
   size=$(docker image inspect "$image" --format '{{.Size}}')

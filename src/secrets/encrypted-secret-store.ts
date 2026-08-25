@@ -57,6 +57,7 @@ export class EncryptedSecretStore {
   }
 
   set(companyId: string, name: string, value: string, scope: SecretScope): SecretMetadata {
+    if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(name)) throw new Error("Invalid secret name");
     if (!value) throw new Error("Secret value must not be empty");
     const now = new Date().toISOString();
     const nonce = randomBytes(NONCE_BYTES);

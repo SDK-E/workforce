@@ -8,7 +8,7 @@ Workforce is organized by product capability. Put new domain behavior beside the
 | --- | --- |
 | `src/` | TypeScript control plane and TUI |
 | `src/storage/migrations/` | One forward-only SQL migration per version plus migration metadata |
-| `docker/` | Universal Alpine agent image and audited egress image |
+| `docker/` | Universal Alpine agent image, trusted control-plane image, and audited egress image |
 | `scripts/` | Build, verification, and operational entry points |
 | `test/` | Unit, integration, TUI, and sandbox contract tests |
 | `docs/` | Current product, architecture, operations, and contribution guidance |
@@ -27,6 +27,7 @@ Workforce is organized by product capability. Put new domain behavior beside the
 | `integrations/` | MCP, mail, and project integration policies |
 | `organizations/` | Departments, teams, offices, rooms, and their repository |
 | `registries/` | Models, tools, and execution environments |
+| `runtime/` | Persistent daemon composition and authenticated TUI control API |
 | `secrets/` | Encrypted, scoped credential storage and attempt injection |
 | `storage/` | Database lifecycle and cross-cutting persistence primitives only |
 | `strategy/` | Objectives, initiatives, projects, goals, and milestones |

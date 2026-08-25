@@ -58,6 +58,18 @@ test("trusted credential import and attempt injection preserve scopes without ex
       employeeIds: ["engineer"],
       taskIds: ["task-1"],
     });
+    importer.importProtectedToken("acme", "FIGMA_ACCESS_TOKEN", "figma-secret\n", {
+      employeeIds: ["engineer"],
+      taskIds: ["task-1"],
+    });
+    assert.throws(
+      () =>
+        importer.importProtectedToken("acme", "invalid-name", "value", {
+          employeeIds: ["engineer"],
+          taskIds: ["task-1"],
+        }),
+      /uppercase environment name/,
+    );
     const environment = resolveAttemptSecrets(secrets, {
       id: "attempt",
       companyId: "acme",
@@ -65,7 +77,7 @@ test("trusted credential import and attempt injection preserve scopes without ex
       employeeId: "engineer",
       sandbox: {} as never,
       command: [],
-      secretNames: ["GITHUB_TOKEN", "VERCEL_TOKEN"],
+      secretNames: ["GITHUB_TOKEN", "VERCEL_TOKEN", "FIGMA_ACCESS_TOKEN"],
       ephemeralSecretNames: [],
       environment: {},
       instructionRevision: null,
@@ -82,6 +94,7 @@ test("trusted credential import and attempt injection preserve scopes without ex
     assert.deepEqual(environment, {
       GITHUB_TOKEN: "github-secret",
       VERCEL_TOKEN: "vercel-secret",
+      FIGMA_ACCESS_TOKEN: "figma-secret",
     });
     assert.throws(
       () =>

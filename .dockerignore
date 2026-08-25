@@ -1,0 +1,9 @@
+.git
+.github
+.workforce
+dist
+node_modules
+coverage
+docs
+*.log
+.env*

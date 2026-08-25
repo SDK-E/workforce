@@ -29,10 +29,21 @@ export class CredentialImporter {
     companyId: string,
     tokenFromProtectedInput: string,
     scope: SecretScope,
-    name = "VERCEL_TOKEN",
+    name: "VERCEL_TOKEN" = "VERCEL_TOKEN",
   ): SecretMetadata {
+    return this.importProtectedToken(companyId, name, tokenFromProtectedInput, scope);
+  }
+
+  importProtectedToken(
+    companyId: string,
+    name: string,
+    tokenFromProtectedInput: string,
+    scope: SecretScope,
+  ): SecretMetadata {
+    if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(name))
+      throw new Error("Credential name must be an uppercase environment name");
     const token = tokenFromProtectedInput.trim();
-    if (!token) throw new Error("Vercel token input was empty");
+    if (!token) throw new Error("Credential input was empty");
     return this.secrets.set(companyId, name, token, scope);
   }
 }

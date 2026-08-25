@@ -9,8 +9,8 @@ pnpm install --frozen-lockfile
 pnpm test
 pnpm images:build
 pnpm doctor
-pnpm build
 pnpm start
+pnpm tui
 ```
 
 `pnpm images:build` builds the universal Alpine agent image and internal egress proxy, verifies both inference engine binaries, checks available mixed toolchain bundles, and rejects production images at or above 500 MiB.
@@ -31,6 +31,12 @@ Vercel tokens are accepted over protected standard input:
 
 ```sh
 printf '%s' "$VERCEL_TOKEN" | pnpm secrets:import -- vercel COMPANY_ID EMPLOYEE_ID TASK_ID
+```
+
+Any credential can be stored the same way using a valid uppercase environment name. The value crosses protected standard input only; its name and company/employee/task scope are persisted, while its encrypted value is never placed in a command argument.
+
+```sh
+printf '%s' "$SERVICE_TOKEN" | pnpm secrets:import -- credential SERVICE_TOKEN COMPANY_ID EMPLOYEE_ID TASK_ID
 ```
 
 ## 3. Navigate the TUI
@@ -93,8 +99,8 @@ If events appear but agents do not start, inspect Docker status, image availabil
 
 ## Agent Workforce MCP access
 
-The local stdio MCP command is available today for trusted external clients. Container access additionally requires the forthcoming authenticated internal HTTP service. Once that service is deployed on the audited agent network, set `WORKFORCE_MCP_URL` to its HTTP/S endpoint before starting Workforce. Authorized attempts then receive the endpoint and a short-lived attempt token; the token is ephemeral, scoped to one company/employee/task/attempt, omitted from Docker command arguments and persistent state, and revoked when execution ends. Do not put credentials in `WORKFORCE_MCP_URL`; user information is stripped during validation.
+The daemon serves authenticated Streamable HTTP at its internal `workforce-engine` network identity. Authorized attempts receive that endpoint and a short-lived token scoped to one company, employee, task, and attempt. Tokens are omitted from Docker command arguments and persistent state, checked against the live attempt record on every request, rate limited, and revoked when execution ends. Trusted external clients may still use the separate stdio command.
 
 ## 7. Recovery and safety
 
-On startup, Workforce expires stale leases and reconciles managed containers. Use `pnpm doctor` for Docker/image readiness and `pnpm sandbox:verify` for isolation checks. Emergency stop interrupts managed attempts without deleting task, employee, message, artifact, or audit history.
+`pnpm stop` stops the daemon but preserves `workforce-state`; the next `pnpm start` reuses the database, encrypted secrets, artifacts, and control identity. On startup, Workforce expires stale leases and reconciles managed containers. `pnpm reset` is intentionally destructive: it stops the stack and removes the named state volume, deleting every company and its history. Use `pnpm doctor` for Docker/image readiness and `pnpm sandbox:verify` for isolation checks. Emergency stop interrupts managed attempts without deleting task, employee, message, artifact, or audit history.

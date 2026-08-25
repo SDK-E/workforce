@@ -11,8 +11,8 @@ The local control plane uses transactional SQLite state with foreign keys, WAL d
 ## Quick start
 
 1. Install a supported Node.js release and pnpm, then run `pnpm install --frozen-lockfile`.
-2. Build and verify the sandbox images with `pnpm images:build`.
-3. Start the production TUI with `pnpm build && pnpm start`.
+2. Build and verify the universal agent image with `pnpm images:build`.
+3. Run `pnpm start` to build and start the persistent Dockerized Workforce daemon, then open the separate interface with `pnpm tui`.
 4. Create or select a company, then use **Models & engines** to configure a model registry entry and complete its independent verification before requesting work. Default model records are deliberately unconfigured, so CEO/automation cycles will record a blocked decision instead of launching an undefined provider.
 5. Create an objective and task, assign an eligible employee, approve it, then use `r` in **Tasks** to request a Docker attempt. Inspect **Live work**, **Deliverables**, and **Audit** for durable evidence.
 
@@ -24,18 +24,21 @@ CEO, ARM, and approved automation loops run every ten seconds while the control 
 - `pnpm check`
 - `pnpm test` (builds, then tests compiled JavaScript)
 - `pnpm dead-code:check` (unused files, exports, and dependencies)
-- `pnpm build && pnpm start` (production; compiled JavaScript only)
-- `pnpm dev` (development TUI)
+- `pnpm start` (build and start the persistent Docker daemon)
+- `pnpm tui` (attach the TUI client to the running daemon)
+- `pnpm status` / `pnpm logs` (inspect the daemon)
+- `pnpm stop` (stop the daemon while preserving state)
+- `pnpm reset` (destructive: stop Workforce and delete its complete state volume)
+- `pnpm dev` (development daemon)
 - `pnpm run doctor`
 - `pnpm images:build`
 - `pnpm sandbox:verify`
 - `pnpm sandbox:plan -- requirements/job.json`
 - `pnpm secrets:import -- github <company> [employee] [task]`
 - `printf '%s' "$VERCEL_TOKEN" | pnpm secrets:import -- vercel <company> [employee] [task]`
+- `printf '%s' "$VALUE" | pnpm secrets:import -- credential SECRET_NAME <company> [employee] [task]`
 - `pnpm workforce:mcp -- /absolute/path/to/principal-config.json` (company-scoped stdio MCP)
-- `pnpm tui` (production alias)
-
-Container-scoped Workforce MCP credentials are issued when `WORKFORCE_MCP_URL` names an authenticated internal endpoint. The internal Streamable HTTP transport is still an explicit remaining delivery slice; stdio is the currently operational transport.
+The daemon persists companies, secrets, audit history, and artifacts in the `workforce-state` named volume. Container-scoped Workforce MCP is operational on its authenticated internal Streamable HTTP endpoint; attempt tokens are short-lived and never persisted.
 
 Node.js 22.13–26 and pnpm 10–11 are supported and checked explicitly. Dependency install scripts are denied unless individually allowlisted. The lockfile pins the dependency graph.
 

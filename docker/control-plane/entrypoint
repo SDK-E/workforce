@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+if [ -S /var/run/docker.sock ]; then
+  socket_gid=$(stat -c '%g' /var/run/docker.sock)
+  socket_group=$(awk -F: -v gid="$socket_gid" '$3 == gid { print $1; exit }' /etc/group)
+  if [ -z "$socket_group" ]; then
+    addgroup -S -g "$socket_gid" dockerhost
+    socket_group=dockerhost
+  fi
+  addgroup workforce "$socket_group"
+fi
+chown -R workforce:workforce /var/lib/workforce
+exec su-exec workforce "$@"
