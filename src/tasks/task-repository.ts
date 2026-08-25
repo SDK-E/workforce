@@ -19,7 +19,7 @@ export class TaskRepository {
     this.requirements = new TaskRequirementRepository(database, audit);
   }
 
-  create(input: CreateTaskInput): TaskRecord {
+  create(input: CreateTaskInput, actorId = "human"): TaskRecord {
     this.companies.require(input.companyId);
     this.validateRelationships(input);
     if (input.acceptanceCriteria.length === 0)
@@ -65,8 +65,8 @@ export class TaskRepository {
     if (!task.objective) throw new Error("A task objective is required");
     this.database.transaction(() => {
       this.insert(task);
-      this.requirements.createInitial(task, "human");
-      this.audit.append("task.created", "human", task.companyId, {
+      this.requirements.createInitial(task, actorId);
+      this.audit.append("task.created", actorId, task.companyId, {
         taskId: task.id,
         objective: task.objective,
       });

@@ -25,11 +25,12 @@ export class StrategyRepository {
     private readonly audit: AuditRepository,
   ) {}
 
-  create(input: CreateStrategyItemInput): StrategyItem {
+  create(input: CreateStrategyItemInput, actorId = "human"): StrategyItem {
     this.companies.require(input.companyId);
     if (input.successMeasures.length === 0)
       throw new Error("Strategy items require measurable success criteria");
     this.validateParent(input.companyId, input.kind, input.parentId ?? null);
+    this.validateOwners(input.companyId, input.ownerId, input.managerId);
     const now = new Date().toISOString();
     const item: StrategyItem = {
       id: input.id ?? randomUUID(),
@@ -74,7 +75,7 @@ export class StrategyRepository {
           now,
           now,
         );
-      this.audit.append("strategy-item.created", "human", item.companyId, {
+      this.audit.append("strategy-item.created", actorId, item.companyId, {
         itemId: item.id,
         kind: item.kind,
         name: item.name,
@@ -125,6 +126,7 @@ export class StrategyRepository {
     if (!updated.name || updated.successMeasures.length === 0)
       throw new Error("Strategy items require a name and measurable success criteria");
     this.validateParent(updated.companyId, updated.kind, updated.parentId);
+    this.validateOwners(updated.companyId, updated.ownerId, updated.managerId);
     this.database.transaction(() => {
       this.database.connection
         .prepare(
@@ -186,6 +188,13 @@ export class StrategyRepository {
     if (expected && !parentId) throw new Error(`${kind} requires a ${expected} parent`);
     if (expected && this.get(companyId, parentId ?? "")?.kind !== expected)
       throw new Error(`${kind} parent must be a ${expected} in the same company`);
+  }
+
+  private validateOwners(companyId: string, ownerId: string, managerId: string): void {
+    const employees = new Set(this.companies.employees(companyId).map(({ id }) => id));
+    if (!employees.has(ownerId)) throw new Error(`Unknown strategy owner in company: ${ownerId}`);
+    if (!employees.has(managerId))
+      throw new Error(`Unknown strategy manager in company: ${managerId}`);
   }
 
   private map(row: Record<string, unknown>): StrategyItem {

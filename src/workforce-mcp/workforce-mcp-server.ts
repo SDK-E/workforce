@@ -6,6 +6,7 @@ import { registerParticipationTools } from "./workforce-mcp-participation-tools.
 import { registerQueryResources, registerQueryTools } from "./workforce-mcp-query-tools.js";
 import { registerSecretTools } from "./workforce-mcp-secret-tools.js";
 import { registerWorkTools } from "./workforce-mcp-work-tools.js";
+import { registerManagementTools } from "./workforce-mcp-management-tools.js";
 
 export function createWorkforceMcpServer(
   store: StateStore,
@@ -17,6 +18,7 @@ export function createWorkforceMcpServer(
     ...registerQueryTools(server, store, principal),
     ...registerParticipationTools(server, store, principal),
     ...registerWorkTools(server, store, principal),
+    ...registerManagementTools(server, store, principal),
     ...(secrets ? registerSecretTools(server, store, secrets, principal) : []),
   ];
   for (const { capability, tool } of registered)

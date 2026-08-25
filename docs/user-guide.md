@@ -103,6 +103,8 @@ The daemon serves authenticated Streamable HTTP at its internal `workforce-engin
 
 An agent can coordinate through joined rooms, mail, and meetings; checkpoint assigned work; submit evidence-backed claims; reference artifacts produced by its signed attempt; request a task approval; propose a typed automation for repetitive work; or request help and hand off durable context. Mutation calls require a unique idempotency key. Repeating the same request is safe, while reusing its key for changed arguments is rejected. These tools never grant access to another task or company.
 
+CEO and ARM sessions discover management tools only when their signed capabilities allow them. The CEO can create measurable objectives and governed tasks, decide approvals, and delegate assignments. Workforce managers can assign work, request adaptive gap analysis and probationary hiring proposals, and apply valid employment-machine transitions. MCP cannot transition the durable CEO or ARM identity, cross company boundaries, or bypass an invalid lifecycle transition.
+
 ## 7. Recovery and safety
 
 `pnpm stop` stops the daemon but preserves `workforce-state`; the next `pnpm start` reuses the database, encrypted secrets, artifacts, and control identity. On startup, Workforce expires stale leases and reconciles managed containers. `pnpm reset` is intentionally destructive: it stops the stack and removes the named state volume, deleting every company and its history. Use `pnpm doctor` for Docker/image readiness and `pnpm sandbox:verify` for isolation checks. Emergency stop interrupts managed attempts without deleting task, employee, message, artifact, or audit history.
