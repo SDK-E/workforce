@@ -27,6 +27,7 @@ export function IncidentView({
           [{action.status}] {action.kind} for {action.employeeId}
         </Text>
       ))}
+      <Text dimColor>n report an evidence-backed incident</Text>
     </Box>
   );
 }

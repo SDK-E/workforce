@@ -22,6 +22,7 @@ export function ClaimView({ claims }: { claims: ClaimRecord[] }) {
           </Box>
         ))
       )}
+      <Text dimColor>n assert an evidence-backed claim</Text>
     </Box>
   );
 }

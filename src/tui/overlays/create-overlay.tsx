@@ -15,6 +15,7 @@ import { EmployeeMutationOverlay } from "./employee-mutation-overlay.js";
 import { ConversationMutationOverlay } from "./conversation-mutation-overlay.js";
 import { ModelMutationOverlay } from "./model-mutation-overlay.js";
 import { RegistryMutationOverlay } from "./registry-mutation-overlay.js";
+import { GovernanceMutationOverlay } from "./governance-mutation-overlay.js";
 
 export type CreateFormKind =
   | "company-create"
@@ -36,7 +37,11 @@ export type CreateFormKind =
   | "automation"
   | "automation-decision"
   | "tool"
-  | "environment";
+  | "environment"
+  | "performance"
+  | "recognition"
+  | "incident"
+  | "claim";
 
 interface CreateOverlayProps {
   kind: CreateFormKind;
@@ -84,6 +89,14 @@ export function CreateOverlay(props: CreateOverlayProps) {
   if (props.kind === "model") return <ModelMutationOverlay {...props} finish={finish} />;
   if (props.kind === "tool" || props.kind === "environment")
     return <RegistryMutationOverlay {...props} kind={props.kind} finish={finish} />;
+  if (["performance", "recognition", "incident", "claim"].includes(props.kind))
+    return (
+      <GovernanceMutationOverlay
+        {...props}
+        kind={props.kind as "performance" | "recognition" | "incident" | "claim"}
+        finish={finish}
+      />
+    );
   if (props.kind === "message")
     return (
       <MessageForm
@@ -257,45 +270,4 @@ function CompanyMutationOverlay(
       }}
     />
   );
-}
-
-export function createFormForSection(section: string): CreateFormKind | null {
-  if (section === "Companies") return "company-create";
-  if (["Organization", "Departments", "Teams", "Offices & rooms"].includes(section))
-    return "organization";
-  if (["Projects", "Objectives", "Initiatives", "Goals", "Milestones"].includes(section))
-    return "strategy";
-  if (section === "Employees") return "employee-hire";
-  if (section === "CEO office") return "message";
-  if (section === "Conversations") return "room";
-  if (section === "Meetings") return "meeting";
-  if (section === "Models & engines") return "model";
-  if (section === "Tools") return "tool";
-  if (section === "Environments") return "environment";
-  if (section === "MCP servers") return "mcp-server";
-  if (section === "Project integrations") return "project-integration";
-  if (section === "Mail") return "mail";
-  if (section === "Automations") return "automation";
-  return section === "Tasks" ? "task" : null;
-}
-
-export function editFormForSection(section: string): CreateFormKind | null {
-  if (section === "Companies") return "company-edit";
-  if (section === "Employees") return "agent-profile";
-  if (section === "Agent Resources") return "hiring-decision";
-  if (section === "Meetings") return "meeting";
-  if (section === "Models & engines") return "model";
-  if (section === "Tools") return "tool";
-  if (section === "Environments") return "environment";
-  if (section === "Conversations") return "room";
-  if (section === "Approvals") return "approval-decision";
-  if (["Organization", "Departments", "Teams", "Offices & rooms"].includes(section))
-    return "organization";
-  if (["Projects", "Objectives", "Initiatives", "Goals", "Milestones"].includes(section))
-    return "strategy";
-  if (section === "Tasks") return "task";
-  if (section === "MCP servers") return "mcp-server";
-  if (section === "Project integrations") return "project-integration";
-  if (section === "Automations") return "automation-decision";
-  return null;
 }

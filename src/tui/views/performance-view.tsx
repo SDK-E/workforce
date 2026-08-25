@@ -26,6 +26,9 @@ export function PerformanceView({
           </Box>
         ))
       )}
+      <Text dimColor>
+        n record evidence-backed {kind === "recognition" ? "recognition" : "performance"}
+      </Text>
     </Box>
   );
 }

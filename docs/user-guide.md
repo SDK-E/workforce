@@ -109,6 +109,8 @@ CEO and ARM sessions discover management tools only when their signed capabiliti
 
 Company management authority can create and configure rooms, add validated company employees as members, and configure tool, environment, and model registry records. New or changed registry records always return to `unknown` health; only the independent Docker verifier can issue a health receipt. A CEO emergency stop is company-scoped and interrupts only that company's active attempts. The human TUI/control API emergency stop remains global.
 
+The **Governance** pages accept human evidence without bypassing policy. Press `n` in Performance, Recognition, Warnings & incidents, or Critics & reviews to record an evidence-backed performance observation, recognition, incident, or claim. Every form requires evidence IDs, writes through the company-scoped governance repository, and appends an audit event. Conflicting claims are retained and marked disputed rather than silently overwritten.
+
 In the TUI, approval, automation, and hiring-proposal decisions operate on the highlighted row: move focus to content, use `[` and `]` or the configured record-navigation arrows, then press `e`. The decision dialog is pre-bound to that record, requires an evidence-based rationale, and confirms before mutation. Users never need to copy opaque record IDs from the screen.
 
 ## 7. Recovery and safety

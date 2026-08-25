@@ -1,9 +1,6 @@
 import { useState } from "react";
-import {
-  createFormForSection,
-  editFormForSection,
-  type CreateFormKind,
-} from "./overlays/create-overlay.js";
+import type { CreateFormKind } from "./overlays/create-overlay.js";
+import { createFormForSection, editFormForSection } from "./overlays/form-routing.js";
 
 export function useFormController(onStatus: (message: string) => void) {
   const [active, setActive] = useState<CreateFormKind | null>(null);

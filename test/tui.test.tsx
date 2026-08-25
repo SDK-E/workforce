@@ -11,7 +11,7 @@ import type { CreateTaskInput } from "../src/tasks/task-types.js";
 import { ModalBackdrop } from "../src/tui/components/modal-backdrop.js";
 import { OrganizationForm } from "../src/tui/overlays/organization-form.js";
 import { McpServerForm } from "../src/tui/overlays/mcp-server-form.js";
-import { editFormForSection } from "../src/tui/overlays/create-overlay.js";
+import { editFormForSection } from "../src/tui/overlays/form-routing.js";
 import { RoomForm } from "../src/tui/overlays/room-form.js";
 
 const company: CompanyRecord = {
