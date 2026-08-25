@@ -22,12 +22,13 @@ packages_for() {
     image) echo "imagemagick" ;;
     audio-video) echo "ffmpeg" ;;
     browser) echo "" ;;
+    beads) echo "" ;;
     *) echo "Unknown toolchain bundle: $1" >&2; exit 65 ;;
   esac
 }
 
 list_bundles() {
-  echo "python php laravel symfony go rust document office pdf image audio-video browser"
+  echo "python php laravel symfony go rust document office pdf image audio-video browser beads"
 }
 
 install_bundles() {
@@ -44,11 +45,20 @@ install_bundles() {
       add --no-scripts $packages
   fi
   create_framework_wrappers
+  install_ecosystem_tools "$@"
   manifest="$root/.workforce-bundles"
   temporary="$root/.workforce-bundles.next"
   { test ! -f "$manifest" || cat "$manifest"; printf '%s\n' "$@"; } | sort -u > "$temporary"
   mv "$temporary" "$manifest"
   echo "Installed into $root: $*"
+}
+
+install_ecosystem_tools() {
+  for bundle in "$@"; do
+    if test "$bundle" = "beads"; then
+      npm install --global --prefix /work/.tools/npm "@beads/bd@1.1.0"
+    fi
+  done
 }
 
 create_framework_wrappers() {

@@ -4,7 +4,7 @@ ARG KILO_VERSION
 ARG OPENCODE_VERSION
 
 RUN test -n "$KILO_VERSION" && test -n "$OPENCODE_VERSION" \
- && apk add --no-cache bash zsh ca-certificates chromium curl git jq nodejs npm tini \
+ && apk add --no-cache bash zsh ca-certificates chromium curl gcompat git jq nodejs npm tini \
  && npm install --global "@kilocode/cli@$KILO_VERSION" "opencode-ai@$OPENCODE_VERSION" \
  && find /usr/local/lib/node_modules/@kilocode/cli/node_modules/@kilocode \
       -mindepth 1 -maxdepth 1 -type d -name 'cli-linux-*' ! -name '*-musl' -exec rm -rf '{}' + \

@@ -5,7 +5,7 @@ test -d /work
 tool_root="${WORKFORCE_TOOLCHAIN_ROOT:-/work/.tools/root}"
 export WORKFORCE_TOOLCHAIN_ROOT="$tool_root"
 export HOME="${WORKFORCE_AGENT_HOME:-/work/.home}"
-export PATH="$tool_root/bin:$tool_root/usr/bin:$tool_root/usr/local/bin:$HOME/.config/composer/vendor/bin:$PATH"
+export PATH="/work/.tools/npm/bin:$tool_root/bin:$tool_root/usr/bin:$tool_root/usr/local/bin:$HOME/.config/composer/vendor/bin:$PATH"
 export LD_LIBRARY_PATH="$tool_root/lib:$tool_root/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 mkdir -p "$HOME" "$tool_root"
 exec "$@"

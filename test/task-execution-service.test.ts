@@ -87,15 +87,53 @@ test("approved task contracts queue verified inference-capable Docker execution"
       "arm",
     );
     store.mcpServers.recordHealth("acme", "quality", "healthy", { protocol: "mcp" }, "probe");
+    const objective = store.createStrategyItem({
+      companyId: "acme",
+      kind: "objective",
+      name: "Ship dependable software",
+      ownerId: "ceo",
+      managerId: "ceo",
+      successMeasures: ["Acceptance passes"],
+    });
+    const initiative = store.createStrategyItem({
+      companyId: "acme",
+      kind: "initiative",
+      parentId: objective.id,
+      name: "API delivery",
+      ownerId: "ceo",
+      managerId: "ceo",
+      successMeasures: ["Projects ship"],
+    });
+    const project = store.createStrategyItem({
+      companyId: "acme",
+      kind: "project",
+      parentId: initiative.id,
+      name: "API",
+      ownerId: "ceo",
+      managerId: "ceo",
+      successMeasures: ["Issue graph stays current"],
+    });
+    store.projectIntegrations.save(
+      {
+        companyId: "acme",
+        projectId: project.id,
+        provider: "beads",
+        config: { databasePath: ".beads" },
+        secretRequirements: [],
+        status: "active",
+      },
+      "human",
+    );
     const task = store.createTask({
       id: "build-api",
       companyId: "acme",
+      projectId: project.id,
       objective: "Build and test the API",
       acceptanceCriteria: ["Tests pass"],
       risk: "medium",
       dataSensitivity: "internal",
       capabilities: ["engineering", "language:typescript", "language:python", "framework:laravel"],
-      tools: ["mcp:quality/inspect"],
+      tools: ["mcp:quality/inspect", "integration:beads"],
       managerId: "ceo",
       assigneeId: "ceo",
     });
@@ -121,8 +159,8 @@ test("approved task contracts queue verified inference-capable Docker execution"
     assert.equal(store.attempts.get(attempt.id).status, "succeeded");
     assert.equal(docker.started.length, 1);
     assert.match(docker.runtimeEnvironment.OPENCODE_CONFIG_CONTENT ?? "", /quality/);
-    assert.equal(docker.runtimeEnvironment.WORKFORCE_REQUIRED_TOOLCHAINS, "laravel,python");
-    assert.match(attempt.command.at(-1) ?? "", /workforce-toolchain install laravel python/);
+    assert.equal(docker.runtimeEnvironment.WORKFORCE_REQUIRED_TOOLCHAINS, "beads,laravel,python");
+    assert.match(attempt.command.at(-1) ?? "", /workforce-toolchain install beads laravel python/);
   } finally {
     store.close();
     rmSync(root, { recursive: true, force: true });

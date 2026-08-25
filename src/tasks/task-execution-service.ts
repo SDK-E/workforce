@@ -154,6 +154,7 @@ function resolveToolchainBundles(task: TaskRecord): string[] {
     ["audio", "audio-video"],
     ["video", "audio-video"],
     ["browser", "browser"],
+    ["integration:beads", "beads"],
   ];
   for (const [capability, bundle] of mappings) if (requested.has(capability)) bundles.add(bundle);
   return [...bundles].sort();
