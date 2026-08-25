@@ -25,6 +25,7 @@ interface WorkforceAppProps {
   onEmergencyStop: () => Promise<void>;
   onStartTask: (companyId: string, taskId: string) => Promise<void>;
   onVerifyMcp: (companyId: string, serverId: string) => Promise<void>;
+  onVerifyModel: (companyId: string, modelId: string) => Promise<void>;
 }
 
 const READY_STATUS = "Ready — no agent work starts without an approved task";
@@ -36,6 +37,7 @@ export function WorkforceApp({
   onEmergencyStop,
   onStartTask,
   onVerifyMcp,
+  onVerifyModel,
 }: WorkforceAppProps) {
   const { stdout } = useStdout();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -84,6 +86,7 @@ export function WorkforceApp({
     data,
     company,
     onVerifyMcp,
+    onVerifyModel,
     setSelectedIndex,
     setPaletteVisible,
     setPaletteIndex,

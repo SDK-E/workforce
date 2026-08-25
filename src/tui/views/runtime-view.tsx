@@ -5,6 +5,7 @@ import type {
   ModelRecord,
   ToolRecord,
 } from "../../registries/registry-types.js";
+import { bindingsFor } from "../keybindings.js";
 
 interface RuntimeViewProps {
   section: string;
@@ -30,7 +31,10 @@ export function RuntimeView(props: RuntimeViewProps) {
         <Text dimColor>Capabilities are granted per approved sandbox plan.</Text>
       )}
       {props.section === "Models & engines" && (
-        <Text dimColor>n configure · e edit · [] select · verify before execution</Text>
+        <Text dimColor>
+          {bindingsFor("create")} configure · {bindingsFor("edit")} edit · {bindingsFor("verify")}{" "}
+          verify with Docker inference
+        </Text>
       )}
     </Box>
   );

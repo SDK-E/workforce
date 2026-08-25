@@ -60,6 +60,7 @@ test("approved task contracts queue verified inference-capable Docker execution"
       provider: "openai",
       capabilities: ["engineering"],
       supportedRoles: ["general"],
+      secretRequirements: [],
       contextLimit: 128_000,
       freePreferred: false,
       localModel: false,

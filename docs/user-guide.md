@@ -19,7 +19,7 @@ pnpm start
 
 On first launch, enter the company identity and mission. Workforce creates durable CEO and ARM identities. A single installation can manage multiple isolated companies; use **Overview → Companies** to create, select, edit, archive, or restore them.
 
-Before agents can execute, configure a provider/model under **Platform → Models & engines**. Configuration does not prove availability: execution only selects a non-placeholder model with an independent verification receipt. Import provider or service credentials into the Workforce secret store with the narrowest company, employee, and task scope.
+Before agents can execute, configure a provider/model under **Platform → Models & engines**. Enter the environment-variable names required by that provider (for example `OPENAI_API_KEY`), select the record, and press `v`. Workforce retrieves only secrets authorized for that company, ARM identity, and verification task, then runs the configured engine and model inside the universal Docker image through audited egress. A bounded, redacted success or failure receipt is persisted. Configuration alone does not prove availability, and execution only selects a non-placeholder model with a successful independent receipt.
 
 GitHub credentials can be imported from the authenticated `gh` CLI without mounting the host credential store:
 

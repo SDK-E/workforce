@@ -15,6 +15,7 @@ import { AutomationService } from "./automations/automation-service.js";
 import { MailAttemptBridge } from "./integrations/mail-attempt-bridge.js";
 import { DockerMcpProbeRunner, McpHealthVerifier } from "./integrations/mcp-health-verifier.js";
 import { ArmOperatingLoop } from "./autonomy/arm-operating-loop.js";
+import { DockerModelProbeRunner, ModelVerifier } from "./registries/model-verifier.js";
 
 const store = new StateStore();
 store.initialize();
@@ -39,6 +40,18 @@ const mcpVerifier = new McpHealthVerifier(store.mcpServers, new DockerMcpProbeRu
         companyId: server.companyId,
         employeeId: "arm",
         taskId: `mcp-health:${server.id}`,
+      }),
+    ]),
+  ),
+);
+const modelVerifier = new ModelVerifier(store.models, new DockerModelProbeRunner(), (model) =>
+  Object.fromEntries(
+    model.secretRequirements.map((name) => [
+      name,
+      secrets.get(name, {
+        companyId: model.companyId,
+        employeeId: "arm",
+        taskId: `model-health:${model.id}`,
       }),
     ]),
   ),
@@ -100,6 +113,9 @@ render(
     }}
     onVerifyMcp={async (companyId, serverId) => {
       await mcpVerifier.verify(companyId, serverId, "human");
+    }}
+    onVerifyModel={async (companyId, modelId) => {
+      await modelVerifier.verify(companyId, modelId, "human");
     }}
   />,
 );

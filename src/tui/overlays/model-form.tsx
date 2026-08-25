@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { PromptMarker } from "../components/prompt-marker.js";
-import { matchesKeybinding } from "../keybindings.js";
+import { bindingsFor, matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import type { ModelRecord } from "../../registries/registry-types.js";
 import { FormFrame } from "./form-frame.js";
@@ -14,6 +14,7 @@ const FIELDS = [
   "Priority (higher starts first)",
   "Capabilities (comma separated)",
   "Supported roles (comma separated)",
+  "Required secret names (comma separated)",
 ] as const;
 
 export interface ModelFormInput {
@@ -24,6 +25,7 @@ export interface ModelFormInput {
   priority: number;
   capabilities: string[];
   supportedRoles: string[];
+  secretRequirements: string[];
 }
 
 export function ModelForm(props: {
@@ -41,6 +43,7 @@ export function ModelForm(props: {
     props.initial?.priority.toString() ?? "60",
     props.initial?.capabilities.join(", ") ?? "",
     props.initial?.supportedRoles.join(", ") ?? "general",
+    props.initial?.secretRequirements.join(", ") ?? "",
   ]);
   const confirming = step === FIELDS.length;
   useInput((input, key) => {
@@ -53,8 +56,8 @@ export function ModelForm(props: {
       terminalWidth={props.terminalWidth}
       footer={
         confirming
-          ? "Enter save · Esc cancel"
-          : `Enter next · Esc cancel · ${step + 1}/${FIELDS.length}`
+          ? `${bindingsFor("activate")} save · ${bindingsFor("cancel")} cancel`
+          : `${bindingsFor("activate")} next · ${bindingsFor("cancel")} cancel · ${step + 1}/${FIELDS.length}`
       }
     >
       {confirming ? (
@@ -101,6 +104,7 @@ function parse(values: string[]): ModelFormInput {
     priority,
     capabilities: split(values[5]),
     supportedRoles: split(values[6]),
+    secretRequirements: split(values[7]),
   };
 }
 

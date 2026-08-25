@@ -40,6 +40,8 @@ export function handleContentInput(
     requestTaskExecution(context);
   else if (matchesKeybinding("verify", input, key) && context.section === "MCP servers")
     verifyFirstMcp(context);
+  else if (matchesKeybinding("verify", input, key) && context.section === "Models & engines")
+    verifySelectedModel(context);
   else if (matchesKeybinding("nextTheme", input, key) && context.section === "Settings")
     context.cycleTheme();
   else if (matchesKeybinding("activate", input, key) && context.section === "Companies")
@@ -63,6 +65,7 @@ interface ContentInputContext {
   data: WorkspaceData;
   company: CompanyRecord;
   onVerifyMcp: (companyId: string, serverId: string) => Promise<void>;
+  onVerifyModel: (companyId: string, modelId: string) => Promise<void>;
   setExecutionTaskId: (id: string) => void;
   setCompany: (company: CompanyRecord) => void;
   setStatusMessage: (message: string) => void;
@@ -89,6 +92,26 @@ function verifyFirstMcp(context: ContentInputContext): void {
     })
     .catch((error: unknown) => {
       context.setStatusMessage(error instanceof Error ? error.message : "MCP verification failed");
+    });
+}
+
+function verifySelectedModel(context: ContentInputContext): void {
+  if (context.lifecycle.selected?.kind !== "model") {
+    context.setStatusMessage("Select a configured model before verification");
+    return;
+  }
+  context.setStatusMessage(
+    `Verifying ${context.lifecycle.selected.label} through Docker inference…`,
+  );
+  void context
+    .onVerifyModel(context.company.id, context.lifecycle.selected.id)
+    .then(() => {
+      context.setStatusMessage("Model inference verification receipt recorded");
+    })
+    .catch((error: unknown) => {
+      context.setStatusMessage(
+        error instanceof Error ? error.message : "Model verification failed",
+      );
     });
 }
 

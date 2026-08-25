@@ -74,6 +74,7 @@ function model(name: string, health: ModelRecord["health"], receipt: string | nu
     provider: "provider",
     capabilities: [],
     supportedRoles: ["general"],
+    secretRequirements: [],
     contextLimit: null,
     freePreferred: false,
     localModel: false,

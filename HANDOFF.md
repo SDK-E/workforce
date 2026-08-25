@@ -4,7 +4,9 @@ This document is the operational handoff for an autonomous coding agent (for exa
 
 ## Goal
 
-Complete Workforce as a production-grade, multi-company AI Workforce Operating System:
+Complete Workforce as a production-grade, multi-company autonomous AI company operating system. Each company must be able to pursue its mission continuously: discover opportunities, generate and qualify leads, acquire and serve clients, build and operate production-grade applications and other deliverables, maintain its own operations, and adapt its workforce without waiting for conversational human prompting. The CEO owns direction and delegation; the ARM owns workforce design, hiring, reinforcement, and offboarding. Human governance remains available and audited.
+
+The required system includes:
 
 - durable per-company CEO and Agent Resources Manager (ARM) identities;
 - autonomous CEO/ARM/automation work loops that execute agents only in Docker;
@@ -67,7 +69,7 @@ Agents do run, not merely emit tick events:
 3. A ready/assigned task flows through `TaskExecutionService.start()` into a durable attempt and `DockerSupervisor.tick()`, which invokes Docker.
 4. The supervisor re-ticks when a container finishes, refilling queue capacity.
 
-The practical readiness dependency is intentional: a company must have a configured, verified model record. Default model registry entries are `unconfigured`, so a CEO cycle will record a blocked operating cycle rather than pretending work ran. Make model configuration/verification visibly manageable in the TUI and document it in the README.
+The practical readiness dependency is intentional: a company must have a configured, verified model record. Default model registry entries are `unconfigured`, so a CEO cycle records a blocked operating cycle rather than pretending work ran. Model create/edit accepts required secret names; `v` performs actual engine/model inference in the hardened Docker image through audited egress and persists a bounded redacted verification receipt. Healthy state cannot be written without a receipt.
 
 ### TUI quality
 
@@ -95,14 +97,13 @@ pnpm test
 git diff --check
 ```
 
-The latest verified committed baseline is `45e7280`; the navigation/docs/repository-organization slice immediately after it passes all 49 tests. Inspect the worktree before modifying it; preserve unrelated user changes.
+The current baseline passes all 56 tests plus formatting, typed lint, dead-code analysis, build, and migration checks. Inspect the worktree before modifying it; preserve unrelated user changes.
 
 ## Remaining work, in recommended order
 
 ### 1. Finish execution readiness and observability
 
-- Add independent model-verification action/receipt flow and real TUI create/edit/verification actions for environments and tools. Model registry create/edit is now available; configuration remains deliberately insufficient to claim verification.
-- Add an explicit execution-readiness panel: Docker availability/image presence, egress proxy, model availability, active attempts/queue, and blocking reason.
+- Add real TUI create/edit/verification actions and independent receipts for environments and tools. Model verification and the evidence-derived readiness panel are complete.
 - Verify the CEO, ARM, automation, supervisor, and restart/recovery loop using the compiled production TUI and a real Docker daemon. Do not accept event-only proof.
 - Ensure periodic supervisor reconciliation/ticking is sufficiently robust while the app is live; test queued work arriving independently of a completion event.
 

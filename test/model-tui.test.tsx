@@ -17,6 +17,7 @@ test("model form prepopulates a selected registry entry", () => {
           provider: "openai",
           capabilities: ["tools"],
           supportedRoles: ["engineering"],
+          secretRequirements: [],
           contextLimit: null,
           freePreferred: false,
           localModel: false,

@@ -1,8 +1,8 @@
 # Workforce
 
-A standalone, Docker-first AI workforce control plane.
+A standalone, Docker-first operating system for autonomous AI companies.
 
-The host runs only the control plane: CEO and Agent Resources identities, task state, policy decisions, audit records, TUI, and Docker supervision. Agent engines and job workspaces run only inside job-specific containers. If Docker is unavailable, work is blocked visibly; the system never falls back to host execution.
+Each isolated company has a durable CEO that chooses and delegates direction and an Agent Resources Manager that builds and reinforces the workforce. The intended company can continuously discover opportunities, generate leads, handle clients, build and operate production-grade applications and other professional deliverables, and maintain its own operations. The host runs only the control plane; agent engines and job workspaces run only inside job-specific containers. If Docker is unavailable, work is blocked visibly and never falls back to host execution.
 
 ## What it does
 

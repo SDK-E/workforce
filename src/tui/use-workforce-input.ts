@@ -24,6 +24,7 @@ export interface WorkforceInputOptions {
   data: WorkspaceData;
   company: CompanyRecord;
   onVerifyMcp: (companyId: string, serverId: string) => Promise<void>;
+  onVerifyModel: (companyId: string, modelId: string) => Promise<void>;
   setSelectedIndex: Dispatch<SetStateAction<number>>;
   setPaletteVisible: Dispatch<SetStateAction<boolean>>;
   setPaletteIndex: Dispatch<SetStateAction<number>>;

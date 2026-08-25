@@ -48,6 +48,7 @@ export interface ModelRecord {
   provider: string;
   capabilities: string[];
   supportedRoles: string[];
+  secretRequirements: string[];
   contextLimit: number | null;
   freePreferred: boolean;
   localModel: boolean;

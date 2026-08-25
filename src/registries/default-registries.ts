@@ -91,6 +91,7 @@ export class DefaultRegistries {
         provider: "user-configured",
         capabilities: [],
         supportedRoles: ["general"],
+        secretRequirements: [],
         contextLimit: null,
         freePreferred: true,
         localModel: false,

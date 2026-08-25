@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Workforce is an organization-neutral control plane for durable AI employees. It manages identities, requirements, task graphs, conversations, performance, policy, approvals, attempts, and evidence. Agent execution happens exclusively inside Docker.
+Workforce is a multi-company autonomous AI operating system. Its purpose is to let each company continuously pursue its mission: discover opportunities, generate and qualify leads, manage client relationships, deliver production-grade applications and other professional work, operate and maintain what it creates, and adapt its organization without waiting for a human conversation. The durable CEO chooses direction and delegates; the ARM builds and reinforces the workforce needed to execute it. Humans retain audited governance and can manage every durable record. Agent execution happens exclusively inside Docker.
 
 ## Non-negotiable invariants
 

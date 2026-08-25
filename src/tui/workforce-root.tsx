@@ -12,6 +12,7 @@ export function WorkforceRoot(props: {
   onEmergencyStop: () => Promise<void>;
   onStartTask: (companyId: string, taskId: string) => Promise<void>;
   onVerifyMcp: (companyId: string, serverId: string) => Promise<void>;
+  onVerifyModel: (companyId: string, modelId: string) => Promise<void>;
 }) {
   const { stdout } = useStdout();
   const [company, setCompany] = useState<CompanyRecord | null>(props.store.companies()[0] ?? null);

@@ -25,6 +25,7 @@ test("rendered TUI arrows reach sidebar pages, palette choices, and room rows", 
         onEmergencyStop={() => Promise.resolve()}
         onStartTask={() => Promise.resolve()}
         onVerifyMcp={() => Promise.resolve()}
+        onVerifyModel={() => Promise.resolve()}
       />,
     );
 
