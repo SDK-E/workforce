@@ -45,7 +45,7 @@ This is a reduced path to a viable release, not a reduction of the product ident
 
 - Business pipeline MCP, viable CEO commercial autonomy, and ARM reinforcement are implemented.
 - The full local quality gate currently passes formatting, typed lint, Knip dead-code analysis,
-  compilation, migrations, and **98 tests**.
+  compilation, migrations, and **99 tests**.
 - Human forms now generate company/model/MCP/tool/environment IDs; infer company, actor, timestamps,
   approval targets, and safe defaults; and select company-scoped relationships by readable names.
   This covers organization, strategy, business, governance, meetings, automations, project
@@ -65,6 +65,9 @@ This is a reduced path to a viable release, not a reduction of the product ident
   fail visibly instead of silently falling through to Advanced diagnostics.
 - The bottom bar explicitly labels immutable evidence, audit, readiness, runtime, and diagnostics
   pages as read-only, and the executive overview advertises its configured left/right panel controls.
+- Conversations now offers an explicit room/thread/message creation chooser. Thread and room
+  relationships use named selectors, human authorship is inferred, and messages can target an open
+  thread without requesting internal IDs.
 
 ## What to defer until after the viable release
 

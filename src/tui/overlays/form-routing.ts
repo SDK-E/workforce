@@ -9,7 +9,7 @@ export function createFormForSection(section: string): CreateFormKind | null {
   const routes: Record<string, CreateFormKind> = {
     Employees: "employee-hire",
     "CEO office": "message",
-    Conversations: "room",
+    Conversations: "conversation",
     Meetings: "meeting",
     "Models & engines": "model",
     Tools: "tool",

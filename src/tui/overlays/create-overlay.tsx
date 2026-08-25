@@ -18,6 +18,7 @@ import { RegistryMutationOverlay } from "./registry-mutation-overlay.js";
 import { GovernanceMutationOverlay } from "./governance-mutation-overlay.js";
 import { IncidentMutationOverlay } from "./incident-mutation-overlay.js";
 import { BusinessMutationOverlay } from "./business-mutation-overlay.js";
+import { ConversationCreateOverlay } from "./conversation-create-overlay.js";
 
 export type CreateFormKind =
   | "company-create"
@@ -29,6 +30,7 @@ export type CreateFormKind =
   | "hiring-decision"
   | "agent-profile"
   | "message"
+  | "conversation"
   | "room"
   | "model"
   | "meeting"
@@ -93,6 +95,8 @@ export function CreateOverlay(props: CreateOverlayProps) {
   )
     return <EmployeeMutationOverlay {...props} kind={props.kind} finish={finish} />;
   if (props.kind === "room") return <ConversationMutationOverlay {...props} finish={finish} />;
+  if (props.kind === "conversation")
+    return <ConversationCreateOverlay {...props} finish={finish} />;
   if (props.kind === "model") return <ModelMutationOverlay {...props} finish={finish} />;
   if (props.kind === "tool" || props.kind === "environment")
     return <RegistryMutationOverlay {...props} kind={props.kind} finish={finish} />;
@@ -118,6 +122,9 @@ export function CreateOverlay(props: CreateOverlayProps) {
     return (
       <MessageForm
         rooms={props.store.conversations.rooms.list(props.company.id)}
+        threads={props.store.conversations
+          .roomList(props.company.id)
+          .flatMap((room) => props.store.conversations.threads.list(props.company.id, room.id))}
         terminalWidth={props.terminalWidth}
         onCancel={props.onClose}
         onSubmit={(input) => {
@@ -127,7 +134,7 @@ export function CreateOverlay(props: CreateOverlayProps) {
               input.roomId,
               input.authorId,
               input.body,
-              null,
+              input.threadId,
             );
           }, "Message persisted and audited");
         }}
