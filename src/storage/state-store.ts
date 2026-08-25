@@ -26,6 +26,10 @@ import { MeetingRepository } from "../governance/meeting-repository.js";
 import { MeetingContributionRepository } from "../governance/meeting-contribution-repository.js";
 import { IncidentRepository } from "../governance/incident-repository.js";
 import { PerformanceRepository } from "../governance/performance-repository.js";
+import { OpportunityRepository } from "../business/opportunity-repository.js";
+import { LeadRepository } from "../business/lead-repository.js";
+import { ClientRepository } from "../business/client-repository.js";
+import { EngagementRepository } from "../business/engagement-repository.js";
 import { AttemptRepository } from "../supervision/attempt-repository.js";
 import { ArtifactRepository } from "./artifact-repository.js";
 import { ExecutionEvidenceRepository } from "./execution-evidence-repository.js";
@@ -60,6 +64,10 @@ export class StateStore {
   readonly meetingContributions: MeetingContributionRepository;
   readonly incidents: IncidentRepository;
   readonly performance: PerformanceRepository;
+  readonly opportunities: OpportunityRepository;
+  readonly leads: LeadRepository;
+  readonly clients: ClientRepository;
+  readonly engagements: EngagementRepository;
   readonly attempts: AttemptRepository;
   readonly artifacts: ArtifactRepository;
   readonly executionEvidence: ExecutionEvidenceRepository;
@@ -122,6 +130,18 @@ export class StateStore {
     this.meetingContributions = new MeetingContributionRepository(this.database, this.audit);
     this.incidents = new IncidentRepository(this.database, this.companiesRepository, this.audit);
     this.performance = new PerformanceRepository(
+      this.database,
+      this.companiesRepository,
+      this.audit,
+    );
+    this.opportunities = new OpportunityRepository(
+      this.database,
+      this.companiesRepository,
+      this.audit,
+    );
+    this.leads = new LeadRepository(this.database, this.companiesRepository, this.audit);
+    this.clients = new ClientRepository(this.database, this.companiesRepository, this.audit);
+    this.engagements = new EngagementRepository(
       this.database,
       this.companiesRepository,
       this.audit,

@@ -72,6 +72,10 @@ Container completion is only an attempt result. Independent control-plane valida
 
 Agents may propose validated interval or strict cron automations, but proposals do not execute until approved. Approved actions are typed task templates rather than arbitrary commands. The scheduler calculates occurrences with `cron-parser`, creates ordinary audited company-scoped tasks, and dispatches them through the same Docker execution and acceptance path as human-created work. Each scheduled occurrence has a unique durable run record, preventing duplicate execution after repeated ticks or restarts; disable, archive, and restore preserve history.
 
+## Business operations
+
+Opportunity discovery, lead qualification, client relationships, and delivery engagements are durable company-scoped domains rather than labels embedded in generic task prose. Migration `028.sql` creates their relational pipeline with parent isolation. Separate typed repositories provide bounded search/pagination, validation, audited updates, and record-preserving archive/restore. Engagements require measurable success criteria and attach delivery work to a client; subsequent slices expose these services to autonomy, MCP, and the TUI.
+
 Company deletion is record-preserving archival. Migration `022.sql` persists the lifecycle status and the pre-archive autonomy setting. Archival is refused while attempts are active, stops CEO and ARM operating cycles, and disables approved automations; restoration preserves durable CEO/ARM identities and restores the prior autonomy choice instead of always starting the company. Archived companies remain visible in the multi-company TUI and must be restored before activation.
 
 Task creation validates company-scoped project, parent-task, manager, assignee, and reviewer relationships. Requirements begin at version 1 and every objective, non-goal, acceptance, capability, network, or resource change creates an immutable version with actor and rationale. If an attempt is starting or running, a change is rejected unless it names an explicit safe checkpoint. Task dependencies are company-scoped and cannot self-reference.

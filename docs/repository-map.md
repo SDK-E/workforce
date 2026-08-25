@@ -19,6 +19,7 @@ Workforce is organized by product capability. Put new domain behavior beside the
 | --- | --- |
 | `acceptance/` | Artifact collection and independent acceptance evaluation |
 | `automations/` | Governed recurring-work proposals and executions |
+| `business/` | Opportunity, lead, client, and engagement pipeline records |
 | `autonomy/` | Durable CEO and ARM operating loops |
 | `conversations/` | Rooms, threads, messages, and attachments |
 | `employees/` | Agent identity, persona, prompt, and capability profiles |
