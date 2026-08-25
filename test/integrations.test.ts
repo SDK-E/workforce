@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { AttemptCapabilityResolver } from "../src/integrations/attempt-capability-resolver.js";
+import { MailAttemptBridge } from "../src/integrations/mail-attempt-bridge.js";
+import type { ArtifactRecord } from "../src/acceptance/artifact-types.js";
+import type { AttemptRecord } from "../src/supervision/attempt-types.js";
 import { StateStore } from "../src/storage/state-store.js";
 
 test("MCP, Beads, and mail capabilities are scoped, audited, and reversible", () => {
@@ -95,6 +98,61 @@ test("MCP, Beads, and mail capabilities are scoped, audited, and reversible", ()
     assert.equal(store.mail.restore("alpha", outbound.id, "owner").status, "sent");
     assert.equal(store.mail.inbox("beta", "human", "owner").length, 0);
     assert.ok(store.verifyAuditChain());
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("agent attempts receive scoped inbox snapshots and import validated outboxes", async () => {
+  const root = mkdtempSync(join(tmpdir(), "workforce-mail-bridge-"));
+  const store = new StateStore(root);
+  try {
+    store.initialize();
+    store.createCompany({ id: "acme", name: "Acme" });
+    store.mail.send({
+      companyId: "acme",
+      senderKind: "human",
+      senderId: "owner",
+      recipientKind: "agent",
+      recipientId: "ceo",
+      subject: "Status request",
+      body: "Send the current evidence summary.",
+    });
+    const task = store.createTask({
+      companyId: "acme",
+      objective: "Respond to company mail",
+      acceptanceCriteria: ["A response is sent"],
+      risk: "low",
+      dataSensitivity: "internal",
+      tools: ["workforce-mail"],
+      managerId: "ceo",
+      assigneeId: "ceo",
+    });
+    const bridge = new MailAttemptBridge(store.mail);
+    const environment = bridge.prepare(task);
+    assert.match(environment.WORKFORCE_MAIL_INBOX ?? "", /Status request/);
+    const outboxPath = join(root, "workforce-mail-outbox.json");
+    writeFileSync(
+      outboxPath,
+      JSON.stringify([
+        {
+          recipientKind: "human",
+          recipientId: "owner",
+          subject: "Evidence summary",
+          body: "The verified work is on track.",
+        },
+      ]),
+    );
+    await bridge.importOutbox(
+      {
+        companyId: "acme",
+        employeeId: "ceo",
+        environment: { WORKFORCE_MAIL_OUTBOX_PATH: "/work/workforce-mail-outbox.json" },
+      } as unknown as AttemptRecord,
+      [{ relativePath: "workforce-mail-outbox.json", storagePath: outboxPath }] as ArtifactRecord[],
+    );
+    assert.equal(store.mail.inbox("acme", "human", "owner")[0]?.subject, "Evidence summary");
   } finally {
     store.close();
     rmSync(root, { recursive: true, force: true });

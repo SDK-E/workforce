@@ -30,6 +30,8 @@ Every forward-only migration is a separately versioned SQL file in `src/storage/
 
 The conversation application service composes separate room, thread, message, and attachment repositories. Rooms own membership, announcements, retention, and archival state. Threads and messages validate their company/room parents. Edits, redactions, pins, membership changes, and attachments are durable audit events; attachment records require SHA-256 digests and artifact URIs rather than embedding files in SQLite.
 
+Agent mail crosses the sandbox boundary without exposing the control-plane database. A task granted `workforce-mail` receives a bounded immutable inbox snapshot. It may emit a `workforce-mail-outbox.json` artifact; only after archive validation and secret scanning does the control plane validate its schema, enforce the attempt employee as sender, re-check company-scoped recipients, and persist the messages with audit events.
+
 ## No host fallback
 
 Docker unavailability is a blocked execution state. The control plane, TUI, CEO, ARM, task management, and conversations remain available; no agent work begins.

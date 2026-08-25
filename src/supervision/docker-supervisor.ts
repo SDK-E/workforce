@@ -14,6 +14,10 @@ export interface AttemptFinalizer {
   finalize(attempt: AttemptRecord, secrets: Record<string, string>): Promise<ArtifactRecord[]>;
 }
 
+export interface AttemptCompletionProcessor {
+  process(attempt: AttemptRecord, artifacts: ArtifactRecord[]): Promise<void>;
+}
+
 export class DockerSupervisor {
   readonly ownerId = randomUUID();
   private readonly running = new Map<string, Promise<void>>();
@@ -38,6 +42,7 @@ export class DockerSupervisor {
     },
     private readonly finalizer?: AttemptFinalizer,
     private readonly evidence?: ExecutionEvidenceRepository,
+    private readonly completionProcessor?: AttemptCompletionProcessor,
   ) {}
 
   enqueue(request: AttemptRequest): AttemptRecord {
@@ -158,6 +163,7 @@ export class DockerSupervisor {
       let artifacts: ArtifactRecord[];
       try {
         artifacts = this.finalizer ? await this.finalizer.finalize(attempt, secrets) : [];
+        await this.completionProcessor?.process(attempt, artifacts);
       } catch (error) {
         this.attempts.setStatus(attempt.id, "failed", {
           exitCode: result.exitCode,

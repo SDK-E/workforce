@@ -36,11 +36,11 @@ test("registries and dynamic agent instructions are company scoped and versioned
     store.initialize();
     store.createCompany({ id: "acme", name: "Acme" });
     store.createCompany({ id: "other", name: "Other" });
-    assert.equal(store.tools.list("acme").length, 5);
+    assert.equal(store.tools.list("acme").length, 6);
     assert.equal(store.environments.list("acme").length, 1);
     assert.equal(store.environments.list("acme")[0]?.id, "universal");
     assert.equal(store.models.list("acme").length, 2);
-    assert.equal(store.tools.list("other").length, 5);
+    assert.equal(store.tools.list("other").length, 6);
 
     const initial = store.agentProfiles.active("acme", "ceo");
     assert.equal(initial.revision, 1);

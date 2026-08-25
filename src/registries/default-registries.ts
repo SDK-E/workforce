@@ -28,6 +28,13 @@ export class DefaultRegistries {
       ["browser", ["browser"], "high", ["browser"], "audited-internet"],
       ["github-cli", ["git", "api"], "high", ["engineering"], "audited-internet"],
       ["vercel-cli", ["deployment"], "critical", ["engineering"], "audited-internet"],
+      [
+        "workforce-mail",
+        ["mail", "coordination"],
+        "medium",
+        ["document", "research", "engineering", "browser", "restricted-review"],
+        "inference-only",
+      ],
     ] as const)
       this.tools.save({
         companyId,

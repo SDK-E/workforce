@@ -12,6 +12,7 @@ import { TaskExecutionService } from "./tasks/task-execution-service.js";
 import { CeoOperatingLoop } from "./autonomy/ceo-operating-loop.js";
 import { AttemptCapabilityResolver } from "./integrations/attempt-capability-resolver.js";
 import { AutomationService } from "./automations/automation-service.js";
+import { MailAttemptBridge } from "./integrations/mail-attempt-bridge.js";
 
 const store = new StateStore();
 store.initialize();
@@ -27,6 +28,7 @@ const dockerClient = new ExecaDockerClient({
   proxyUrl: "http://workforce-egress-proxy:3128",
 });
 const artifactPipeline = new ArtifactPipeline(store.root, store.artifacts, dockerClient);
+const mailBridge = new MailAttemptBridge(store.mail);
 const supervisor = new DockerSupervisor(
   store.attempts,
   dockerClient,
@@ -36,6 +38,7 @@ const supervisor = new DockerSupervisor(
   (attempt) => resolveAttemptSecrets(secrets, attempt),
   artifactPipeline,
   store.executionEvidence,
+  { process: (attempt, artifacts) => mailBridge.importOutbox(attempt, artifacts) },
 );
 const taskExecution = new TaskExecutionService(
   store.tasksRepository,
@@ -43,7 +46,7 @@ const taskExecution = new TaskExecutionService(
   store.tools,
   store.attemptFactory,
   supervisor,
-  new AttemptCapabilityResolver(store.mcpServers, store.projectIntegrations),
+  new AttemptCapabilityResolver(store.mcpServers, store.projectIntegrations, mailBridge),
 );
 const operatingLoop = new CeoOperatingLoop(store, store.autonomy, taskExecution);
 const automationService = new AutomationService(store, taskExecution);

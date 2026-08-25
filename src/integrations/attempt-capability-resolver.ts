@@ -3,6 +3,7 @@ import type { TaskRecord } from "../tasks/task-types.js";
 import type { McpServerRecord, ProjectIntegrationRecord } from "./integration-types.js";
 import type { McpServerRepository } from "./mcp-server-repository.js";
 import type { ProjectIntegrationRepository } from "./project-integration-repository.js";
+import type { MailAttemptBridge } from "./mail-attempt-bridge.js";
 
 export interface AttemptCapabilities {
   environment: Record<string, string>;
@@ -13,6 +14,7 @@ export class AttemptCapabilityResolver {
   constructor(
     private readonly mcpServers: McpServerRepository,
     private readonly projectIntegrations: ProjectIntegrationRepository,
+    private readonly mail?: MailAttemptBridge,
   ) {}
 
   resolve(task: TaskRecord, engine: SandboxSpec["engine"]): AttemptCapabilities {
@@ -35,7 +37,7 @@ export class AttemptCapabilityResolver {
     }
     const integrations = this.resolveIntegrations(task);
     const config = renderMcpConfig([...servers.values()]);
-    const environment: Record<string, string> = {};
+    const environment: Record<string, string> = { ...this.mail?.prepare(task) };
     if (servers.size > 0)
       environment[engine === "kilo" ? "KILO_CONFIG_CONTENT" : "OPENCODE_CONFIG_CONTENT"] =
         JSON.stringify(config);
