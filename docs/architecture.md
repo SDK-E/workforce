@@ -1,5 +1,61 @@
 # Architecture
 
+## Workforce logical flow
+
+The graph reads from company intent at the top to verified outcomes and continuous adaptation at the
+bottom. Solid arrows are ordinary work flow; governance decisions feed back into the same durable
+company state rather than creating a parallel execution path.
+
+```mermaid
+flowchart TD
+    H[Human shareholder/operator] -->|mission, policy, approvals, oversight| CP
+    EXT[Authorized external AI] -->|company-scoped Workforce MCP| CP
+
+    subgraph CP[Persistent Workforce control plane]
+        STATE[(Company-isolated SQLite state<br/>audit, secrets, artifacts)]
+        CEO[Durable CEO<br/>chooses direction and delegates]
+        ARM[Durable ARM<br/>staffs, reinforces, offboards]
+        AUTO[Approved automation scheduler]
+        GOV[Governance<br/>approvals and XState lifecycles]
+        WORK[Objectives, pipeline, projects,<br/>tasks and acceptance contracts]
+        SUP[Lease and capacity supervisor]
+
+        STATE --> CEO
+        STATE --> ARM
+        STATE --> AUTO
+        CEO --> WORK
+        ARM -->|assignment or probationary hire| WORK
+        AUTO -->|typed recurring task| WORK
+        WORK --> GOV
+        GOV -->|approved and ready| SUP
+    end
+
+    SUP -->|sandbox specification| JOB
+
+    subgraph JOB[One isolated Docker attempt]
+        BRIEF[Dynamic identity, persona,<br/>instructions and organization briefing]
+        ENGINE[Kilo or OpenCode model session]
+        TOOLS[Authorized MCP, browser, tools,<br/>audited network and scoped secrets]
+        OUTPUT[Workspace artifacts, claims,<br/>events, mail and checkpoints]
+        BRIEF --> ENGINE
+        TOOLS --> ENGINE
+        ENGINE --> OUTPUT
+    end
+
+    OUTPUT --> VALIDATE[Independent deterministic validation]
+    VALIDATE -->|accepted artifacts and evidence| STATE
+    VALIDATE -->|classified failure or gap| STATE
+    STATE -->|next bounded operating cycle| CEO
+    STATE -->|capacity and performance evidence| ARM
+    STATE -->|timeline, decisions and recovery| H
+```
+
+In short: the CEO decides what the company should pursue, the ARM ensures the right workforce exists,
+governance determines which consequential actions may proceed, and the supervisor turns only ready
+tasks into isolated Docker attempts. Agents collaborate through scoped Workforce MCP and produce
+untrusted output. Independent validators decide acceptance, persist evidence, and return the result to
+the CEO and ARM for the next operating cycle.
+
 ## Trust boundary
 
 The trusted control plane runs continuously as the `workforce-engine` Docker service. Its dedicated `workforce-state` named volume stores organization identities, tasks, chats, policies, sandbox specifications, normalized activities, raw-event references, approvals, encrypted secrets, artifacts, and audit events. The separate TUI client attaches to this service and never starts a second scheduler.

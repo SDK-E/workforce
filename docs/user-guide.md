@@ -2,6 +2,10 @@
 
 ## 1. Prerequisites
 
+For a system-level picture before operating a company, see the
+[Workforce logical flow](architecture.md#workforce-logical-flow). It shows how the CEO, ARM,
+governance, Docker attempts, MCP tools, validation, and continuous feedback fit together.
+
 Install Node.js 22.13–26, pnpm 10–11, and a compatible Docker daemon. Workforce never runs agent engines on the host. If Docker is unavailable, management remains usable but execution is visibly blocked.
 
 ```sh
