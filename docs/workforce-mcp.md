@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`workforce-mcp` will expose Workforce application services to two classes of MCP client:
+`workforce-mcp` exposes Workforce application services to two classes of MCP client:
 
 1. **External administrator clients** — another trusted AI or operator can inspect and manage authorized companies through a local stdio server or authenticated Streamable HTTP endpoint.
 2. **Workforce agent clients** — a sandboxed employee can inspect and mutate only its assigned company, identity, task, rooms, mail, artifacts, and explicitly delegated management scope.
@@ -51,11 +51,29 @@ Management tools, visible only with authority: `create_objective`, `create_task`
 
 ## Delivery slices
 
-1. Add the official MCP server package, principal/capability contracts, stdio transport, read-only resources, and audit events.
+1. **In progress:** the official MCP server package, immutable principal/capability contracts, stdio transport, audited `company_overview` and `list_tasks` tools, and company-isolation tests are implemented. Read-only resources and the remaining read tools are next.
 2. Add scoped task/message/mail/checkpoint tools and inject the agent MCP endpoint/token only into authorized attempts.
 3. Add administrative mutation tools through application services with idempotency and approval enforcement.
 4. Add authenticated Streamable HTTP, revocation, rate limiting, request/result bounds, and security tests.
 5. Add MCP Inspector interoperability tests, malicious-client tests, cross-company denial tests, and operator documentation.
+
+## Local stdio usage
+
+Create a protected JSON configuration whose `principal` declares an ID, role, explicit company IDs, optional employee ID, and capabilities. It may also declare `stateRoot`; omission uses the normal Workforce state location. Secret values never belong in this file.
+
+```json
+{
+  "principal": {
+    "id": "local-admin",
+    "role": "human-admin",
+    "companyIds": ["my-company"],
+    "employeeId": null,
+    "capabilities": ["company:read", "task:read"]
+  }
+}
+```
+
+Configure the MCP client command as `pnpm workforce:mcp -- /absolute/path/to/config.json`. Tool arguments are validated, authorization is repeated inside the query service, and every successful read is added to the company audit chain.
 
 ## Acceptance
 

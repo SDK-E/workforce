@@ -23,6 +23,7 @@
     "sandbox:plan": "pnpm build && node dist/src/plan-cli.js",
     "arm:design": "pnpm build && node dist/src/arm-cli.js",
     "secrets:import": "pnpm build && node dist/src/secrets-cli.js",
+    "workforce:mcp": "pnpm build && node dist/src/workforce-mcp/workforce-mcp-stdio.js",
     "images:build": "sh scripts/build-images.sh",
     "images:verify-size": "sh scripts/verify-image-sizes.sh",
     "egress:setup": "sh scripts/setup-egress.sh",
@@ -36,6 +37,7 @@
       "src/plan-cli.ts",
       "src/arm-cli.ts",
       "src/secrets-cli.ts",
+      "src/workforce-mcp/workforce-mcp-stdio.ts",
       "test/**/*.test.ts"
     ],
     "project": [
@@ -47,6 +49,7 @@
     ]
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
     "cron-parser": "^5.10.0",
     "execa": "10.0.1",
     "ink": "6.3.1",

@@ -51,6 +51,7 @@ Read [`AGENTS.md`](AGENTS.md), [`docs/architecture.md`](docs/architecture.md), [
 
 - Rooms, threads, messages, pins, redaction, attachments, room membership, retention, announcements, mail bridge, MCP configuration/health receipts, project integrations, and scoped Beads support exist.
 - Conversation-room create/edit/archive/restore TUI workflows are implemented and tested.
+- Workforce MCP now uses the official SDK with a stdio entry point, immutable capability principals, audited `company_overview`/`list_tasks` services, and cross-company denial tests. Complete the remaining resources and scoped mutation/HTTP slices in `docs/workforce-mcp.md`.
 - Recent commit: `441e6c1 Add managed conversation room workflows`.
 
 ### Docker execution platform

@@ -32,6 +32,7 @@ CEO, ARM, and approved automation loops run every ten seconds while the control 
 - `pnpm sandbox:plan -- requirements/job.json`
 - `pnpm secrets:import -- github <company> [employee] [task]`
 - `printf '%s' "$VERCEL_TOKEN" | pnpm secrets:import -- vercel <company> [employee] [task]`
+- `pnpm workforce:mcp -- /absolute/path/to/principal-config.json` (company-scoped stdio MCP)
 - `pnpm tui` (production alias)
 
 Node.js 22.13–26 and pnpm 10–11 are supported and checked explicitly. Dependency install scripts are denied unless individually allowlisted. The lockfile pins the dependency graph.
