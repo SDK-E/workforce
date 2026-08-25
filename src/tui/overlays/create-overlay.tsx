@@ -117,6 +117,7 @@ export function CreateOverlay(props: CreateOverlayProps) {
   if (props.kind === "message")
     return (
       <MessageForm
+        rooms={props.store.conversations.rooms.list(props.company.id)}
         terminalWidth={props.terminalWidth}
         onCancel={props.onClose}
         onSubmit={(input) => {
@@ -126,7 +127,7 @@ export function CreateOverlay(props: CreateOverlayProps) {
               input.roomId,
               input.authorId,
               input.body,
-              input.threadId,
+              null,
             );
           }, "Message persisted and audited");
         }}
@@ -211,6 +212,7 @@ function CapabilityMutationOverlay(props: MutationOverlayProps) {
     return (
       <MailForm
         companyId={props.company.id}
+        employees={props.store.employees(props.company.id)}
         terminalWidth={props.terminalWidth}
         onCancel={props.onClose}
         onSubmit={(input) => {

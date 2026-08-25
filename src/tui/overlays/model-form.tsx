@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { PromptMarker } from "../components/prompt-marker.js";
@@ -7,7 +8,6 @@ import type { ModelRecord } from "../../registries/registry-types.js";
 import { FormFrame } from "./form-frame.js";
 
 const FIELDS = [
-  "Registry ID",
   "Engine (opencode or kilo)",
   "Model identifier",
   "Provider",
@@ -36,7 +36,6 @@ export function ModelForm(props: {
 }) {
   const [step, setStep] = useState(0);
   const [values, setValues] = useState([
-    props.initial?.id ?? "",
     props.initial?.engine ?? "opencode",
     props.initial?.model ?? "",
     props.initial?.provider ?? "",
@@ -48,7 +47,8 @@ export function ModelForm(props: {
   const confirming = step === FIELDS.length;
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key)) props.onSubmit(parse(values));
+    if (confirming && matchesKeybinding("activate", input, key))
+      props.onSubmit(parse(values, props.initial?.id));
   });
   return (
     <FormFrame
@@ -61,7 +61,7 @@ export function ModelForm(props: {
       }
     >
       {confirming ? (
-        <Text>Save model “{values[2]}” for controlled verification?</Text>
+        <Text>Save model “{values[1]}” for controlled verification?</Text>
       ) : (
         <>
           <Text>{FIELDS[step]}</Text>
@@ -85,26 +85,24 @@ export function ModelForm(props: {
   );
 }
 
-function parse(values: string[]): ModelFormInput {
-  const engine = values[1]?.trim();
+function parse(values: string[], existingId?: string): ModelFormInput {
+  const engine = values[0]?.trim();
   if (engine !== "opencode" && engine !== "kilo")
     throw new Error("Engine must be opencode or kilo");
-  const priority = Number.parseInt(values[4] ?? "", 10);
+  const priority = Number.parseInt(values[3] ?? "", 10);
   if (!Number.isInteger(priority)) throw new Error("Priority must be an integer");
-  const id = values[0]?.trim() ?? "";
-  const model = values[2]?.trim() ?? "";
-  const provider = values[3]?.trim() ?? "";
-  if (!id || !model || !provider)
-    throw new Error("Registry ID, model identifier, and provider are required");
+  const model = values[1]?.trim() ?? "";
+  const provider = values[2]?.trim() ?? "";
+  if (!model || !provider) throw new Error("Model identifier and provider are required");
   return {
-    id,
+    id: existingId ?? randomUUID(),
     engine,
     model,
     provider,
     priority,
-    capabilities: split(values[5]),
-    supportedRoles: split(values[6]),
-    secretRequirements: split(values[7]),
+    capabilities: split(values[4]),
+    supportedRoles: split(values[5]),
+    secretRequirements: split(values[6]),
   };
 }
 

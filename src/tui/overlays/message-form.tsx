@@ -1,65 +1,62 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import SelectInput from "ink-select-input";
+import TextInput from "ink-text-input";
+import type { RoomRecord } from "../../conversations/conversation-types.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
-import TextInput from "ink-text-input";
 import { FormFrame } from "./form-frame.js";
 
-const FIELDS = ["Room ID", "Author ID", "Thread ID (use - for none)", "Message"] as const;
-
 export function MessageForm(props: {
+  rooms: RoomRecord[];
   terminalWidth: number;
-  onSubmit: (input: {
-    roomId: string;
-    authorId: string;
-    threadId: string | null;
-    body: string;
-  }) => void;
+  onSubmit: (input: { roomId: string; authorId: string; body: string }) => void;
   onCancel: () => void;
 }) {
+  const activeRooms = props.rooms.filter(({ status }) => status === "active");
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(["", "human", "-", ""]);
-  const confirming = step === FIELDS.length;
+  const [roomId, setRoomId] = useState(activeRooms[0]?.id ?? "");
+  const [body, setBody] = useState("");
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key))
-      props.onSubmit({
-        roomId: values[0] ?? "",
-        authorId: values[1] ?? "",
-        threadId: values[2] === "-" ? null : (values[2] ?? null),
-        body: values[3] ?? "",
-      });
+    if (step === 2 && matchesKeybinding("activate", input, key))
+      props.onSubmit({ roomId, authorId: "human", body: body.trim() });
   });
   return (
     <FormFrame
       title="Compose durable message"
       terminalWidth={props.terminalWidth}
-      footer={
-        confirming ? "Enter send and audit · Esc cancel" : `Enter next · Esc cancel · ${step + 1}/4`
-      }
+      footer={step === 2 ? "Enter send and audit · Esc cancel" : "Enter/select next · Esc cancel"}
     >
-      {confirming ? (
-        <Text>
-          Send to {values[0]} as {values[1]}?
-        </Text>
-      ) : (
+      {activeRooms.length === 0 ? (
+        <Text>Create an active room before sending a message. Esc closes this dialog.</Text>
+      ) : step === 0 ? (
         <>
-          <Text>{FIELDS[step]}</Text>
+          <Text>Room</Text>
+          <SelectInput
+            items={activeRooms.map((room) => ({ label: room.name, value: room.id }))}
+            onSelect={(item) => {
+              setRoomId(item.value);
+              setStep(1);
+            }}
+          />
+        </>
+      ) : step === 1 ? (
+        <>
+          <Text>Message</Text>
           <Box>
             <PromptMarker />
             <TextInput
-              value={values[step] ?? ""}
-              onChange={(value) => {
-                setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
-                );
-              }}
+              value={body}
+              onChange={setBody}
               onSubmit={() => {
-                if (values[step]?.trim()) setStep((current) => current + 1);
+                if (body.trim()) setStep(2);
               }}
             />
           </Box>
         </>
+      ) : (
+        <Text>Send this message as you to the selected room?</Text>
       )}
     </FormFrame>
   );

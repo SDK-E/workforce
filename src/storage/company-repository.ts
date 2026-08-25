@@ -16,7 +16,7 @@ export class CompanyRepository {
 
   create(input: CreateCompanyInput): CompanyRecord {
     const now = new Date().toISOString();
-    const id = input.id ?? randomUUID();
+    const id = input.id ?? generatedCompanyId(input.name);
     if (!COMPANY_ID_PATTERN.test(id))
       throw new Error("Company id must be 2-64 lowercase letters, numbers, or hyphens");
     const company = this.build(id, input, now);
@@ -268,4 +268,13 @@ export class CompanyRepository {
       createdAt: String(row.created_at),
     };
   }
+}
+
+function generatedCompanyId(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48);
+  return `${slug || "company"}-${randomUUID().slice(0, 8)}`;
 }

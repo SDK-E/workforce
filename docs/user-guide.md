@@ -17,7 +17,7 @@ pnpm tui
 
 ## 2. Create and configure a company
 
-On first launch, enter the company identity and mission. Workforce creates durable CEO and ARM identities. A single installation can manage multiple isolated companies; use **Overview → Companies** to create, select, edit, archive, or restore them.
+On first launch, enter only the company name and mission. Workforce generates its internal ID and creates durable CEO and ARM identities. A single installation can manage multiple isolated companies; use **Overview → Companies** to create, select, edit, archive, or restore them. Vision, values, governance, policies, and budget remain available in the edit form instead of burdening initial creation.
 
 Before agents can execute, configure a provider/model under **Platform → Models & engines**. Enter the environment-variable names required by that provider (for example `OPENAI_API_KEY`), select the record, and press `v`. Workforce retrieves only secrets authorized for that company, ARM identity, and verification task, then runs the configured engine and model inside the universal Docker image through audited egress. A bounded, redacted success or failure receipt is persisted. Configuration alone does not prove availability, and execution only selects a non-placeholder model with a successful independent receipt.
 
@@ -76,7 +76,12 @@ Use `Up` / `Down` to choose a palette result, `Enter` to open it directly in das
 
 ## 4. Define work
 
-Create measurable objectives, initiatives, projects, goals, and milestones under **Strategy & work**. Create a task with an objective, explicit acceptance criteria, risk, ownership, required tools, outputs, and model policy. Requirements are versioned; changes during active execution require a safe checkpoint.
+Create measurable objectives, initiatives, projects, goals, and milestones under **Strategy & work**. Create a task with an objective, explicit acceptance criteria, and risk; assignment is optional because the ARM can staff it. The confirmation is the human approval, so the TUI does not create an unusable draft that needs a hidden second action. Requirements are versioned; changes during active execution require a safe checkpoint.
+
+Creation dialogs infer the current company and human identity, generate internal IDs and timestamps,
+and use the selected record for edits and decisions. Mail identifies you as the sender automatically,
+messages offer active rooms by name, and recipients are selected by employee name. Advanced identity
+and scope values remain visible only where changing them is itself the purpose of the configuration.
 
 The ARM evaluates whether an existing employee can do the work before proposing a probationary hire. A human can also create a governed hire from **Organization → Employees**. Dynamic persona, system prompt, instructions, sandbox, and probation criteria derive from the job rather than a hard-coded template.
 

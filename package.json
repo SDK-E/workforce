@@ -20,8 +20,6 @@
     "dev": "tsx src/daemon.ts",
     "tui": "sh scripts/open-tui.sh",
     "doctor": "pnpm build && node dist/src/doctor.js",
-    "sandbox:plan": "pnpm build && node dist/src/plan-cli.js",
-    "arm:design": "pnpm build && node dist/src/arm-cli.js",
     "secrets:import": "sh scripts/import-secret.sh",
     "workforce:mcp": "pnpm build && node dist/src/workforce-mcp/workforce-mcp-stdio.js",
     "images:build": "sh scripts/build-images.sh",
@@ -38,8 +36,6 @@
   "knip": {
     "entry": [
       "src/doctor.ts",
-      "src/plan-cli.ts",
-      "src/arm-cli.ts",
       "src/secrets-cli.ts",
       "src/tui-client.tsx",
       "src/workforce-mcp/workforce-mcp-stdio.ts",

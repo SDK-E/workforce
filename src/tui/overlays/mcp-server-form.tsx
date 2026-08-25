@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { PromptMarker } from "../components/prompt-marker.js";
@@ -7,7 +8,6 @@ import type { McpServerRecord } from "../../integrations/integration-types.js";
 import { FormFrame } from "./form-frame.js";
 
 const FIELDS = [
-  "Server ID",
   "Name",
   "Transport (stdio/http)",
   "Endpoint or argv command",
@@ -31,18 +31,18 @@ export function McpServerForm(props: {
     if (confirming && matchesKeybinding("activate", input, key)) submit();
   });
   function submit(): void {
-    const transport = values[2] === "stdio" ? "stdio" : "http";
-    const target = values[3]?.trim() ?? "";
+    const transport = values[1] === "stdio" ? "stdio" : "http";
+    const target = values[2]?.trim() ?? "";
     props.onSubmit({
       companyId: props.companyId,
-      id: props.initial?.id ?? values[0]?.trim() ?? "",
-      name: values[1]?.trim() ?? "",
+      id: props.initial?.id ?? randomUUID(),
+      name: values[0]?.trim() ?? "",
       transport,
       endpoint: transport === "stdio" ? null : target,
       command: transport === "stdio" ? splitWords(target) : [],
-      toolAllowlist: splitList(values[4]),
-      secretRequirements: splitList(values[5]),
-      credentialBindings: parseBindings(values[6]),
+      toolAllowlist: splitList(values[3]),
+      secretRequirements: splitList(values[4]),
+      credentialBindings: parseBindings(values[5]),
       status: props.initial?.status ?? "active",
       health: props.initial?.health ?? "unknown",
       healthReceiptId: props.initial?.healthReceiptId ?? null,
@@ -59,7 +59,7 @@ export function McpServerForm(props: {
       }
     >
       {confirming ? (
-        <Text>Register {values[1]} as unverified until its health check passes?</Text>
+        <Text>Register {values[0]} as unverified until its health check passes?</Text>
       ) : (
         <>
           <Text>{FIELDS[step]}</Text>
@@ -84,9 +84,8 @@ export function McpServerForm(props: {
 }
 
 function initialValues(initial?: McpServerRecord): string[] {
-  if (!initial) return ["", "", "http", "", "", "", ""];
+  if (!initial) return ["", "http", "", "", "", ""];
   return [
-    initial.id,
     initial.name,
     initial.transport,
     initial.transport === "stdio" ? initial.command.join(" ") : (initial.endpoint ?? ""),

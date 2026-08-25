@@ -20,25 +20,22 @@ CEO, ARM, and approved automation loops run every ten seconds while the control 
 
 ## Commands
 
-- `pnpm install`
-- `pnpm check`
-- `pnpm test` (builds, then tests compiled JavaScript)
-- `pnpm dead-code:check` (unused files, exports, and dependencies)
-- `pnpm start` (build and start the persistent Docker daemon)
-- `pnpm tui` (attach the TUI client to the running daemon)
-- `pnpm status` / `pnpm logs` (inspect the daemon)
-- `pnpm stop` (stop the daemon while preserving state)
-- `pnpm reset` (destructive: stop Workforce and delete its complete state volume)
-- `pnpm dev` (development daemon)
-- `pnpm run doctor`
-- `pnpm images:build`
-- `pnpm sandbox:verify`
-- `pnpm sandbox:plan -- requirements/job.json`
-- `pnpm secrets:import -- github <company> [employee] [task]`
-- `printf '%s' "$VERCEL_TOKEN" | pnpm secrets:import -- vercel <company> [employee] [task]`
-- `printf '%s' "$VALUE" | pnpm secrets:import -- credential SECRET_NAME <company> [employee] [task]`
-- `pnpm workforce:mcp -- /absolute/path/to/principal-config.json` (company-scoped stdio MCP)
-  The daemon persists companies, secrets, audit history, and artifacts in the `workforce-state` named volume. Container-scoped Workforce MCP is operational on its authenticated internal Streamable HTTP endpoint; attempt tokens are short-lived and never persisted.
+These are the everyday operator commands:
+
+- `pnpm start` — start or resume the persistent company engine.
+- `pnpm tui` — open the operator interface.
+- `pnpm status` — check whether the engine is running.
+- `pnpm logs` — follow engine activity and failures.
+- `pnpm stop` — stop the engine while preserving all state.
+- `pnpm reset` — permanently erase every company and the complete state volume.
+
+Installation, image building, secret administration, diagnostics, MCP clients, and contributor
+checks are documented in the [detailed user guide](docs/user-guide.md) and
+[contribution guide](CONTRIBUTING.md); they are intentionally not mixed into the daily workflow.
+
+The daemon persists companies, secrets, audit history, and artifacts in the `workforce-state`
+named volume. Container-scoped Workforce MCP uses its authenticated internal endpoint; attempt
+tokens are short-lived and never persisted.
 
 Node.js 22.13–26 and pnpm 10–11 are supported and checked explicitly. Dependency install scripts are denied unless individually allowlisted. The lockfile pins the dependency graph.
 

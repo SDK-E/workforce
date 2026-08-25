@@ -4,6 +4,7 @@ import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
 import TextInput from "ink-text-input";
 import SelectInput from "ink-select-input";
+import type { Employee } from "../../domain.js";
 import type { CreateTaskInput, TaskRecord } from "../../tasks/task-types.js";
 import { FormFrame } from "./form-frame.js";
 
@@ -19,15 +20,17 @@ export function TaskForm(props: {
   terminalWidth: number;
   onSubmit: (input: CreateTaskInput) => void;
   onCancel: () => void;
+  employees?: Employee[];
   initial?: TaskRecord | undefined;
 }) {
   const [step, setStep] = useState(0);
   const [objective, setObjective] = useState(props.initial?.objective ?? "");
   const [criteria, setCriteria] = useState(props.initial?.acceptanceCriteria.join(", ") ?? "");
   const [risk, setRisk] = useState<TaskRecord["risk"]>(props.initial?.risk ?? "medium");
+  const [assigneeId, setAssigneeId] = useState(props.initial?.assigneeId ?? "");
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (step === 3 && matchesKeybinding("activate", input, key)) submit();
+    if (step === 4 && matchesKeybinding("activate", input, key)) submit();
   });
   function submit(): void {
     props.onSubmit({
@@ -40,13 +43,14 @@ export function TaskForm(props: {
       risk,
       dataSensitivity: "internal",
       managerId: "ceo",
+      assigneeId: assigneeId.trim() || null,
     });
   }
   return (
     <FormFrame
       title={`${props.initial ? "Edit" : "Create"} task`}
       terminalWidth={props.terminalWidth}
-      footer={step === 3 ? "Enter confirm · Esc cancel" : "Enter/select next · Esc cancel"}
+      footer={step === 4 ? "Enter confirm · Esc cancel" : "Enter/select next · Esc cancel"}
     >
       {step === 0 && (
         <>
@@ -95,8 +99,30 @@ export function TaskForm(props: {
         </>
       )}
       {step === 3 && (
+        <>
+          <Text>Assignee (optional)</Text>
+          <SelectInput
+            items={[
+              { label: "Let ARM choose", value: "" },
+              ...(props.employees ?? [])
+                .filter(({ status }) => status !== "terminated")
+                .map((employee) => ({
+                  label: `${employee.name} — ${employee.title}`,
+                  value: employee.id,
+                })),
+            ]}
+            onSelect={(item) => {
+              setAssigneeId(item.value);
+              setStep(4);
+            }}
+          />
+        </>
+      )}
+      {step === 4 && (
         <Text>
-          Confirm “{objective}” at {risk} risk? This mutation is audited.
+          Confirm and approve “{objective}” at {risk} risk
+          {assigneeId.trim() ? ` for ${assigneeId.trim()}` : " for ARM staffing"}? This mutation is
+          audited.
         </Text>
       )}
     </FormFrame>

@@ -1,10 +1,59 @@
-# Workforce viable-release plan and OpenCode handoff
+# Workforce completion handoff
+
+This is the single authoritative continuation handoff. Keep this file current after every coherent
+slice; do not create another handoff, prompt export, or competing requirements plan elsewhere.
 
 ## Product goal
 
 Ship a usable multi-company autonomous AI company operating system. Each company has a durable CEO that chooses direction and delegates work, plus a durable Agent Resources Manager (ARM) that designs and adapts the workforce. Agents execute only in isolated Docker attempts. Humans operate and govern the company through the TUI, while all consequential decisions and evidence remain auditable.
 
 This is a reduced path to a viable release, not a reduction of the product identity. Autonomous CEO and ARM operation, real Docker execution, independent acceptance, persistence, and human control are release requirements.
+
+## Non-negotiable product requirements
+
+- A user can operate multiple isolated companies. Each company owns one durable CEO and one durable
+  Agent Resources Manager; automation creates and manages the remaining workforce by default while
+  preserving human management authority.
+- The CEO is a continuous non-conversational company operator. It chooses direction, maintains the
+  business, delegates governed work, and records bounded reasons for acting or waiting. The ARM owns
+  capability analysis, dynamic identities/personas/prompts/instructions, hiring, reinforcement,
+  reassignment, suspension, termination, and record-preserving offboarding.
+- Every agent engine and agent-authored command runs in a job-specific Docker container. Docker
+  unavailability blocks execution; there is no host fallback and no Docker socket, host home,
+  credential directory, or whole repository mount.
+- One direct-Alpine universal agent image supports browser and mixed work. Approved additive bundles
+  share the private writable job volume, and every production image must remain below 500 MiB.
+- Network use is policy-authorized and audited. Inference remains available to running agents;
+  broader research/engineering access follows the task policy. Secrets are encrypted, company and
+  principal scoped, never put in command arguments, and usable through authorized Workforce MCP.
+- Workforce MCP lets authorized humans and agents read and mutate their permitted company work,
+  including tasks, rooms, messages, meetings, mail, business records, registries, automations,
+  evidence, and scoped secrets. Capabilities never imply cross-company access.
+- All persistent schema changes are forward-only numbered SQL files applied transactionally through
+  `schema_migrations`; runtime initialization contains no ad hoc schema creation.
+- The keyboard-first TUI is the complete human operating surface. It uses configured unique keys and
+  themes, opaque dialogs, focused panels, contextual help, real lifecycle actions, audit confirmation,
+  and human-friendly selectors. Generated IDs, timestamps, current company/human identity, selected
+  records, and safe lifecycle defaults are inferred instead of requested as free text.
+- A zero exit code is not acceptance. Required artifacts, deterministic validators, claims/evidence,
+  unresolved critical findings, recovery, bounded logs/resources, and audit integrity decide success.
+- Keep domain types, repositories, services, views, and forms separate and below the configured
+  300-line limit. Delete dead files, exports, dependencies, facades, tests, and stale documentation in
+  the slice that supersedes them.
+
+## Current verified baseline (2026-08-25)
+
+- Business pipeline MCP, viable CEO commercial autonomy, and ARM reinforcement are implemented.
+- The full local quality gate currently passes formatting, typed lint, Knip dead-code analysis,
+  compilation, migrations, and **91 tests**.
+- Current work in progress simplifies the human workflow: generated company/model/MCP IDs, inferred
+  human mail/message identity, named room/mail/task selection, human-confirmed approved task creation,
+  selected task execution/MCP verification, README operator commands, and removal of obsolete
+  `plan-cli`/`arm-cli` entry points.
+- Before committing that work, finish replacing remaining free-text relationship IDs in organization,
+  strategy, business, governance, meetings, automations, project integrations, profiles, tools, and
+  environments with selected records or inferred values; add focused interaction tests and rerun the
+  complete quality gate.
 
 ## What to defer until after the viable release
 
@@ -31,6 +80,9 @@ Do not defer Docker isolation, company isolation, scoped credentials, audit inte
 10. Do not claim a broad requirement from a narrow unit test. Record the concrete evidence used for acceptance.
 
 ## Slice 1 — Finish business pipeline MCP
+
+**Implementation status:** complete in the current repository; retain the acceptance requirements
+below as regression gates.
 
 ### Outcome
 
@@ -93,6 +145,10 @@ The ARM continuously evaluates verified capacity, capability, and performance ev
 
 ## Slice 4 — Close the human operating workflow
 
+**Implementation status:** in progress. Navigation/focus, configured keys/themes, opaque dialogs,
+contextual guidance, business/governance workflows, and durable timelines exist. The current form
+simplification and compiled operator journey remain unfinished.
+
 ### Outcome
 
 A non-developer can create and operate multiple companies entirely from the TUI: configure the company and model, organize people, create work, approve decisions, manage the business pipeline, communicate, inspect real attempts, and recover records.
@@ -154,3 +210,24 @@ The repository and persisted runtime pass a requirement-by-requirement release a
 Complete the slices in order. Business MCP gives the CEO a governed commercial interface; CEO autonomy then produces work; ARM autonomy supplies and reinforces the workforce; the TUI closes human operation; execution/recovery proves the work is real; the final audit removes drift and verifies the whole story.
 
 After the viable release, resume external operator HTTP MCP, broader integrations, expanded creative tool bundles, advanced business optimization, exhaustive adversarial testing, and additional interface polish as separately versioned work.
+
+## Continuation prompt
+
+Give the next coding agent this prompt together with the repository:
+
+> You are the principal engineer continuing Workforce. Read `AGENTS.md`,
+> `docs/viable-release-plan.md`, `docs/product-specification.md`, `docs/architecture.md`, and
+> `docs/coding-standards.md` completely before editing. Treat the handoff as the living completion
+> checklist and update it after every coherent slice. Start with `git status --short`, inspect all
+> uncommitted work, and preserve it. Finish the in-progress TUI human-workflow slice first: audit every
+> creation/edit/decision dialog and remove fields that Workforce can generate or infer. Never ask for
+> internal IDs, current company, current human actor, timestamps, selected-record identity, or safe
+> defaults. Replace genuine relationships with named, company-scoped selectors and clear empty states.
+> Keep advanced policy inputs only when changing that policy is the purpose of the form. Complete the
+> compiled operator journey and update README/user docs. Then execute Slices 5 and 6 in order. For each
+> slice, implement domain/repository policy before UI, use only numbered SQL migrations for persistence,
+> preserve Docker-only execution and all isolation/security invariants, delete superseded code/docs,
+> run `pnpm format && pnpm test && git diff --check`, and commit only coherent green work. Do not claim
+> completion until the compiled production TUI, real Docker/recovery/image gates, persistence,
+> multi-company isolation, artifacts/evidence, audit integrity, documentation, CI, and clean Git tree
+> all have direct evidence.

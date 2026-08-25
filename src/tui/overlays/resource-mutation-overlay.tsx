@@ -98,6 +98,7 @@ function TaskMutation(props: Props) {
   return (
     <TaskForm
       companyId={props.company.id}
+      employees={props.store.employees(props.company.id)}
       terminalWidth={props.terminalWidth}
       initial={current}
       onCancel={props.onClose}
@@ -105,9 +106,9 @@ function TaskMutation(props: Props) {
         props.finish(
           () => {
             if (current) updateTask(props.store, current, input);
-            else props.store.createTask(input);
+            else createApprovedTask(props.store, input);
           },
-          `Task ${current ? "updated" : "created"} and audited`,
+          `Task ${current ? "updated" : "created and approved"} and audited`,
         );
       }}
     />
@@ -137,6 +138,29 @@ function updateTask(
     changeReason: "Edited through confirmed TUI form",
   });
   store.tasksRepository.setRisk(current.companyId, current.id, input.risk, "human");
+  if (input.assigneeId && input.assigneeId !== current.assigneeId)
+    store.tasksRepository.assign(current.companyId, current.id, input.assigneeId, "human");
+}
+
+function createApprovedTask(
+  store: StateStore,
+  input: Parameters<StateStore["createTask"]>[0],
+): void {
+  const task = store.createTask(input);
+  store.transitionTask(
+    task.companyId,
+    task.id,
+    "REQUEST_APPROVAL",
+    "human",
+    "Confirmed through the task creation workflow",
+  );
+  store.transitionTask(
+    task.companyId,
+    task.id,
+    "APPROVE",
+    "human",
+    "Human approved the displayed objective, risk, assignment, and acceptance criteria",
+  );
 }
 
 function organizationKind(section: string): OrganizationUnitKind {

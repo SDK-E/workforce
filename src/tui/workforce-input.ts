@@ -73,15 +73,27 @@ interface ContentInputContext {
 }
 
 function requestTaskExecution(context: ContentInputContext): void {
-  const task = context.data.tasks.find(({ status }) => status === "ready" || status === "assigned");
-  if (task) context.setExecutionTaskId(task.id);
-  else context.setStatusMessage("No ready or assigned task is available to run");
+  const selected = context.lifecycle.selected;
+  const task =
+    selected?.kind === "task" ? context.data.tasks.find(({ id }) => id === selected.id) : undefined;
+  if (!task) context.setStatusMessage("Select a task before requesting execution");
+  else if (!["ready", "assigned"].includes(task.status))
+    context.setStatusMessage(`Selected task cannot run while ${task.status}`);
+  else context.setExecutionTaskId(task.id);
 }
 
 function verifyFirstMcp(context: ContentInputContext): void {
-  const server = context.data.mcpServers.find((candidate) => candidate.status === "active");
+  const selected = context.lifecycle.selected;
+  const server =
+    selected?.kind === "mcp"
+      ? context.data.mcpServers.find(({ id }) => id === selected.id)
+      : undefined;
   if (!server) {
-    context.setStatusMessage("No active MCP server is available to verify");
+    context.setStatusMessage("Select an MCP server before verification");
+    return;
+  }
+  if (server.status !== "active") {
+    context.setStatusMessage("Restore the selected MCP server before verification");
     return;
   }
   context.setStatusMessage(`Verifying ${server.name} in Docker…`);

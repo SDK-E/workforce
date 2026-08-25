@@ -34,6 +34,6 @@ test("model form prepopulates a selected registry entry", () => {
     </Box>,
   );
   assert.match(view.lastFrame() ?? "", /Edit model registry entry/);
-  assert.match(view.lastFrame() ?? "", /opencode-primary/);
+  assert.match(view.lastFrame() ?? "", /opencode/);
   view.unmount();
 });

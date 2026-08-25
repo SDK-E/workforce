@@ -52,7 +52,7 @@ Workforce asks for confirmation before consequential actions. Deleting from the 
 ## Set up your first company
 
 1. Open the command palette with `/`, search for **Companies**, and press `Enter`.
-2. Press `n`, then enter the company name, mission, vision, values, and governance information. Workforce creates durable CEO and ARM identities for the company.
+2. Press `n`, then enter only the company name and mission. Workforce generates the internal ID and creates durable CEO and ARM identities. Select the company and press `e` later when you want to add vision, values, governance, or budget settings.
 3. Open **Models & engines**. Create the model configuration the agents will use, select it, and press `v` to verify it. A configured but unverified model cannot run work.
 4. Open **Execution readiness**. Resolve every blocker shown there before expecting agents to start.
 5. Open **Organization** to review the CEO, ARM, departments, teams, reporting structure, policies, and agent profiles.
@@ -63,11 +63,10 @@ If the overview shows CEO and ARM identities but Docker shows no containers, tha
 
 1. In **Objectives**, press `n` and describe a measurable result.
 2. Optionally organize it through Initiatives, Projects, Goals, and Milestones.
-3. In **Tasks**, press `n`. Give the task a clear objective, explicit acceptance criteria, required capabilities, risk, owner, and reviewer.
-4. Select the task with `[` or `]`, then press `e` to assign or approve it when the page offers that action.
-5. Press `r` when the task is ready.
-6. Watch **Live work** for the real Docker attempt and its event timeline—not merely the employee identity.
-7. Check **Deliverables** for validated output and **Audit** for decisions and mutations.
+3. In **Tasks**, press `n`. Give the task a clear objective, explicit acceptance criteria, and risk. Choosing an assignee is optional; leave it empty for ARM staffing. Confirmation creates an approved task because that confirmation is the human approval.
+4. Select the task with `[` or `]`, then press `r` when it is assigned and ready.
+5. Watch **Live work** for the real Docker attempt and its event timeline—not merely the employee identity.
+6. Check **Deliverables** for validated output and **Audit** for decisions and mutations.
 
 A successful process exit does not finish a task by itself. Workforce requires the declared deliverables and independent acceptance evidence.
 

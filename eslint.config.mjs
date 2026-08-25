@@ -43,7 +43,7 @@ export default tseslint.config(
     }
   },
   {
-    files: ["src/cli.tsx", "src/doctor.ts", "src/plan-cli.ts", "src/arm-cli.ts"],
+    files: ["src/cli.tsx", "src/doctor.ts"],
     rules: { "no-console": "off" }
   },
   {

@@ -157,7 +157,7 @@ test("task form uses maintained controls and confirms before submitting", async 
       />
     </Box>,
   );
-  for (const input of ["Verify release", "\r", "Tests pass", "\r", "\r"]) {
+  for (const input of ["Verify release", "\r", "Tests pass", "\r", "\r", "\r"]) {
     view.stdin.write(input);
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 75);
@@ -246,7 +246,7 @@ test("selected resource edit forms are prefilled and keep immutable integration 
     </Box>,
   );
   assert.match(mcp.lastFrame() ?? "", /Edit MCP server/);
-  assert.match(mcp.lastFrame() ?? "", /research/);
+  assert.match(mcp.lastFrame() ?? "", /Research MCP/);
   mcp.unmount();
   const room = render(
     <Box width={100} height={30}>

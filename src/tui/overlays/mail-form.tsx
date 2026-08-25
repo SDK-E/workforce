@@ -1,86 +1,110 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import SelectInput from "ink-select-input";
+import TextInput from "ink-text-input";
+import type { Employee } from "../../domain.js";
+import type { MailRecord } from "../../integrations/integration-types.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
-import TextInput from "ink-text-input";
-import type { MailRecord } from "../../integrations/integration-types.js";
 import { FormFrame } from "./form-frame.js";
 
-const FIELDS = [
-  "Sender kind (human/agent)",
-  "Sender ID",
-  "Recipient kind",
-  "Recipient ID",
-  "Subject",
-  "Body",
-];
+type SendMailInput = Pick<
+  MailRecord,
+  "companyId" | "senderKind" | "senderId" | "recipientKind" | "recipientId" | "subject" | "body"
+>;
 
 export function MailForm(props: {
   companyId: string;
+  employees: Employee[];
   terminalWidth: number;
-  onSubmit: (
-    input: Pick<
-      MailRecord,
-      "companyId" | "senderKind" | "senderId" | "recipientKind" | "recipientId" | "subject" | "body"
-    >,
-  ) => void;
+  onSubmit: (input: SendMailInput) => void;
   onCancel: () => void;
 }) {
+  const recipients = props.employees.filter(({ status }) => status !== "terminated");
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(["human", "human", "agent", "ceo", "", ""]);
-  const confirming = step === FIELDS.length;
+  const [recipientId, setRecipientId] = useState(recipients[0]?.id ?? "");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key)) submit();
+    if (step === 3 && matchesKeybinding("activate", input, key))
+      props.onSubmit({
+        companyId: props.companyId,
+        senderKind: "human",
+        senderId: "human",
+        recipientKind: "agent",
+        recipientId,
+        subject: subject.trim(),
+        body: body.trim(),
+      });
   });
-  function submit(): void {
-    props.onSubmit({
-      companyId: props.companyId,
-      senderKind: partyKind(values[0]),
-      senderId: values[1]?.trim() ?? "",
-      recipientKind: partyKind(values[2]),
-      recipientId: values[3]?.trim() ?? "",
-      subject: values[4]?.trim() ?? "",
-      body: values[5]?.trim() ?? "",
-    });
-  }
+  const recipient = recipients.find(({ id }) => id === recipientId);
   return (
     <FormFrame
       title="Compose company mail"
       terminalWidth={props.terminalWidth}
-      footer={
-        confirming
-          ? "Enter send · Esc cancel"
-          : `Enter next · Esc cancel · ${step + 1}/${FIELDS.length}`
-      }
+      footer={step === 3 ? "Enter send · Esc cancel" : "Enter/select next · Esc cancel"}
     >
-      {confirming ? (
-        <Text>
-          Send durable mail to {values[2]}:{values[3]}?
-        </Text>
-      ) : (
+      {recipients.length === 0 ? (
+        <Text>No active company recipient is available. Esc closes this dialog.</Text>
+      ) : step === 0 ? (
         <>
-          <Text>{FIELDS[step]}</Text>
-          <Box>
-            <PromptMarker />
-            <TextInput
-              value={values[step] ?? ""}
-              onChange={(value) => {
-                setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
-                );
-              }}
-              onSubmit={() => {
-                if (values[step]?.trim()) setStep((current) => current + 1);
-              }}
-            />
-          </Box>
+          <Text>Recipient</Text>
+          <SelectInput
+            items={recipients.map((employee) => ({
+              label: `${employee.name} — ${employee.title}`,
+              value: employee.id,
+            }))}
+            onSelect={(item) => {
+              setRecipientId(item.value);
+              setStep(1);
+            }}
+          />
         </>
+      ) : step === 1 ? (
+        <MailTextField
+          label="Subject"
+          value={subject}
+          onChange={setSubject}
+          onNext={() => {
+            setStep(2);
+          }}
+        />
+      ) : step === 2 ? (
+        <MailTextField
+          label="Body"
+          value={body}
+          onChange={setBody}
+          onNext={() => {
+            setStep(3);
+          }}
+        />
+      ) : (
+        <Text>Send this mail as you to {recipient?.name ?? recipientId}?</Text>
       )}
     </FormFrame>
   );
 }
 
-function partyKind(value: string | undefined): "agent" | "human" {
-  return value === "agent" ? "agent" : "human";
+function MailTextField(props: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onNext: () => void;
+}) {
+  return (
+    <>
+      <Text>{props.label}</Text>
+      <Box>
+        <PromptMarker />
+        <TextInput
+          value={props.value}
+          onChange={props.onChange}
+          onSubmit={() => {
+            if (props.value.trim()) props.onNext();
+          }}
+        />
+      </Box>
+    </>
+  );
 }
