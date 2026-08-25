@@ -67,6 +67,8 @@ test("selected TUI resources archive and restore without deleting records", () =
     assert.equal(lifecycleTargets("Employees", data)[0]?.kind, "employee");
     assert.equal(lifecycleTargets("Conversations", data)[0]?.kind, "room");
     assert.equal(lifecycleTargets("Models & engines", data)[0]?.kind, "model");
+    assert.equal(lifecycleTargets("Tools", data)[0]?.kind, "tool");
+    assert.equal(lifecycleTargets("Environments", data)[0]?.kind, "environment");
     const approvalTarget = lifecycleTargets("Approvals", data)[0];
     assert.equal(approvalTarget?.kind, "approval");
     assert.ok(approvalTarget);
@@ -150,6 +152,8 @@ function workspaceData(store: StateStore, companyId: string) {
     rooms: store.conversations.roomList(companyId),
     meetings: store.meetings.list(companyId),
     models: store.models.list(companyId),
+    tools: store.tools.list(companyId),
+    environments: store.environments.list(companyId),
     approvals: store.approvalsRepository.list(companyId),
     hiringProposals: store.employment.proposalList(companyId),
   };

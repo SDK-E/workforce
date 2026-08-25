@@ -16,7 +16,9 @@ export interface LifecycleTarget {
     | "integration"
     | "automation"
     | "approval"
-    | "hiring-proposal";
+    | "hiring-proposal"
+    | "tool"
+    | "environment";
   id: string;
   label: string;
   status: string;
@@ -37,6 +39,8 @@ export interface LifecycleData {
   models: ReturnType<StateStore["models"]["list"]>;
   approvals: ReturnType<StateStore["approvalsRepository"]["list"]>;
   hiringProposals: ReturnType<StateStore["employment"]["proposalList"]>;
+  tools: ReturnType<StateStore["tools"]["list"]>;
+  environments: ReturnType<StateStore["environments"]["list"]>;
 }
 
 export function lifecycleTargets(section: string, data: LifecycleData): LifecycleTarget[] {
@@ -87,6 +91,20 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       kind: "model",
       id: item.id,
       label: `${item.engine} · ${item.model}`,
+      status: item.health,
+    }));
+  if (section === "Tools")
+    return data.tools.map((item) => ({
+      kind: "tool",
+      id: item.id,
+      label: `${item.id} · ${item.provider}`,
+      status: item.health,
+    }));
+  if (section === "Environments")
+    return data.environments.map((item) => ({
+      kind: "environment",
+      id: item.id,
+      label: `${item.name} · ${item.sandboxImage}`,
       status: item.health,
     }));
   const organizationKinds = organizationSectionKinds(section);
