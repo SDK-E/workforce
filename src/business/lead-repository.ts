@@ -18,6 +18,7 @@ export class LeadRepository {
   ): LeadRecord {
     this.companies.require(input.companyId);
     if (input.opportunityId) this.requireOpportunity(input.companyId, input.opportunityId);
+    this.requireOwner(input.companyId, input.ownerId);
     validateScore(input.qualificationScore);
     const now = new Date().toISOString();
     const record: LeadRecord = {
@@ -79,6 +80,7 @@ export class LeadRepository {
   ): LeadRecord {
     const current = this.require(companyId, id);
     const next = { ...current, ...patch, updatedAt: new Date().toISOString() };
+    this.requireOwner(companyId, next.ownerId);
     validateScore(next.qualificationScore);
     next.name = required(next.name, "Lead name", 300);
     next.organization = required(next.organization, "Lead organization", 300);
@@ -164,6 +166,10 @@ export class LeadRepository {
         .get(companyId, id)
     )
       throw new Error(`Unknown opportunity in company: ${id}`);
+  }
+  private requireOwner(companyId: string, ownerId: string | null): void {
+    if (ownerId && !this.companies.employees(companyId).some(({ id }) => id === ownerId))
+      throw new Error(`Unknown lead owner in company: ${ownerId}`);
   }
 }
 

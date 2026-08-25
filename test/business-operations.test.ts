@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { StateStore } from "../src/storage/state-store.js";
+import { applyBusinessLifecycleAction } from "../src/tui/business-lifecycle.js";
 
 test("business pipeline is searchable, recoverable, and company isolated", () => {
   const root = mkdtempSync(join(tmpdir(), "workforce-business-"));
@@ -53,6 +54,42 @@ test("business pipeline is searchable, recoverable, and company isolated", () =>
       },
       "ceo",
     );
+    assert.throws(
+      () =>
+        store.opportunities.create(
+          {
+            companyId: "alpha",
+            name: "Unowned opportunity",
+            source: "research",
+            problem: "Unknown ownership",
+            hypothesis: "Must be rejected",
+            score: 10,
+            discoveredBy: "ceo",
+            ownerId: "missing-employee",
+            evidenceIds: [],
+          },
+          "ceo",
+        ),
+      /Unknown opportunity owner in company/,
+    );
+    assert.throws(
+      () =>
+        store.engagements.create(
+          {
+            companyId: "alpha",
+            clientId: client.id,
+            projectId: "missing-project",
+            name: "Invalid project link",
+            scope: "Must not persist",
+            successCriteria: ["Rejected"],
+            ownerId: "ceo",
+            startsAt: null,
+            endsAt: null,
+          },
+          "ceo",
+        ),
+      /Unknown project in company/,
+    );
     const engagement = store.engagements.create(
       {
         companyId: "alpha",
@@ -80,9 +117,24 @@ test("business pipeline is searchable, recoverable, and company isolated", () =>
         store.leads.create({ ...lead, companyId: "beta", opportunityId: opportunity.id }, "ceo"),
       /Unknown opportunity in company/,
     );
-    store.engagements.archive("alpha", engagement.id, "human");
+    assert.equal(
+      applyBusinessLifecycleAction(
+        store,
+        "alpha",
+        { kind: "engagement", id: engagement.id, label: engagement.name, status: "proposed" },
+        false,
+        "human",
+      ),
+      true,
+    );
     assert.equal(store.engagements.get("alpha", engagement.id)?.status, "archived");
-    store.engagements.restore("alpha", engagement.id, "human");
+    applyBusinessLifecycleAction(
+      store,
+      "alpha",
+      { kind: "engagement", id: engagement.id, label: engagement.name, status: "archived" },
+      true,
+      "human",
+    );
     assert.equal(store.engagements.get("alpha", engagement.id)?.status, "proposed");
     assert.ok(store.verifyAuditChain());
   } finally {

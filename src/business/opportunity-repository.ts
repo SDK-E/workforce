@@ -18,6 +18,7 @@ export class OpportunityRepository {
     actorId: string,
   ): OpportunityRecord {
     this.companies.require(input.companyId);
+    this.requireOwner(input.companyId, input.ownerId);
     validateScore(input.score);
     const now = new Date().toISOString();
     const record: OpportunityRecord = {
@@ -70,6 +71,7 @@ export class OpportunityRepository {
   ): OpportunityRecord {
     const current = this.require(companyId, id);
     const next = { ...current, ...patch, updatedAt: new Date().toISOString() };
+    this.requireOwner(companyId, next.ownerId);
     validateScore(next.score);
     next.name = required(next.name, "Opportunity name", 300);
     next.source = required(next.source, "Opportunity source", 500);
@@ -149,6 +151,10 @@ export class OpportunityRepository {
     const record = this.get(companyId, id);
     if (!record) throw new Error(`Unknown opportunity in company: ${id}`);
     return record;
+  }
+  private requireOwner(companyId: string, ownerId: string | null): void {
+    if (ownerId && !this.companies.employees(companyId).some(({ id }) => id === ownerId))
+      throw new Error(`Unknown opportunity owner in company: ${ownerId}`);
   }
 }
 

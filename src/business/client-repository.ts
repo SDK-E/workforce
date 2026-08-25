@@ -18,6 +18,7 @@ export class ClientRepository {
   ): ClientRecord {
     this.companies.require(input.companyId);
     if (input.leadId) this.requireLead(input.companyId, input.leadId);
+    this.requireOwner(input.companyId, input.ownerId);
     const now = new Date().toISOString();
     const record: ClientRecord = {
       ...input,
@@ -63,6 +64,7 @@ export class ClientRepository {
   ): ClientRecord {
     const current = this.require(companyId, id);
     const next = { ...current, ...patch, updatedAt: new Date().toISOString() };
+    this.requireOwner(companyId, next.ownerId);
     next.name = required(next.name, "Client name", 300);
     next.primaryContact = required(next.primaryContact, "Primary contact", 300);
     next.notes = sanitizeTerminal(next.notes, 10_000);
@@ -142,6 +144,10 @@ export class ClientRepository {
         .get(companyId, id)
     )
       throw new Error(`Unknown lead in company: ${id}`);
+  }
+  private requireOwner(companyId: string, ownerId: string | null): void {
+    if (ownerId && !this.companies.employees(companyId).some(({ id }) => id === ownerId))
+      throw new Error(`Unknown client owner in company: ${ownerId}`);
   }
 }
 

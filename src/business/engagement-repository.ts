@@ -19,6 +19,8 @@ export class EngagementRepository {
   ): EngagementRecord {
     this.companies.require(input.companyId);
     this.requireClient(input.companyId, input.clientId);
+    if (input.projectId) this.requireProject(input.companyId, input.projectId);
+    this.requireOwner(input.companyId, input.ownerId);
     if (input.successCriteria.length === 0)
       throw new Error("Engagement success criteria are required");
     const now = new Date().toISOString();
@@ -70,6 +72,7 @@ export class EngagementRepository {
   ): EngagementRecord {
     const current = this.require(companyId, id);
     const next = { ...current, ...patch, updatedAt: new Date().toISOString() };
+    this.requireOwner(companyId, next.ownerId);
     next.name = required(next.name, "Engagement name", 300);
     next.scope = required(next.scope, "Engagement scope", 10_000);
     if (next.successCriteria.length === 0)
@@ -150,6 +153,16 @@ export class EngagementRepository {
         .get(companyId, id)
     )
       throw new Error(`Unknown client in company: ${id}`);
+  }
+  private requireProject(companyId: string, id: string): void {
+    const row = this.database.connection
+      .prepare("SELECT kind FROM strategy_items WHERE company_id=? AND id=?")
+      .get(companyId, id) as { kind: string } | undefined;
+    if (row?.kind !== "project") throw new Error(`Unknown project in company: ${id}`);
+  }
+  private requireOwner(companyId: string, ownerId: string | null): void {
+    if (ownerId && !this.companies.employees(companyId).some(({ id }) => id === ownerId))
+      throw new Error(`Unknown engagement owner in company: ${ownerId}`);
   }
 }
 

@@ -192,5 +192,9 @@ function workspaceData(store: StateStore, companyId: string) {
     incidents: store.incidents.listIncidents(companyId),
     claims: store.performance.listClaims(companyId),
     correctiveActions: store.incidents.listCorrective(companyId),
+    opportunities: store.opportunities.list(companyId),
+    leads: store.leads.list(companyId),
+    clients: store.clients.list(companyId),
+    engagements: store.engagements.list(companyId),
   };
 }

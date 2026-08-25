@@ -23,6 +23,10 @@ export function createFormForSection(section: string): CreateFormKind | null {
     "Warnings & incidents": "incident",
     "Critics & reviews": "claim",
     Tasks: "task",
+    Opportunities: "opportunity",
+    Leads: "lead",
+    Clients: "client",
+    Engagements: "engagement",
   };
   return routes[section] ?? null;
 }
@@ -46,6 +50,10 @@ export function editFormForSection(section: string): CreateFormKind | null {
     "MCP servers": "mcp-server",
     "Project integrations": "project-integration",
     Automations: "automation-decision",
+    Opportunities: "opportunity",
+    Leads: "lead",
+    Clients: "client",
+    Engagements: "engagement",
     "Warnings & incidents": "incident-decision",
   };
   return routes[section] ?? null;

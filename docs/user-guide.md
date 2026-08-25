@@ -103,6 +103,8 @@ While the control plane is running, CEO, ARM, and automation loops evaluate work
 
 Open **Execution → Live work** for the agent workflow timeline. The summary shows the latest durable status for each agent attempt; the connected timeline below shows queued, lease, start, runtime, checkpoint, validation, recovery, and terminal events with time, employee, task, and attempt identity. Events come from the bounded durable attempt-event ledger and are company isolated, so the screen reflects actual supervisor history rather than simulated “running agent” counters.
 
+The **Business** navigation area contains Opportunities, Leads, Clients, and Engagements. Each page supports selection plus confirmed create, edit, archive, and restore actions. Opportunities retain evidence and validation scores; leads retain qualification and source; clients preserve their originating lead; engagements attach delivery scope and measurable success criteria to a client. Parent references are validated inside the same company, and archived records remain recoverable for history and reporting.
+
 If events appear but agents do not start, inspect Docker status, image availability, the selected model's verification state, task assignment/status, approvals, secret scope, and operating-cycle failure reason.
 
 ## Agent Workforce MCP access

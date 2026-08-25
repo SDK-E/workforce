@@ -25,6 +25,10 @@ export const NAVIGATION_GROUPS = [
       "Automations",
     ],
   },
+  {
+    label: "Business",
+    sections: ["Opportunities", "Leads", "Clients", "Engagements"],
+  },
   { label: "Collaboration", sections: ["Meetings", "Conversations", "Mail", "Approvals"] },
   {
     label: "Governance",

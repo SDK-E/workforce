@@ -17,6 +17,7 @@ import { ModelMutationOverlay } from "./model-mutation-overlay.js";
 import { RegistryMutationOverlay } from "./registry-mutation-overlay.js";
 import { GovernanceMutationOverlay } from "./governance-mutation-overlay.js";
 import { IncidentMutationOverlay } from "./incident-mutation-overlay.js";
+import { BusinessMutationOverlay } from "./business-mutation-overlay.js";
 
 export type CreateFormKind =
   | "company-create"
@@ -43,7 +44,11 @@ export type CreateFormKind =
   | "recognition"
   | "incident"
   | "incident-decision"
-  | "claim";
+  | "claim"
+  | "opportunity"
+  | "lead"
+  | "client"
+  | "engagement";
 
 interface CreateOverlayProps {
   kind: CreateFormKind;
@@ -101,6 +106,14 @@ export function CreateOverlay(props: CreateOverlayProps) {
     );
   if (props.kind === "incident-decision")
     return <IncidentMutationOverlay {...props} finish={finish} />;
+  if (["opportunity", "lead", "client", "engagement"].includes(props.kind))
+    return (
+      <BusinessMutationOverlay
+        {...props}
+        kind={props.kind as "opportunity" | "lead" | "client" | "engagement"}
+        finish={finish}
+      />
+    );
   if (props.kind === "message")
     return (
       <MessageForm

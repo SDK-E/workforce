@@ -56,6 +56,13 @@ import { MailView } from "./mail-view.js";
 import { AutomationView } from "./automation-view.js";
 import { ExecutionReadinessView } from "./execution-readiness-view.js";
 import { executionReadiness } from "../../execution/execution-readiness.js";
+import type {
+  ClientRecord,
+  EngagementRecord,
+  LeadRecord,
+  OpportunityRecord,
+} from "../../business/business-types.js";
+import { BusinessPipelineView } from "./business-pipeline-view.js";
 
 interface WorkspaceViewProps {
   section: string;
@@ -63,6 +70,10 @@ interface WorkspaceViewProps {
   organizationUnits: OrganizationUnit[];
   strategyItems: StrategyItem[];
   tasks: TaskRecord[];
+  opportunities: OpportunityRecord[];
+  leads: LeadRecord[];
+  clients: ClientRecord[];
+  engagements: EngagementRecord[];
   messages: MessageRecord[];
   rooms: RoomRecord[];
   threads: ConversationThread[];
@@ -103,18 +114,9 @@ const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
 };
 
 export function WorkspaceView(props: WorkspaceViewProps) {
-  if (props.section === "Execution readiness")
-    return (
-      <ExecutionReadinessView
-        readiness={executionReadiness({
-          docker: props.docker,
-          environments: props.environments,
-          models: props.models,
-          attempts: props.attempts,
-          runtime: props.runtime,
-        })}
-      />
-    );
+  const business = businessView(props);
+  if (business) return business;
+  if (props.section === "Execution readiness") return executionReadinessView(props);
   if (props.section === "Companies")
     return (
       <CompanyView
@@ -240,4 +242,28 @@ export function WorkspaceView(props: WorkspaceViewProps) {
   if (props.section === "Settings")
     return <SettingsView company={props.company} runtime={props.runtime} />;
   return <DiagnosticsView events={props.events} />;
+}
+
+function businessView(props: WorkspaceViewProps) {
+  if (!["Opportunities", "Leads", "Clients", "Engagements"].includes(props.section)) return null;
+  return (
+    <BusinessPipelineView
+      {...props}
+      section={props.section as "Opportunities" | "Leads" | "Clients" | "Engagements"}
+    />
+  );
+}
+
+function executionReadinessView(props: WorkspaceViewProps) {
+  return (
+    <ExecutionReadinessView
+      readiness={executionReadiness({
+        docker: props.docker,
+        environments: props.environments,
+        models: props.models,
+        attempts: props.attempts,
+        runtime: props.runtime,
+      })}
+    />
+  );
 }

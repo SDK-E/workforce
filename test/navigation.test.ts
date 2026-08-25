@@ -13,14 +13,14 @@ import { handleSidebarInput } from "../src/tui/workforce-input.js";
 import { THEMES, themeById } from "../src/tui/themes/index.js";
 
 test("navigation exposes focused areas and keeps page movement inside the active area", () => {
-  assert.equal(NAVIGATION_GROUPS.length, 7);
+  assert.equal(NAVIGATION_GROUPS.length, 8);
   assert.equal(new Set(NAVIGATION_SECTIONS).size, NAVIGATION_SECTIONS.length);
   assert.equal(navigationGroup("Tasks").label, "Strategy & work");
   const tasks = NAVIGATION_SECTIONS.indexOf("Tasks");
   const nextPage = NAVIGATION_SECTIONS[moveWithinGroup(tasks, 1)];
   assert.equal(nextPage, "Live work");
   assert.equal(navigationGroup(nextPage).label, "Strategy & work");
-  assert.equal(NAVIGATION_SECTIONS[moveGroup(tasks, 1)], "Meetings");
+  assert.equal(NAVIGATION_SECTIONS[moveGroup(tasks, 1)], "Opportunities");
   assert.equal(NAVIGATION_SECTIONS[moveGroup(0, -1)], "Settings");
 });
 
