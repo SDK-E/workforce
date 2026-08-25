@@ -18,7 +18,13 @@ export class AttemptFactory {
   }): AttemptRequest {
     if (input.task.companyId.length === 0) throw new Error("Task company is required");
     const version = this.profiles.active(input.task.companyId, input.employeeId);
-    const objective = this.profiles.render(version, input.task.objective);
+    const toolchainCommand = input.environment?.WORKFORCE_TOOLCHAIN_COMMAND;
+    const objective = this.profiles.render(
+      version,
+      toolchainCommand
+        ? `${input.task.objective}\nProvision the approved mixed toolchain when needed: ${toolchainCommand}`
+        : input.task.objective,
+    );
     const adapter = engineAdapter(input.sandbox.engine);
     return {
       id: randomUUID(),

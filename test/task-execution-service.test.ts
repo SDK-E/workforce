@@ -92,7 +92,7 @@ test("approved task contracts queue verified inference-capable Docker execution"
       acceptanceCriteria: ["Tests pass"],
       risk: "medium",
       dataSensitivity: "internal",
-      capabilities: ["engineering", "language:typescript"],
+      capabilities: ["engineering", "language:typescript", "language:python", "framework:laravel"],
       tools: ["mcp:quality/inspect"],
       managerId: "ceo",
       assigneeId: "ceo",
@@ -119,6 +119,8 @@ test("approved task contracts queue verified inference-capable Docker execution"
     assert.equal(store.attempts.get(attempt.id).status, "succeeded");
     assert.equal(docker.started.length, 1);
     assert.match(docker.runtimeEnvironment.OPENCODE_CONFIG_CONTENT ?? "", /quality/);
+    assert.equal(docker.runtimeEnvironment.WORKFORCE_REQUIRED_TOOLCHAINS, "laravel,python");
+    assert.match(attempt.command.at(-1) ?? "", /workforce-toolchain install laravel python/);
   } finally {
     store.close();
     rmSync(root, { recursive: true, force: true });

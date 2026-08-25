@@ -1,0 +1,68 @@
+#!/bin/sh
+set -eu
+
+root="${WORKFORCE_TOOLCHAIN_ROOT:-/work/.tools/root}"
+cache="${WORKFORCE_TOOLCHAIN_CACHE:-/work/.tools/cache}"
+
+usage() {
+  echo "usage: workforce-toolchain list | install BUNDLE..." >&2
+  exit 64
+}
+
+packages_for() {
+  case "$1" in
+    python) echo "python3 py3-pip py3-virtualenv" ;;
+    php) echo "php84 php84-cli php84-curl php84-dom php84-mbstring php84-openssl php84-phar php84-tokenizer php84-xml composer" ;;
+    laravel|symfony) echo "php84 php84-cli php84-curl php84-dom php84-mbstring php84-openssl php84-phar php84-tokenizer php84-xml composer" ;;
+    go) echo "go" ;;
+    rust) echo "rust cargo" ;;
+    document) echo "pandoc-cli" ;;
+    office) echo "libreoffice" ;;
+    pdf) echo "ghostscript poppler-utils qpdf" ;;
+    image) echo "imagemagick" ;;
+    audio-video) echo "ffmpeg" ;;
+    browser) echo "" ;;
+    *) echo "Unknown toolchain bundle: $1" >&2; exit 65 ;;
+  esac
+}
+
+list_bundles() {
+  echo "python php laravel symfony go rust document office pdf image audio-video browser"
+}
+
+install_bundles() {
+  mkdir -p "$root/etc/apk" "$cache"
+  cp /etc/apk/repositories "$root/etc/apk/repositories"
+  packages=""
+  for bundle in "$@"; do
+    packages="$packages $(packages_for "$bundle")"
+  done
+  # apk verifies repository signatures and installs only beneath the private-volume root.
+  if test -n "$(printf '%s' "$packages" | tr -d ' ')"; then
+    apk --root "$root" --initdb --keys-dir /etc/apk/keys \
+      --repositories-file /etc/apk/repositories --cache-dir "$cache" --update-cache \
+      add --no-scripts $packages
+  fi
+  create_framework_wrappers
+  manifest="$root/.workforce-bundles"
+  temporary="$root/.workforce-bundles.next"
+  { test ! -f "$manifest" || cat "$manifest"; printf '%s\n' "$@"; } | sort -u > "$temporary"
+  mv "$temporary" "$manifest"
+  echo "Installed into $root: $*"
+}
+
+create_framework_wrappers() {
+  mkdir -p "$root/bin"
+  if test -x "$root/usr/bin/php84" && test -f "$root/usr/bin/composer"; then
+    printf '%s\n' '#!/bin/sh' 'exec "$WORKFORCE_TOOLCHAIN_ROOT/usr/bin/php84" "$WORKFORCE_TOOLCHAIN_ROOT/usr/bin/composer" "$@"' > "$root/bin/composer"
+    printf '%s\n' '#!/bin/sh' 'exec composer create-project laravel/laravel "$@"' > "$root/bin/laravel-new"
+    printf '%s\n' '#!/bin/sh' 'exec composer create-project symfony/skeleton "$@"' > "$root/bin/symfony-new"
+    chmod 0555 "$root/bin/composer" "$root/bin/laravel-new" "$root/bin/symfony-new"
+  fi
+}
+
+case "${1:-}" in
+  list) list_bundles ;;
+  install) shift; test "$#" -gt 0 || usage; install_bundles "$@" ;;
+  *) usage ;;
+esac

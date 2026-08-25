@@ -38,6 +38,16 @@ export class TaskExecutionService {
       environment: {},
       secretNames: [],
     };
+    const toolchains = resolveToolchainBundles(task);
+    const environment = {
+      ...capabilities.environment,
+      ...(toolchains.length > 0
+        ? {
+            WORKFORCE_REQUIRED_TOOLCHAINS: toolchains.join(","),
+            WORKFORCE_TOOLCHAIN_COMMAND: `workforce-toolchain install ${toolchains.join(" ")}`,
+          }
+        : {}),
+    };
     const secretNames = [
       ...new Set([...this.resolveToolSecrets(task), ...capabilities.secretNames]),
     ];
@@ -47,7 +57,7 @@ export class TaskExecutionService {
       sandbox,
       model: model.model,
       secretNames,
-      environment: capabilities.environment,
+      environment,
     });
     const attempt = this.supervisor.enqueue(request);
     this.tasks.transition(companyId, taskId, "START", actorId, `Queued attempt ${attempt.id}`);
@@ -125,6 +135,28 @@ export class TaskExecutionService {
       acceptanceCriteria: task.acceptanceCriteria,
     });
   }
+}
+
+function resolveToolchainBundles(task: TaskRecord): string[] {
+  const requested = new Set([...task.capabilities, ...task.tools]);
+  const bundles = new Set<string>();
+  const mappings: [string, string][] = [
+    ["language:python", "python"],
+    ["language:php", "php"],
+    ["framework:laravel", "laravel"],
+    ["framework:symfony", "symfony"],
+    ["language:go", "go"],
+    ["language:rust", "rust"],
+    ["document", "document"],
+    ["office", "office"],
+    ["pdf", "pdf"],
+    ["image", "image"],
+    ["audio", "audio-video"],
+    ["video", "audio-video"],
+    ["browser", "browser"],
+  ];
+  for (const [capability, bundle] of mappings) if (requested.has(capability)) bundles.add(bundle);
+  return [...bundles].sort();
 }
 
 function isBuiltInTool(id: string): boolean {
