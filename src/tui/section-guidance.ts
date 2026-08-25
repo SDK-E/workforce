@@ -37,8 +37,21 @@ const SELECTABLE_SECTIONS = new Set([
   "Warnings & incidents",
 ]);
 
+const READ_ONLY_GUIDANCE: Readonly<Record<string, string>> = {
+  "Live work": "read-only live evidence",
+  Deliverables: "read-only validated artifacts",
+  Audit: "read-only audit ledger",
+  "Execution readiness": "read-only checks; resolve at the named source",
+  "Docker & resources": "read-only runtime state",
+  "Advanced diagnostics": "read-only diagnostics",
+};
+
 export function contentGuidance(section: string, sidebarVisible: boolean): string {
   const actions: string[] = [];
+  const readOnly = READ_ONLY_GUIDANCE[section];
+  if (readOnly) actions.push(readOnly);
+  if (section === "Executive overview")
+    actions.push(`${bindingsFor("previousPanel")}/${bindingsFor("nextPanel")} switch panel`);
   if (SELECTABLE_SECTIONS.has(section))
     actions.push(`${bindingsFor("previous")}/${bindingsFor("next")} select`);
   if (createFormForSection(section)) actions.push(`${bindingsFor("create")} new`);

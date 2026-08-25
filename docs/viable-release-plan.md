@@ -63,6 +63,8 @@ This is a reduced path to a viable release, not a reduction of the product ident
   removes Ink styling while retaining required cursor controls.
 - Every configured navigation destination now has a compiled render-contract test. Unknown sections
   fail visibly instead of silently falling through to Advanced diagnostics.
+- The bottom bar explicitly labels immutable evidence, audit, readiness, runtime, and diagnostics
+  pages as read-only, and the executive overview advertises its configured left/right panel controls.
 
 ## What to defer until after the viable release
 

@@ -22,6 +22,8 @@ The engine keeps operating when the TUI is closed. `pnpm stop` stops it without 
 - The **sidebar** contains areas such as Overview, Organization, Strategy & work, Business, Collaboration, Governance, Platform, and System.
 - The **main panel** shows the page you selected.
 - The **bottom bar** shows only the useful actions for the current page. Press `?` at any time for all keys.
+- Evidence, audit, readiness, and runtime pages identify themselves as read-only and tell you to make
+  changes at the source instead of presenting ineffective mutation keys.
 
 Press `Tab` to move focus between the sidebar and the main panel. Arrow keys affect the focused part of the screen.
 Below 64 columns Workforce hides the sidebar automatically and routes input to the content panel; widen
