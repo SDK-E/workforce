@@ -9,11 +9,12 @@ Every physical chord belongs to one command. A command may have aliases, but two
 The focus model is explicit:
 
 - `Up`/`Down` or `k`/`j` moves inside the focused surface.
-- `Right` or `Enter` transfers focus from navigation to content.
+- `Left`/`Right` changes sidebar area; `Enter` transfers focus from navigation to content.
 - `Tab`/`Shift-Tab` transfers focus between visible navigation and content.
 - `Ctrl-Tab`/`Ctrl-Shift-Tab` changes navigation area.
 - `Escape` returns from content to visible navigation.
 - Collapsing navigation with `Ctrl-B` always transfers focus to content, so hidden navigation cannot consume input.
+- The command palette owns arrow, Enter, and Escape input while visible; selecting a result transfers focus to its content.
 
 ## Theme configuration
 

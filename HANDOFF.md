@@ -73,6 +73,7 @@ The practical readiness dependency is intentional: a company must have a configu
 
 - Forms use opaque `FormFrame`/modal backdrops, so text behind a popup is not exposed.
 - Navigation has explicit sidebar/content focus: arrows operate only on the focused surface, collapsed navigation transfers focus to content, and hidden regions cannot mutate state. One validated keybinding registry drives input and help text. Registered theme files drive shell/modal/status colors and appear in Settings.
+- Rendered interaction coverage proves vertical/horizontal sidebar navigation, command-palette arrow selection and Escape, direct palette-to-content focus, and room-row movement. The footer now explains the active surface and next actions in plain language.
 - Company, organization, strategy, task, employee, agent profile, conversation room, MCP, integration, mail, automation, and meeting creation forms exist to varying degrees of completeness. Meeting create/edit/archive/restore is complete and tested.
 
 ### Project foundation

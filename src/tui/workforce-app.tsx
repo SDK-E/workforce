@@ -40,6 +40,7 @@ export function WorkforceApp({
   const { stdout } = useStdout();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [paletteVisible, setPaletteVisible] = useState(false);
+  const [paletteIndex, setPaletteIndex] = useState(0);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [focus, setFocus] = useState<"sidebar" | "content">("sidebar");
   const [theme, setTheme] = useState(() => themeById(process.env.WORKFORCE_THEME));
@@ -50,8 +51,7 @@ export function WorkforceApp({
   const [emergencyVisible, setEmergencyVisible] = useState(false);
   const [executionTaskId, setExecutionTaskId] = useState<string | null>(null);
 
-  const width = stdout.columns;
-  const height = stdout.rows;
+  const { columns: width, rows: height } = stdout;
   const compact = width < 88;
   const selectedSection = NAVIGATION_SECTIONS[selectedIndex] ?? DEFAULT_SECTION;
   const data = loadWorkspaceData(store, company.id);
@@ -63,15 +63,15 @@ export function WorkforceApp({
     onStatus: setStatusMessage,
   });
   const forms = useFormController(setStatusMessage);
+  const inputBlocked = [emergencyVisible, executionTaskId, lifecycle.target, forms.active].some(
+    Boolean,
+  );
 
   useWorkforceInput({
-    blocked:
-      emergencyVisible ||
-      executionTaskId !== null ||
-      lifecycle.target !== null ||
-      forms.active !== null,
+    blocked: inputBlocked,
     helpVisible,
     paletteVisible,
+    paletteIndex,
     searchQuery,
     sidebarVisible,
     focus,
@@ -83,6 +83,7 @@ export function WorkforceApp({
     onVerifyMcp,
     setSelectedIndex,
     setPaletteVisible,
+    setPaletteIndex,
     setSidebarVisible,
     setFocus,
     setHelpVisible,
@@ -124,17 +125,16 @@ export function WorkforceApp({
           sidebarVisible={sidebarVisible}
           focus={focus}
           contentInteractive={
-            focus === "content" &&
-            !emergencyVisible &&
-            !executionTaskId &&
-            !lifecycle.target &&
-            !forms.active &&
-            !helpVisible &&
-            !paletteVisible
+            focus === "content" && !inputBlocked && !helpVisible && !paletteVisible
           }
         />
 
-        <StatusBar message={statusMessage} />
+        <StatusBar
+          message={statusMessage}
+          focus={focus}
+          sidebarVisible={sidebarVisible}
+          section={selectedSection}
+        />
         <WorkforceOverlays
           paletteVisible={paletteVisible}
           helpVisible={helpVisible}
@@ -144,6 +144,7 @@ export function WorkforceApp({
           activeForm={forms.active}
           selectedTarget={forms.editing ? lifecycle.selected : null}
           query={searchQuery}
+          paletteIndex={paletteIndex}
           compact={compact}
           terminalWidth={width}
           section={selectedSection}

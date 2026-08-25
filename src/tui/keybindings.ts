@@ -11,8 +11,10 @@ export const KEYBINDINGS = {
   areaPrevious: ["ctrl+shift+tab"],
   cancel: ["escape"],
   activate: ["enter"],
-  previous: ["up", "k"],
-  next: ["down", "j"],
+  previous: ["up"],
+  next: ["down"],
+  previousVim: ["k"],
+  nextVim: ["j"],
   previousPanel: ["left"],
   nextPanel: ["right"],
   create: ["n"],
@@ -51,7 +53,26 @@ export function matchesKeybinding(
 }
 
 export function bindingsFor(command: KeybindingCommand): string {
-  return KEYBINDINGS[command].join(" / ");
+  return KEYBINDINGS[command].map(formatChord).join(" / ");
+}
+
+function formatChord(chord: string): string {
+  const names: Record<string, string> = {
+    up: "↑",
+    down: "↓",
+    left: "←",
+    right: "→",
+    enter: "Enter",
+    escape: "Esc",
+    tab: "Tab",
+    ctrl: "Ctrl",
+    shift: "Shift",
+    meta: "Meta",
+  };
+  return chord
+    .split("+")
+    .map((part) => names[part] ?? (part.length === 1 ? part.toUpperCase() : part))
+    .join("+");
 }
 
 export function duplicateKeybindings(): { chord: string; commands: KeybindingCommand[] }[] {
@@ -71,7 +92,7 @@ function inputChord(input: string, key: InputKey): string {
   const base = special ?? input.toLowerCase();
   const modifiers = [
     key.ctrl && "ctrl",
-    key.meta && "meta",
+    key.meta && special !== "escape" && "meta",
     key.shift && (key.ctrl === true || key.meta === true || special === "tab") && "shift",
   ].filter(Boolean);
   return [...modifiers, base].join("+");

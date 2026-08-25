@@ -28,7 +28,8 @@ export function HelpOverlay({ compact, terminalWidth }: HelpOverlayProps) {
           {bindingsFor("areaNext")} / {bindingsFor("areaPrevious")} Change area
         </Text>
         <Text>
-          {bindingsFor("previous")} / {bindingsFor("next")} Move in focused surface
+          {bindingsFor("previous")} / {bindingsFor("next")} or {bindingsFor("previousVim")} /{" "}
+          {bindingsFor("nextVim")} Move in focused surface
         </Text>
         <Text>
           {bindingsFor("previousRecord")} / {bindingsFor("nextRecord")} Select record

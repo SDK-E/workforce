@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useCallback, useRef, type Dispatch, type SetStateAction } from "react";
 import { useInput } from "ink";
 import type { CompanyRecord } from "../storage/records.js";
 import { applicationShortcut } from "./application-shortcuts.js";
@@ -14,6 +14,7 @@ export interface WorkforceInputOptions {
   blocked: boolean;
   helpVisible: boolean;
   paletteVisible: boolean;
+  paletteIndex: number;
   searchQuery: string;
   sidebarVisible: boolean;
   focus: "sidebar" | "content";
@@ -25,6 +26,7 @@ export interface WorkforceInputOptions {
   onVerifyMcp: (companyId: string, serverId: string) => Promise<void>;
   setSelectedIndex: Dispatch<SetStateAction<number>>;
   setPaletteVisible: Dispatch<SetStateAction<boolean>>;
+  setPaletteIndex: Dispatch<SetStateAction<number>>;
   setSidebarVisible: Dispatch<SetStateAction<boolean>>;
   setFocus: Dispatch<SetStateAction<"sidebar" | "content">>;
   setHelpVisible: Dispatch<SetStateAction<boolean>>;
@@ -36,8 +38,11 @@ export interface WorkforceInputOptions {
   cycleTheme: () => void;
 }
 
-export function useWorkforceInput(options: WorkforceInputOptions): void {
-  useInput((input, key) => {
+export function useWorkforceInput(latestOptions: WorkforceInputOptions): void {
+  const optionsRef = useRef(latestOptions);
+  optionsRef.current = latestOptions;
+  const handleInput = useCallback<Parameters<typeof useInput>[0]>((input, key) => {
+    const options = optionsRef.current;
     if (options.blocked) return;
     if (options.helpVisible) {
       if (matchesKeybinding("help", input, key) || matchesKeybinding("cancel", input, key))
@@ -45,14 +50,19 @@ export function useWorkforceInput(options: WorkforceInputOptions): void {
       return;
     }
     if (options.paletteVisible) {
-      processPaletteInput(input, key, options.searchQuery, {
+      processPaletteInput(input, key, options.searchQuery, options.paletteIndex, {
         close: () => {
           options.setPaletteVisible(false);
           options.setSearchQuery("");
+          options.setPaletteIndex(0);
         },
-        select: options.setSelectedIndex,
+        select: (index) => {
+          options.setSelectedIndex(index);
+          options.setFocus("content");
+        },
         status: options.setStatusMessage,
         query: options.setSearchQuery,
+        selection: options.setPaletteIndex,
       });
       return;
     }
@@ -60,8 +70,10 @@ export function useWorkforceInput(options: WorkforceInputOptions): void {
     if (matchesKeybinding("quit", input, key)) process.exit(0);
     if (matchesKeybinding("emergencyStop", input, key)) options.setEmergencyVisible(true);
     if (matchesKeybinding("help", input, key)) options.setHelpVisible(true);
-    else if (matchesKeybinding("commandPalette", input, key)) options.setPaletteVisible(true);
-    else if (matchesKeybinding("areaNext", input, key))
+    else if (matchesKeybinding("commandPalette", input, key)) {
+      options.setPaletteIndex(0);
+      options.setPaletteVisible(true);
+    } else if (matchesKeybinding("areaNext", input, key))
       options.setSelectedIndex((current) => moveGroup(current, 1));
     else if (matchesKeybinding("areaPrevious", input, key))
       options.setSelectedIndex((current) => moveGroup(current, -1));
@@ -78,7 +90,8 @@ export function useWorkforceInput(options: WorkforceInputOptions): void {
         options.setFocus("content");
       });
     else handleContentInput(input, key, { ...options, section: options.selectedSection });
-  });
+  }, []);
+  useInput(handleInput);
 }
 
 function handleShortcut(
@@ -93,7 +106,10 @@ function handleShortcut(
   } else if (shortcut === "open-settings") {
     options.setSelectedIndex(NAVIGATION_SECTIONS.indexOf("Settings"));
     options.setFocus("content");
-  } else if (shortcut === "open-palette") options.setPaletteVisible(true);
+  } else if (shortcut === "open-palette") {
+    options.setPaletteIndex(0);
+    options.setPaletteVisible(true);
+  }
   return shortcut !== null;
 }
 

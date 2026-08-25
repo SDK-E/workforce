@@ -38,7 +38,7 @@ printf '%s' "$VERCEL_TOKEN" | pnpm secrets:import -- vercel COMPANY_ID EMPLOYEE_
 - `Tab` / `Shift-Tab`: move focus between the visible sidebar and dashboard content.
 - `Ctrl-Tab` / `Ctrl-Shift-Tab`: switch navigation area.
 - `j` / `k` or `Up` / `Down`: move within whichever surface is focused.
-- `Right` or `Enter`: enter dashboard content from the sidebar; `Escape` returns.
+- `Left` / `Right`: change sidebar area; `Enter` enters dashboard content and `Escape` returns.
 - `[` / `]`: select the previous or next record on a page.
 - `n`: create a record where supported.
 - `e`: edit or decide the selected record.
@@ -62,6 +62,7 @@ Themes are listed under **System → Settings**. Press `t` there to select the n
 Terminal applications cannot reliably distinguish every platform shortcut, so these bindings are additive: the single-key alternatives remain available and all text-entry dialogs retain normal editing behavior.
 
 Only the pages in the current area appear in the sidebar. The command palette searches every area.
+Use `Up` / `Down` to choose a palette result, `Enter` to open it directly in dashboard content, and `Escape` to close the palette without navigating.
 
 ## 4. Define work
 

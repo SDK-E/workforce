@@ -52,7 +52,7 @@ test("configured keybindings are unique and arrow navigation changes the focused
   assert.equal(NAVIGATION_SECTIONS[selected], "CEO office");
   handleSidebarInput(
     "",
-    { upArrow: false, downArrow: false, rightArrow: true, return: false },
+    { upArrow: false, downArrow: false, rightArrow: false, return: true },
     select,
     () => {
       contentFocused = true;

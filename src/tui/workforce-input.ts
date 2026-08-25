@@ -1,20 +1,28 @@
 import type { CompanyRecord } from "../storage/records.js";
 import type { useFormController } from "./use-form-controller.js";
 import type { useLifecycleController } from "./use-lifecycle-controller.js";
-import { moveWithinGroup } from "./navigation.js";
+import { moveGroup, moveWithinGroup } from "./navigation.js";
 import type { WorkspaceData } from "./workspace-data.js";
 import { matchesKeybinding } from "./keybindings.js";
 
 export function handleSidebarInput(
   input: string,
-  key: { upArrow: boolean; downArrow: boolean; rightArrow: boolean; return: boolean },
+  key: {
+    upArrow: boolean;
+    downArrow: boolean;
+    leftArrow?: boolean;
+    rightArrow: boolean;
+    return: boolean;
+  },
   select: (update: (current: number) => number) => void,
   focusContent: () => void,
 ): void {
-  if (matchesKeybinding("previous", input, key)) select((current) => moveWithinGroup(current, -1));
-  else if (matchesKeybinding("next", input, key)) select((current) => moveWithinGroup(current, 1));
-  else if (matchesKeybinding("nextPanel", input, key) || matchesKeybinding("activate", input, key))
-    focusContent();
+  if (isPrevious(input, key)) select((current) => moveWithinGroup(current, -1));
+  else if (isNext(input, key)) select((current) => moveWithinGroup(current, 1));
+  else if (matchesKeybinding("previousPanel", input, key))
+    select((current) => moveGroup(current, -1));
+  else if (matchesKeybinding("nextPanel", input, key)) select((current) => moveGroup(current, 1));
+  else if (matchesKeybinding("activate", input, key)) focusContent();
 }
 
 export function handleContentInput(
@@ -26,8 +34,8 @@ export function handleContentInput(
   else if (matchesKeybinding("edit", input, key))
     context.forms.openEdit(context.section, Boolean(context.lifecycle.selected));
   else if (context.lifecycle.handleKey(input)) return;
-  else if (matchesKeybinding("previous", input, key)) context.lifecycle.moveSelection(-1);
-  else if (matchesKeybinding("next", input, key)) context.lifecycle.moveSelection(1);
+  else if (isPrevious(input, key)) context.lifecycle.moveSelection(-1);
+  else if (isNext(input, key)) context.lifecycle.moveSelection(1);
   else if (matchesKeybinding("run", input, key) && context.section === "Tasks")
     requestTaskExecution(context);
   else if (matchesKeybinding("verify", input, key) && context.section === "MCP servers")
@@ -38,6 +46,14 @@ export function handleContentInput(
     activateSelectedCompany(context);
   else if (matchesKeybinding("activate", input, key) && context.lifecycle.selected)
     context.setStatusMessage(`Inspecting ${context.lifecycle.selected.label}`);
+}
+
+function isPrevious(input: string, key: Parameters<typeof matchesKeybinding>[2]): boolean {
+  return matchesKeybinding("previous", input, key) || matchesKeybinding("previousVim", input, key);
+}
+
+function isNext(input: string, key: Parameters<typeof matchesKeybinding>[2]): boolean {
+  return matchesKeybinding("next", input, key) || matchesKeybinding("nextVim", input, key);
 }
 
 interface ContentInputContext {

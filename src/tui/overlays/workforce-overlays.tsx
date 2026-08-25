@@ -16,6 +16,7 @@ export function WorkforceOverlays(props: {
   activeForm: CreateFormKind | null;
   selectedTarget: LifecycleTarget | null;
   query: string;
+  paletteIndex: number;
   compact: boolean;
   terminalWidth: number;
   section: string;
@@ -34,7 +35,11 @@ export function WorkforceOverlays(props: {
   return (
     <>
       {props.paletteVisible && (
-        <CommandPalette query={props.query} terminalWidth={props.terminalWidth} />
+        <CommandPalette
+          query={props.query}
+          terminalWidth={props.terminalWidth}
+          selectedIndex={props.paletteIndex}
+        />
       )}
       {props.helpVisible && (
         <HelpOverlay compact={props.compact} terminalWidth={props.terminalWidth} />

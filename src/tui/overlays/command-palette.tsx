@@ -1,18 +1,17 @@
 import { Box, Text } from "ink";
-import { NAVIGATION_SECTIONS } from "../navigation.js";
+import { paletteMatches } from "../command-palette-input.js";
 import { ModalBackdrop } from "../components/modal-backdrop.js";
 import { useWorkforceTheme } from "../themes/theme-context.js";
 
 interface CommandPaletteProps {
   query: string;
   terminalWidth: number;
+  selectedIndex: number;
 }
 
-export function CommandPalette({ query, terminalWidth }: CommandPaletteProps) {
+export function CommandPalette({ query, terminalWidth, selectedIndex }: CommandPaletteProps) {
   const theme = useWorkforceTheme();
-  const matches = NAVIGATION_SECTIONS.filter((section) =>
-    section.toLowerCase().includes(query.toLowerCase()),
-  ).slice(0, 6);
+  const matches = paletteMatches(query);
 
   return (
     <ModalBackdrop width={Math.max(36, Math.floor(terminalWidth / 2))}>
@@ -29,8 +28,10 @@ export function CommandPalette({ query, terminalWidth }: CommandPaletteProps) {
           › {query}
           <Text inverse> </Text>
         </Text>
-        {matches.map((section) => (
-          <Text key={section}> {section}</Text>
+        {matches.map((section, index) => (
+          <Text key={section} inverse={index === selectedIndex}>
+            {index === selectedIndex ? "›" : " "} {section}
+          </Text>
         ))}
         <Text dimColor>Type to filter · Enter to open · Esc to close</Text>
       </Box>
