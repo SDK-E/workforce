@@ -73,6 +73,10 @@ The two-line bottom bar separates the latest system status from contextual keybo
 
 Themes are listed under **System → Settings**. Press `t` there to select the next registered theme, or set `WORKFORCE_THEME=high-contrast` before startup. See the [TUI customization guide](tui-customization.md) when adding themes or changing bindings.
 
+At terminal widths below 64 columns the sidebar is automatically hidden and input remains in the content
+panel; widening the terminal restores it. Start with `NO_COLOR=1 pnpm tui` to disable ANSI color styling
+while retaining the cursor controls required by the interactive screen.
+
 Terminal applications cannot reliably distinguish every platform shortcut, so these bindings are additive: the single-key alternatives remain available and all text-entry dialogs retain normal editing behavior.
 
 Only the pages in the current area appear in the sidebar. The command palette searches every area.

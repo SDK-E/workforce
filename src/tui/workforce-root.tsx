@@ -5,6 +5,7 @@ import type { CompanyRecord } from "../storage/records.js";
 import type { StateStore } from "../storage/state-store.js";
 import { CompanyCreateForm } from "./overlays/company-create-form.js";
 import { WorkforceApp } from "./workforce-app.js";
+import { terminalLayout } from "./terminal-layout.js";
 
 export function WorkforceRoot(props: {
   store: StateStore;
@@ -15,15 +16,16 @@ export function WorkforceRoot(props: {
   onVerifyModel: (companyId: string, modelId: string) => Promise<void>;
 }) {
   const { stdout } = useStdout();
+  const { width, height } = terminalLayout(stdout.columns, stdout.rows);
   const [company, setCompany] = useState<CompanyRecord | null>(props.store.companies()[0] ?? null);
   const [message, setMessage] = useState("Create the first company to begin autonomous operation");
   if (company) return <WorkforceApp {...props} initialCompany={company} />;
   return (
-    <Box width={stdout.columns} height={stdout.rows} flexDirection="column">
+    <Box width={width} height={height} flexDirection="column">
       <Text bold>Workforce OS onboarding</Text>
       <Text>{message}</Text>
       <CompanyCreateForm
-        terminalWidth={stdout.columns}
+        terminalWidth={width}
         onCancel={() => {
           setMessage("A persisted company configuration is required to continue");
         }}

@@ -45,7 +45,7 @@ This is a reduced path to a viable release, not a reduction of the product ident
 
 - Business pipeline MCP, viable CEO commercial autonomy, and ARM reinforcement are implemented.
 - The full local quality gate currently passes formatting, typed lint, Knip dead-code analysis,
-  compilation, migrations, and **94 tests**.
+  compilation, migrations, and **97 tests**.
 - Human forms now generate company/model/MCP/tool/environment IDs; infer company, actor, timestamps,
   approval targets, and safe defaults; and select company-scoped relationships by readable names.
   This covers organization, strategy, business, governance, meetings, automations, project
@@ -57,7 +57,10 @@ This is a reduced path to a viable release, not a reduction of the product ident
   Its execution callback is deliberately deterministic; it proves the TUI/service seam, not the
   real-Docker boundary reserved for Slice 2.
 - The remaining human-workflow work is the broader page/action audit, especially compact resize and
-  no-color behavior, archive/restore coverage, collaboration/governance paths, and exact guide parity.
+  archive/restore coverage, collaboration/governance paths, and exact guide parity. Compact mode now
+  uses tested width thresholds, hides the sidebar below 64 columns without leaving hidden focus behind,
+  and falls back to usable dimensions on non-TTY output. A child-process render proves `NO_COLOR`
+  removes Ink styling while retaining required cursor controls.
 
 ## What to defer until after the viable release
 
@@ -163,9 +166,10 @@ Give the next coding agent this prompt together with the repository:
 > checklist and update it after every coherent slice. Start with `git status --short`, inspect all
 > uncommitted work, and preserve it. Finish the in-progress TUI human-workflow slice first. The compiled
 > operator journey and form simplification are complete; now audit the remaining page actions,
-> collaboration/governance paths, archive/restore behavior, compact resize and no-color modes, and
-> exact getting-started-guide parity. Keep generated values and safe defaults inferred, genuine
-> relationships name-selected and company-scoped, and advanced policy inputs limited to policy forms.
+> collaboration/governance paths, archive/restore behavior, and exact getting-started-guide parity.
+> Compact resize and no-color policies already have direct tests; preserve them. Keep generated values
+> and safe defaults inferred, genuine relationships name-selected and company-scoped, and advanced
+> policy inputs limited to policy forms.
 > Then execute Slices 2 and 3 in order. For each
 > slice, implement domain/repository policy before UI, use only numbered SQL migrations for persistence,
 > preserve Docker-only execution and all isolation/security invariants, delete superseded code/docs,

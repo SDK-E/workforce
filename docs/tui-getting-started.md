@@ -24,6 +24,9 @@ The engine keeps operating when the TUI is closed. `pnpm stop` stops it without 
 - The **bottom bar** shows only the useful actions for the current page. Press `?` at any time for all keys.
 
 Press `Tab` to move focus between the sidebar and the main panel. Arrow keys affect the focused part of the screen.
+Below 64 columns Workforce hides the sidebar automatically and routes input to the content panel; widen
+the terminal to restore the sidebar. Run `NO_COLOR=1 pnpm tui` when the terminal or accessibility tool
+must not receive ANSI color styling. Cursor-control sequences remain necessary for an interactive TUI.
 
 ## Essential keys
 

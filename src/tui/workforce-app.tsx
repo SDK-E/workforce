@@ -17,6 +17,7 @@ import { useFormController } from "./use-form-controller.js";
 import { nextTheme, themeById } from "./themes/index.js";
 import { WorkforceThemeProvider } from "./themes/theme-context.js";
 import { useWorkforceInput } from "./use-workforce-input.js";
+import { terminalLayout } from "./terminal-layout.js";
 
 interface WorkforceAppProps {
   store: StateStore;
@@ -53,8 +54,9 @@ export function WorkforceApp({
   const [emergencyVisible, setEmergencyVisible] = useState(false);
   const [executionTaskId, setExecutionTaskId] = useState<string | null>(null);
 
-  const { columns: width, rows: height } = stdout;
-  const compact = width < 88;
+  const { width, height, compact, sidebarAllowed } = terminalLayout(stdout.columns, stdout.rows);
+  const effectiveSidebarVisible = sidebarVisible && sidebarAllowed;
+  const effectiveFocus = effectiveSidebarVisible ? focus : "content";
   const selectedSection = NAVIGATION_SECTIONS[selectedIndex] ?? DEFAULT_SECTION;
   const data = loadWorkspaceData(store, company.id);
   const lifecycle = useLifecycleController({
@@ -65,21 +67,17 @@ export function WorkforceApp({
     onStatus: setStatusMessage,
   });
   const forms = useFormController(setStatusMessage);
-  const inputBlocked = hasActiveOverlay(
-    emergencyVisible,
-    executionTaskId,
-    lifecycle.target,
-    forms.active,
+  const inputBlocked = [emergencyVisible, executionTaskId, lifecycle.target, forms.active].some(
+    Boolean,
   );
-
   useWorkforceInput({
     blocked: inputBlocked,
     helpVisible,
     paletteVisible,
     paletteIndex,
     searchQuery,
-    sidebarVisible,
-    focus,
+    sidebarVisible: effectiveSidebarVisible,
+    focus: effectiveFocus,
     selectedSection,
     lifecycle,
     forms,
@@ -102,7 +100,6 @@ export function WorkforceApp({
       setTheme((current) => nextTheme(current));
     },
   });
-
   return (
     <WorkforceThemeProvider theme={theme}>
       <Box
@@ -111,8 +108,9 @@ export function WorkforceApp({
         flexDirection="column"
         backgroundColor={theme.colors.canvas}
       >
-        <WorkforceHeader {...{ company, docker, data, section: selectedSection, focus }} />
-
+        <WorkforceHeader
+          {...{ company, docker, data, section: selectedSection, focus: effectiveFocus }}
+        />
         <WorkforceContent
           selectedIndex={selectedIndex}
           section={selectedSection}
@@ -123,17 +121,16 @@ export function WorkforceApp({
           height={height}
           data={data}
           rowIndex={lifecycle.rowIndex}
-          sidebarVisible={sidebarVisible}
-          focus={focus}
+          sidebarVisible={effectiveSidebarVisible}
+          focus={effectiveFocus}
           contentInteractive={
-            focus === "content" && !inputBlocked && !helpVisible && !paletteVisible
+            effectiveFocus === "content" && !inputBlocked && !helpVisible && !paletteVisible
           }
         />
-
         <StatusBar
           message={statusMessage}
-          focus={focus}
-          sidebarVisible={sidebarVisible}
+          focus={effectiveFocus}
+          sidebarVisible={effectiveSidebarVisible}
           section={selectedSection}
         />
         <WorkforceOverlays
@@ -220,10 +217,6 @@ function attemptMetricsFor(data: WorkspaceData) {
     queuedAttempts: data.attempts.filter(({ status }) => status === "queued").length,
     capacity: data.runtime?.maxConcurrentAttempts ?? 2,
   };
-}
-
-function hasActiveOverlay(...values: unknown[]): boolean {
-  return values.some(Boolean);
 }
 
 function WorkforceContent(props: {
