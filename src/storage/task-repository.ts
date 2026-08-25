@@ -152,6 +152,27 @@ export class TaskRepository {
     return { ...current, status, updatedAt: now };
   }
 
+  assign(companyId: string, taskId: string, employeeId: string, actorId = "arm"): TaskRecord {
+    const current = this.get(companyId, taskId);
+    if (!current) throw new Error(`Unknown task: ${taskId}`);
+    const employee = this.companies
+      .employees(companyId)
+      .find(({ id, status }) => id === employeeId && ["active", "probation"].includes(status));
+    if (!employee) throw new Error(`Task assignee must be an active employee: ${employeeId}`);
+    const now = new Date().toISOString();
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare("UPDATE tasks SET assignee_id=?,updated_at=? WHERE company_id=? AND id=?")
+        .run(employeeId, now, companyId, taskId);
+      this.audit.append("task.assignee-changed", actorId, companyId, {
+        taskId,
+        from: current.assigneeId,
+        to: employeeId,
+      });
+    });
+    return { ...current, assigneeId: employeeId, updatedAt: now };
+  }
+
   private insert(task: TaskRecord): void {
     this.database.connection
       .prepare(

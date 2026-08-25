@@ -14,6 +14,7 @@ import { AttemptCapabilityResolver } from "./integrations/attempt-capability-res
 import { AutomationService } from "./automations/automation-service.js";
 import { MailAttemptBridge } from "./integrations/mail-attempt-bridge.js";
 import { DockerMcpProbeRunner, McpHealthVerifier } from "./integrations/mcp-health-verifier.js";
+import { ArmOperatingLoop } from "./autonomy/arm-operating-loop.js";
 
 const store = new StateStore();
 store.initialize();
@@ -63,10 +64,12 @@ const taskExecution = new TaskExecutionService(
 );
 const operatingLoop = new CeoOperatingLoop(store, store.autonomy, taskExecution);
 const automationService = new AutomationService(store, taskExecution);
+const armOperatingLoop = new ArmOperatingLoop(store);
 const recovery = await supervisor.reconcile();
 await supervisor.tick();
 await operatingLoop.tick();
 await automationService.tick();
+armOperatingLoop.tick();
 setInterval(() => {
   void operatingLoop.tick().catch((error: unknown) => {
     logger.error({ error }, "CEO operating cycle failed");
@@ -76,6 +79,13 @@ setInterval(() => {
   void automationService.tick().catch((error: unknown) => {
     logger.error({ error }, "Automation scheduler tick failed");
   });
+}, 10_000);
+setInterval(() => {
+  try {
+    armOperatingLoop.tick();
+  } catch (error) {
+    logger.error({ error }, "ARM operating cycle failed");
+  }
 }, 10_000);
 logger.info({ dockerAvailable: docker.available }, "control plane started");
 logger.info(recovery, "supervisor reconciliation completed");

@@ -1,4 +1,3 @@
-import { JobRequirementsSchema, type JobRequirements } from "../domain.js";
 import type { ModelRepository } from "../registries/model-repository.js";
 import type { ToolRepository } from "../registries/tool-repository.js";
 import { planSandbox } from "../sandbox-planner.js";
@@ -7,6 +6,7 @@ import type { AttemptFactory } from "../supervision/attempt-factory.js";
 import type { AttemptRecord } from "../supervision/attempt-types.js";
 import type { DockerSupervisor } from "../supervision/docker-supervisor.js";
 import type { TaskRecord } from "./task-types.js";
+import { taskJobRequirements } from "./task-job-requirements.js";
 import type { AttemptCapabilityResolver } from "../integrations/attempt-capability-resolver.js";
 
 export class TaskExecutionService {
@@ -30,7 +30,7 @@ export class TaskExecutionService {
       throw new Error(`Task must be assigned before execution; current status is ${task.status}`);
 
     const model = this.resolveModel(task);
-    const requirements = this.requirements(task);
+    const requirements = taskJobRequirements(task);
     const sandbox = planSandbox(requirements);
     if (sandbox.rejectedCapabilities.length > 0)
       throw new Error(`Task capabilities rejected: ${sandbox.rejectedCapabilities.join(", ")}`);
@@ -97,44 +97,6 @@ export class TaskExecutionService {
       ),
     ].sort();
   }
-
-  private requirements(task: TaskRecord): JobRequirements {
-    const capability = new Set([...task.capabilities, ...task.tools]);
-    const mode = networkMode(task.networkPolicy.mode);
-    return JobRequirementsSchema.parse({
-      id: `job-${task.id}`,
-      title: task.objective.slice(0, 200),
-      objective: task.objective,
-      risk: task.risk,
-      dataSensitivity: task.dataSensitivity,
-      capabilities: {
-        filesystemWrite: true,
-        shell: capability.has("shell") || capability.has("engineering"),
-        sourceControl: capability.has("git") || capability.has("github-cli"),
-        browser: capability.has("browser"),
-        publicInternet: mode !== "inference-only",
-        packageInstall: capability.has("package-manager") || capability.has("engineering"),
-        buildTools: task.tools.filter((tool) => tool.startsWith("build:")).map(afterColon),
-        languages: task.capabilities.filter((item) => item.startsWith("language:")).map(afterColon),
-      },
-      inputs: task.inputs,
-      outputs: task.outputs,
-      network: {
-        mode,
-        allowedHosts: stringArray(task.networkPolicy.allowedHosts),
-        reason: stringValue(task.networkPolicy.reason, "Remote model inference"),
-        approvedBy: optionalString(task.networkPolicy.approvedBy),
-      },
-      resources: {
-        cpu: numberValue(task.resourcePolicy.cpu, 1),
-        memoryMb: numberValue(task.resourcePolicy.memoryMb, 768),
-        pids: numberValue(task.resourcePolicy.pids, 128),
-        timeoutSeconds: numberValue(task.resourcePolicy.timeoutSeconds, 1800),
-      },
-      enginePreference: task.modelPolicy.enginePreference,
-      acceptanceCriteria: task.acceptanceCriteria,
-    });
-  }
 }
 
 function resolveToolchainBundles(task: TaskRecord): string[] {
@@ -167,34 +129,4 @@ function isBuiltInTool(id: string): boolean {
 function preference(requested: string[], id: string, model: string): number {
   const index = requested.findIndex((value) => value === id || value === model);
   return index < 0 ? Number.MAX_SAFE_INTEGER : index;
-}
-
-function networkMode(
-  value: unknown,
-): "inference-only" | "search-only" | "allowlisted" | "audited-internet" {
-  return value === "search-only" || value === "allowlisted" || value === "audited-internet"
-    ? value
-    : "inference-only";
-}
-
-function stringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
-}
-
-function stringValue(value: unknown, fallback: string): string {
-  return typeof value === "string" ? value : fallback;
-}
-
-function optionalString(value: unknown): string | undefined {
-  return typeof value === "string" && value.length > 0 ? value : undefined;
-}
-
-function numberValue(value: unknown, fallback: number): number {
-  return typeof value === "number" ? value : fallback;
-}
-
-function afterColon(value: string): string {
-  return value.slice(value.indexOf(":") + 1);
 }
