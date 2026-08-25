@@ -5,9 +5,10 @@ import type { StateStore } from "../../storage/state-store.js";
 import type { LifecycleTarget } from "../lifecycle-actions.js";
 import { AgentProfileForm } from "./agent-profile-form.js";
 import { EmployeeHireForm, type EmployeeHireInput } from "./employee-hire-form.js";
+import { HiringDecisionForm } from "./hiring-decision-form.js";
 
 interface Props {
-  kind: "employee-hire" | "agent-profile";
+  kind: "employee-hire" | "agent-profile" | "hiring-decision";
   company: CompanyRecord;
   store: StateStore;
   terminalWidth: number;
@@ -17,6 +18,28 @@ interface Props {
 }
 
 export function EmployeeMutationOverlay(props: Props) {
+  if (props.kind === "hiring-decision") {
+    if (props.selectedTarget?.kind !== "hiring-proposal") return null;
+    const proposalId = props.selectedTarget.id;
+    return (
+      <HiringDecisionForm
+        proposalId={proposalId}
+        terminalWidth={props.terminalWidth}
+        onCancel={props.onClose}
+        onSubmit={(decision, rationale) => {
+          props.finish(() => {
+            props.store.employment.decide(
+              props.company.id,
+              proposalId,
+              decision,
+              "human",
+              rationale,
+            );
+          }, `Hiring proposal ${decision} and audited`);
+        }}
+      />
+    );
+  }
   if (props.kind === "employee-hire")
     return (
       <EmployeeHireForm

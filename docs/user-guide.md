@@ -107,6 +107,8 @@ CEO and ARM sessions discover management tools only when their signed capabiliti
 
 Company management authority can create and configure rooms, add validated company employees as members, and configure tool, environment, and model registry records. New or changed registry records always return to `unknown` health; only the independent Docker verifier can issue a health receipt. A CEO emergency stop is company-scoped and interrupts only that company's active attempts. The human TUI/control API emergency stop remains global.
 
+In the TUI, approval, automation, and hiring-proposal decisions operate on the highlighted row: move focus to content, use `[` and `]` or the configured record-navigation arrows, then press `e`. The decision dialog is pre-bound to that record, requires an evidence-based rationale, and confirms before mutation. Users never need to copy opaque record IDs from the screen.
+
 ## 7. Recovery and safety
 
 `pnpm stop` stops the daemon but preserves `workforce-state`; the next `pnpm start` reuses the database, encrypted secrets, artifacts, and control identity. On startup, Workforce expires stale leases and reconciles managed containers. `pnpm reset` is intentionally destructive: it stops the stack and removes the named state volume, deleting every company and its history. Use `pnpm doctor` for Docker/image readiness and `pnpm sandbox:verify` for isolation checks. Emergency stop interrupts managed attempts without deleting task, employee, message, artifact, or audit history.

@@ -171,8 +171,9 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       />
     );
   if (props.section === "Agent Resources")
-    return <AgentResourcesView proposals={props.hiringProposals} />;
-  if (props.section === "Approvals") return <ApprovalView approvals={props.approvals} />;
+    return <AgentResourcesView proposals={props.hiringProposals} selectedRow={props.selectedRow} />;
+  if (props.section === "Approvals")
+    return <ApprovalView approvals={props.approvals} selectedRow={props.selectedRow} />;
   if (props.section === "Meetings")
     return <MeetingView meetings={props.meetings} selectedRow={props.selectedRow} />;
   if (props.section === "Performance")

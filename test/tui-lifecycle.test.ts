@@ -61,11 +61,18 @@ test("selected TUI resources archive and restore without deleting records", () =
       rationale: "Avoid repeated scheduling",
       estimatedRunsSaved: 2,
     });
+    store.approvalsRepository.request("acme", "task", task.id, "arm", "Review required");
     const data = workspaceData(store, "acme");
     assert.equal(lifecycleTargets("Companies", data)[0]?.kind, "company");
     assert.equal(lifecycleTargets("Employees", data)[0]?.kind, "employee");
     assert.equal(lifecycleTargets("Conversations", data)[0]?.kind, "room");
     assert.equal(lifecycleTargets("Models & engines", data)[0]?.kind, "model");
+    const approvalTarget = lifecycleTargets("Approvals", data)[0];
+    assert.equal(approvalTarget?.kind, "approval");
+    assert.ok(approvalTarget);
+    assert.throws(() => {
+      applyLifecycleAction(store, "acme", approvalTarget);
+    }, /not supported for approval/);
     const departmentTarget = lifecycleTargets("Departments", data)[0];
     const objectiveTarget = lifecycleTargets("Objectives", data)[0];
     const taskTarget = lifecycleTargets("Tasks", data)[0];
@@ -143,5 +150,7 @@ function workspaceData(store: StateStore, companyId: string) {
     rooms: store.conversations.roomList(companyId),
     meetings: store.meetings.list(companyId),
     models: store.models.list(companyId),
+    approvals: store.approvalsRepository.list(companyId),
+    hiringProposals: store.employment.proposalList(companyId),
   };
 }

@@ -11,9 +11,10 @@ export function ApprovalDecisionForm(props: {
   terminalWidth: number;
   onSubmit: (input: { approvalId: string; event: ApprovalEvent; rationale: string }) => void;
   onCancel: () => void;
+  initialApprovalId?: string;
 }) {
-  const [step, setStep] = useState(0);
-  const [approvalId, setApprovalId] = useState("");
+  const [step, setStep] = useState(props.initialApprovalId ? 1 : 0);
+  const [approvalId, setApprovalId] = useState(props.initialApprovalId ?? "");
   const [event, setEvent] = useState<ApprovalEvent>("APPROVE");
   const [rationale, setRationale] = useState("");
   useInput((input, key) => {

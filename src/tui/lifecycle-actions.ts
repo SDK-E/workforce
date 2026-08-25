@@ -14,7 +14,9 @@ export interface LifecycleTarget {
     | "task"
     | "mcp"
     | "integration"
-    | "automation";
+    | "automation"
+    | "approval"
+    | "hiring-proposal";
   id: string;
   label: string;
   status: string;
@@ -33,6 +35,8 @@ export interface LifecycleData {
   rooms: ReturnType<StateStore["conversations"]["roomList"]>;
   meetings: ReturnType<StateStore["meetings"]["list"]>;
   models: ReturnType<StateStore["models"]["list"]>;
+  approvals: ReturnType<StateStore["approvalsRepository"]["list"]>;
+  hiringProposals: ReturnType<StateStore["employment"]["proposalList"]>;
 }
 
 export function lifecycleTargets(section: string, data: LifecycleData): LifecycleTarget[] {
@@ -62,6 +66,20 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       kind: "meeting",
       id: item.id,
       label: item.title,
+      status: item.status,
+    }));
+  if (section === "Approvals")
+    return data.approvals.map((item) => ({
+      kind: "approval",
+      id: item.id,
+      label: `${item.subjectType} · ${item.subjectId}`,
+      status: item.status,
+    }));
+  if (section === "Agent Resources")
+    return data.hiringProposals.map((item) => ({
+      kind: "hiring-proposal",
+      id: item.id,
+      label: `${item.blueprint.employee.title} · ${item.jobId}`,
       status: item.status,
     }));
   if (section === "Models & engines")
@@ -187,21 +205,21 @@ export function applyLifecycleAction(
       restore ? "active" : "archived",
       actorId,
     );
-  } else if (restore) {
+  } else if (target.kind === "automation" && restore) {
     store.automations.restore(
       companyId,
       target.id,
       actorId,
       "Restored through confirmed TUI action",
     );
-  } else {
+  } else if (target.kind === "automation") {
     store.automations.archive(
       companyId,
       target.id,
       actorId,
       "Archived through confirmed TUI action",
     );
-  }
+  } else throw new Error(`Lifecycle action is not supported for ${target.kind}`);
 }
 
 function organizationSectionKinds(section: string): readonly OrganizationUnitKind[] | null {

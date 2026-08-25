@@ -277,4 +277,7 @@ test("selected resource edit forms are prefilled and keep immutable integration 
   assert.equal(editFormForSection("Conversations"), "room");
   assert.equal(editFormForSection("Meetings"), "meeting");
   assert.equal(editFormForSection("Models & engines"), "model");
+  assert.equal(editFormForSection("Approvals"), "approval-decision");
+  assert.equal(editFormForSection("Automations"), "automation-decision");
+  assert.equal(editFormForSection("Agent Resources"), "hiring-decision");
 });
