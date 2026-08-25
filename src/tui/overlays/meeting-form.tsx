@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import TextInput from "ink-text-input";
 import { FormFrame } from "./form-frame.js";
+import type { MeetingRecord } from "../../governance/meeting-repository.js";
 
 const FIELDS = [
   "Title",
@@ -21,11 +22,18 @@ export interface MeetingFormInput {
 
 export function MeetingForm(props: {
   terminalWidth: number;
+  initial?: MeetingRecord;
   onSubmit: (input: MeetingFormInput) => void;
   onCancel: () => void;
 }) {
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(["", "ceo", "ceo, arm", "", new Date().toISOString()]);
+  const [values, setValues] = useState([
+    props.initial?.title ?? "",
+    props.initial?.organizerId ?? "ceo",
+    props.initial?.participantIds.join(", ") ?? "ceo, arm",
+    props.initial?.agenda.join(", ") ?? "",
+    props.initial?.scheduledAt ?? new Date().toISOString(),
+  ]);
   const confirming = step === FIELDS.length;
   useInput((_input, key) => {
     if (key.escape) props.onCancel();
@@ -40,7 +48,7 @@ export function MeetingForm(props: {
   });
   return (
     <FormFrame
-      title="Schedule bounded meeting"
+      title={props.initial ? "Edit bounded meeting" : "Schedule bounded meeting"}
       terminalWidth={props.terminalWidth}
       footer={confirming ? "Enter confirm · Esc cancel" : `Enter next · Esc cancel · ${step + 1}/5`}
     >

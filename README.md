@@ -4,9 +4,19 @@ A standalone, Docker-first AI workforce control plane.
 
 The host runs only the control plane: CEO and Agent Resources identities, task state, policy decisions, audit records, TUI, and Docker supervision. Agent engines and job workspaces run only inside job-specific containers. If Docker is unavailable, work is blocked visibly; the system never falls back to host execution.
 
-## Product state
+## What it does
 
-The local control plane uses transactional SQLite state with foreign keys, WAL durability, company isolation, durable CEO/ARM identities, typed organization and strategy hierarchies, tasks, rooms and messages, approvals, evidence, and a tamper-evident audit chain. The full-screen Ink interface remains usable when Docker is unavailable; execution never falls back to the host. Unimplemented workflows are identified explicitly and are not represented as working placeholders.
+The local control plane uses transactional SQLite state with foreign keys, WAL durability, company isolation, durable CEO/ARM identities, typed organization and strategy hierarchies, tasks, dynamic agents, rooms and messages, approvals, evidence, and a tamper-evident audit chain. The full-screen Ink interface remains usable when Docker is unavailable; execution never falls back to the host.
+
+## Quick start
+
+1. Install a supported Node.js release and pnpm, then run `pnpm install --frozen-lockfile`.
+2. Build and verify the sandbox images with `pnpm images:build`.
+3. Start the production TUI with `pnpm build && pnpm start`.
+4. Create or select a company, then configure and verify a model registry entry before requesting work. Default model records are deliberately unconfigured, so CEO/automation cycles will record a blocked decision instead of launching an undefined provider.
+5. Create an objective and task, assign an eligible employee, approve it, then use `r` in **Tasks** to request a Docker attempt. Inspect **Live work**, **Deliverables**, and **Audit** for durable evidence.
+
+CEO, ARM, and approved automation loops run every ten seconds while the control plane is running. They create durable operating-cycle records and route approved work into the same Docker supervisor used by the TUI. A verified model, Docker daemon, and any required scoped credentials remain mandatory prerequisites for an attempt to launch.
 
 ## Commands
 
@@ -40,6 +50,8 @@ Use arrows or `j`/`k` to navigate sections, `[`/`]` to select records, `n` to cr
 - `src/supervision`: durable attempts, leases, capacity policy, Docker supervision, and recovery
 
 See [docs/coding-standards.md](docs/coding-standards.md). Formatting, typed linting, the 300-line module boundary, dead-code analysis, compilation, and tests are enforced by `pnpm test`; use `pnpm format` to apply formatting.
+
+Read [docs/architecture.md](docs/architecture.md) for system boundaries, [docs/product-specification.md](docs/product-specification.md) for requirements, [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules, and [SECURITY.md](SECURITY.md) for private vulnerability reporting. The project is available under the [MIT License](LICENSE).
 
 Docker Desktop or another compatible Docker daemon must be running before any agent attempt can start.
 

@@ -157,7 +157,7 @@ test("task form uses maintained controls and confirms before submitting", async 
       />
     </Box>,
   );
-  for (const input of ["Verify release", "\r", "Tests pass", "\r", "2"]) {
+  for (const input of ["Verify release", "\r", "Tests pass", "\r", "\r"]) {
     view.stdin.write(input);
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 20);
@@ -275,4 +275,5 @@ test("selected resource edit forms are prefilled and keep immutable integration 
   assert.equal(editFormForSection("Tasks"), "task");
   assert.equal(editFormForSection("MCP servers"), "mcp-server");
   assert.equal(editFormForSection("Conversations"), "room");
+  assert.equal(editFormForSection("Meetings"), "meeting");
 });

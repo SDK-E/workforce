@@ -115,6 +115,58 @@ export class MeetingRepository {
     return this.require(companyId, meetingId);
   }
 
+  archive(companyId: string, meetingId: string, actorId: string): MeetingRecord {
+    const current = this.require(companyId, meetingId);
+    if (current.status === "archived") return current;
+    if (current.status === "planned" || current.status === "active")
+      this.transition(companyId, meetingId, "CANCEL", actorId);
+    return this.transition(companyId, meetingId, "ARCHIVE", actorId);
+  }
+
+  restore(companyId: string, meetingId: string, actorId: string): MeetingRecord {
+    return this.transition(companyId, meetingId, "RESTORE", actorId);
+  }
+
+  update(input: {
+    companyId: string;
+    meetingId: string;
+    title: string;
+    organizerId: string;
+    participantIds: string[];
+    agenda: string[];
+    scheduledAt: string;
+    actorId: string;
+  }): MeetingRecord {
+    const current = this.require(input.companyId, input.meetingId);
+    if (current.status !== "planned") throw new Error("Only planned meetings can be edited");
+    for (const id of [input.organizerId, ...input.participantIds])
+      this.requireEmployee(input.companyId, id);
+    const title = sanitizeTerminal(input.title, 200);
+    const agenda = input.agenda.map((item) => sanitizeTerminal(item, 500)).filter(Boolean);
+    if (!title || agenda.length === 0) throw new Error("Meeting title and agenda are required");
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare(
+          `UPDATE meetings SET title=?,organizer_id=?,participant_ids_json=?,agenda_json=?,scheduled_at=?,updated_at=?
+           WHERE company_id=? AND id=?`,
+        )
+        .run(
+          title,
+          input.organizerId,
+          JSON.stringify(input.participantIds),
+          JSON.stringify(agenda),
+          input.scheduledAt,
+          new Date().toISOString(),
+          input.companyId,
+          input.meetingId,
+        );
+      this.audit.append("meeting.updated", input.actorId, input.companyId, {
+        meetingId: input.meetingId,
+      });
+    });
+    return this.require(input.companyId, input.meetingId);
+  }
+
   addActionItem(input: {
     companyId: string;
     meetingId: string;

@@ -1,7 +1,7 @@
 import { createMachine, transition } from "xstate";
 
 export type MeetingStatus = "planned" | "active" | "adjourned" | "cancelled" | "archived";
-export type MeetingEvent = "START" | "ADJOURN" | "CANCEL" | "ARCHIVE";
+export type MeetingEvent = "START" | "ADJOURN" | "CANCEL" | "ARCHIVE" | "RESTORE";
 
 const machine = createMachine({
   id: "meeting",
@@ -11,7 +11,7 @@ const machine = createMachine({
     active: { on: { ADJOURN: "adjourned", CANCEL: "cancelled" } },
     adjourned: { on: { ARCHIVE: "archived" } },
     cancelled: { on: { ARCHIVE: "archived" } },
-    archived: { type: "final" },
+    archived: { on: { RESTORE: "planned" } },
   },
 });
 

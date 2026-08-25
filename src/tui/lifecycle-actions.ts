@@ -7,6 +7,7 @@ export interface LifecycleTarget {
     | "company"
     | "employee"
     | "room"
+    | "meeting"
     | "organization"
     | "strategy"
     | "task"
@@ -29,6 +30,7 @@ export interface LifecycleData {
   companies: ReturnType<StateStore["companies"]>;
   employees: ReturnType<StateStore["employees"]>;
   rooms: ReturnType<StateStore["conversations"]["roomList"]>;
+  meetings: ReturnType<StateStore["meetings"]["list"]>;
 }
 
 export function lifecycleTargets(section: string, data: LifecycleData): LifecycleTarget[] {
@@ -51,6 +53,13 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       kind: "room",
       id: item.id,
       label: `${item.name} · ${item.kind}`,
+      status: item.status,
+    }));
+  if (section === "Meetings")
+    return data.meetings.map((item) => ({
+      kind: "meeting",
+      id: item.id,
+      label: item.title,
       status: item.status,
     }));
   const organizationKinds = organizationSectionKinds(section);
@@ -103,6 +112,7 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
 export function lifecycleVerb(target: LifecycleTarget): "archive" | "restore" {
   if (target.kind === "employee" && ["terminated", "archived"].includes(target.status))
     return "restore";
+  if (target.kind === "meeting" && target.status === "archived") return "restore";
   return target.status === "archived" || target.status === "disabled" ? "restore" : "archive";
 }
 
@@ -137,6 +147,9 @@ export function applyLifecycleAction(
       },
       actorId,
     );
+  } else if (target.kind === "meeting") {
+    if (restore) store.meetings.restore(companyId, target.id, actorId);
+    else store.meetings.archive(companyId, target.id, actorId);
   } else if (target.kind === "organization") {
     if (restore) store.organizationRepository.restore(companyId, target.id, actorId);
     else store.organizationRepository.archive(companyId, target.id, actorId);

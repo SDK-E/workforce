@@ -30,6 +30,15 @@ test("selected TUI resources archive and restore without deleting records", () =
       managerId: "ceo",
       successMeasures: ["Acceptance passes"],
     });
+    const meeting = store.meetings.create({
+      companyId: "acme",
+      title: "Delivery review",
+      organizerId: "ceo",
+      participantIds: ["arm"],
+      agenda: ["Verify evidence"],
+      scheduledAt: new Date().toISOString(),
+    });
+    store.meetings.transition("acme", meeting.id, "CANCEL", "human");
     const task = store.createTask({
       companyId: "acme",
       objective: "Retain lifecycle history",
@@ -61,7 +70,15 @@ test("selected TUI resources archive and restore without deleting records", () =
     const taskTarget = lifecycleTargets("Tasks", data)[0];
     const automationTarget = lifecycleTargets("Automations", data)[0];
     const roomTarget = lifecycleTargets("Conversations", data)[0];
-    assert.ok(departmentTarget && objectiveTarget && taskTarget && automationTarget && roomTarget);
+    const meetingTarget = lifecycleTargets("Meetings", data)[0];
+    assert.ok(
+      departmentTarget &&
+        objectiveTarget &&
+        taskTarget &&
+        automationTarget &&
+        roomTarget &&
+        meetingTarget,
+    );
 
     for (const target of [
       departmentTarget,
@@ -69,6 +86,7 @@ test("selected TUI resources archive and restore without deleting records", () =
       taskTarget,
       automationTarget,
       roomTarget,
+      meetingTarget,
     ])
       applyLifecycleAction(store, "acme", target);
     assert.equal(store.organizationRepository.get("acme", department.id)?.status, "archived");
@@ -79,9 +97,17 @@ test("selected TUI resources archive and restore without deleting records", () =
       store.conversations.roomList("acme").find((item) => item.id === room.id)?.status,
       "archived",
     );
+    assert.equal(store.meetings.list("acme")[0]?.status, "archived");
 
     const archivedData = workspaceData(store, "acme");
-    for (const section of ["Departments", "Objectives", "Tasks", "Automations", "Conversations"]) {
+    for (const section of [
+      "Departments",
+      "Objectives",
+      "Tasks",
+      "Automations",
+      "Conversations",
+      "Meetings",
+    ]) {
       const target = lifecycleTargets(section, archivedData)[0];
       assert.ok(target);
       assert.equal(lifecycleVerb(target), "restore");
@@ -95,6 +121,7 @@ test("selected TUI resources archive and restore without deleting records", () =
       store.conversations.roomList("acme").find((item) => item.id === room.id)?.status,
       "active",
     );
+    assert.equal(store.meetings.list("acme")[0]?.status, "planned");
     assert.ok(store.verifyAuditChain());
   } finally {
     store.close();
@@ -113,5 +140,6 @@ function workspaceData(store: StateStore, companyId: string) {
     companies: store.companies(),
     employees: store.employees(companyId),
     rooms: store.conversations.roomList(companyId),
+    meetings: store.meetings.list(companyId),
   };
 }

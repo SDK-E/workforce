@@ -86,18 +86,7 @@ export function CreateOverlay(props: CreateOverlayProps) {
         }}
       />
     );
-  if (props.kind === "meeting")
-    return (
-      <MeetingForm
-        terminalWidth={props.terminalWidth}
-        onCancel={props.onClose}
-        onSubmit={(input) => {
-          finish(() => {
-            props.store.meetings.create({ companyId: props.company.id, ...input });
-          }, "Meeting scheduled and audited");
-        }}
-      />
-    );
+  if (props.kind === "meeting") return <MeetingMutationOverlay {...props} finish={finish} />;
   if (props.kind === "approval-decision")
     return (
       <ApprovalDecisionForm
@@ -196,6 +185,37 @@ function CapabilityMutationOverlay(props: MutationOverlayProps) {
   );
 }
 
+function MeetingMutationOverlay(props: MutationOverlayProps) {
+  const current =
+    props.selectedTarget?.kind === "meeting"
+      ? props.store.meetings
+          .list(props.company.id)
+          .find((item) => item.id === props.selectedTarget?.id)
+      : undefined;
+  return (
+    <MeetingForm
+      terminalWidth={props.terminalWidth}
+      {...(current ? { initial: current } : {})}
+      onCancel={props.onClose}
+      onSubmit={(input) => {
+        props.finish(
+          () => {
+            if (current)
+              props.store.meetings.update({
+                companyId: props.company.id,
+                meetingId: current.id,
+                ...input,
+                actorId: "human",
+              });
+            else props.store.meetings.create({ companyId: props.company.id, ...input });
+          },
+          `Meeting ${current ? "updated" : "scheduled"} and audited`,
+        );
+      }}
+    />
+  );
+}
+
 function CompanyMutationOverlay(
   props: CreateOverlayProps & { finish: (action: () => void, success: string) => void },
 ) {
@@ -251,6 +271,7 @@ export function createFormForSection(section: string): CreateFormKind | null {
 export function editFormForSection(section: string): CreateFormKind | null {
   if (section === "Companies") return "company-edit";
   if (section === "Employees") return "agent-profile";
+  if (section === "Meetings") return "meeting";
   if (section === "Conversations") return "room";
   if (section === "Approvals") return "approval-decision";
   if (["Organization", "Departments", "Teams", "Offices & rooms"].includes(section))

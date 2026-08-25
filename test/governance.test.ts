@@ -47,6 +47,8 @@ test("XState governance machines reject invalid decisions and cover employment r
   assert.equal(nextEmploymentStatus("archived", "REINSTATE"), "probation");
   assert.throws(() => nextEmploymentStatus("active", "REINSTATE"), /cannot handle/);
   assert.equal(nextMeetingStatus("planned", "START"), "active");
+  assert.equal(nextMeetingStatus("cancelled", "ARCHIVE"), "archived");
+  assert.equal(nextMeetingStatus("archived", "RESTORE"), "planned");
   assert.equal(nextIncidentStatus("reported", "TRIAGE"), "triaged");
   assert.equal(nextCorrectiveStatus("issued", "CHALLENGE"), "challenged");
   assert.throws(() => nextMeetingStatus("planned", "ADJOURN"), /cannot handle/);
@@ -112,26 +114,7 @@ test("gap analysis precedes probationary hiring and offboarding preserves histor
       () => store.approvalsRepository.decide("acme", approvalId, "REJECT", "ceo", "late"),
       /cannot handle/,
     );
-    const meeting = store.meetings.create({
-      companyId: "acme",
-      title: "Delivery review",
-      organizerId: "ceo",
-      participantIds: ["arm", employeeId],
-      agenda: ["Review evidence"],
-      scheduledAt: new Date().toISOString(),
-    });
-    store.meetings.transition("acme", meeting.id, "START", "ceo");
-    store.meetings.addActionItem({
-      companyId: "acme",
-      meetingId: meeting.id,
-      ownerId: "arm",
-      description: "Verify remediation",
-      actorId: "ceo",
-    });
-    assert.equal(
-      store.meetings.transition("acme", meeting.id, "ADJOURN", "ceo", "Evidence reviewed").status,
-      "adjourned",
-    );
+    exerciseMeeting(store, employeeId);
     const incident = store.incidents.report({
       companyId: "acme",
       title: "Policy deviation",
@@ -209,4 +192,40 @@ function archiveAndRestoreEmployee(store: StateStore, employeeId: string): void 
   store.employment.transition("acme", employeeId, "TERMINATE", "ceo", "Role ended");
   store.employment.transition("acme", employeeId, "ARCHIVE", "arm", "Retention archive");
   store.employment.transition("acme", employeeId, "REINSTATE", "ceo", "Return approved");
+}
+
+function exerciseMeeting(store: StateStore, employeeId: string): void {
+  const meeting = store.meetings.create({
+    companyId: "acme",
+    title: "Delivery review",
+    organizerId: "ceo",
+    participantIds: ["arm", employeeId],
+    agenda: ["Review evidence"],
+    scheduledAt: new Date().toISOString(),
+  });
+  assert.equal(
+    store.meetings.update({
+      companyId: "acme",
+      meetingId: meeting.id,
+      title: "Delivery evidence review",
+      organizerId: "ceo",
+      participantIds: ["arm", employeeId],
+      agenda: ["Review evidence", "Approve actions"],
+      scheduledAt: meeting.scheduledAt,
+      actorId: "human",
+    }).title,
+    "Delivery evidence review",
+  );
+  store.meetings.transition("acme", meeting.id, "START", "ceo");
+  store.meetings.addActionItem({
+    companyId: "acme",
+    meetingId: meeting.id,
+    ownerId: "arm",
+    description: "Verify remediation",
+    actorId: "ceo",
+  });
+  assert.equal(
+    store.meetings.transition("acme", meeting.id, "ADJOURN", "ceo", "Evidence reviewed").status,
+    "adjourned",
+  );
 }
