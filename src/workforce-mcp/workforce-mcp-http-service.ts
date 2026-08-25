@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { StateStore } from "../storage/state-store.js";
+import type { EncryptedSecretStore } from "../secrets/encrypted-secret-store.js";
 import type { AttemptMcpTokenService } from "./attempt-mcp-token-service.js";
 import { createWorkforceMcpServer } from "./workforce-mcp-server.js";
 
@@ -24,6 +25,7 @@ export class WorkforceMcpHttpService {
     private readonly store: StateStore,
     private readonly tokens: AttemptMcpTokenService,
     private readonly configuration: WorkforceMcpHttpConfiguration,
+    private readonly secrets?: EncryptedSecretStore,
   ) {
     if (!configuration.host.trim()) throw new Error("Workforce MCP bind host is required");
     if (!configuration.allowedHosts.length)
@@ -110,7 +112,7 @@ export class WorkforceMcpHttpService {
       this.activeRequests += 1;
       try {
         const transport = new StreamableHTTPServerTransport();
-        const mcp = createWorkforceMcpServer(this.store, principal);
+        const mcp = createWorkforceMcpServer(this.store, principal, this.secrets);
         await mcp.connect(transport as Transport);
         try {
           await transport.handleRequest(request, response, body);

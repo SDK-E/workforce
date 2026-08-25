@@ -9,11 +9,16 @@ const stateRoot = process.env.WORKFORCE_STATE_ROOT ?? resolve(process.cwd(), ".w
 const mcpEndpoint = process.env.WORKFORCE_MCP_URL ?? "http://workforce-engine:7788/mcp";
 const runtime = new ControlPlaneRuntime(stateRoot, mcpEndpoint);
 const controlToken = durableToken(resolve(stateRoot, "control-api-token"));
-const mcp = new WorkforceMcpHttpService(runtime.store, runtime.attemptMcpTokens, {
-  host: "0.0.0.0",
-  port: 7788,
-  allowedHosts: ["workforce-engine"],
-});
+const mcp = new WorkforceMcpHttpService(
+  runtime.store,
+  runtime.attemptMcpTokens,
+  {
+    host: "0.0.0.0",
+    port: 7788,
+    allowedHosts: ["workforce-engine"],
+  },
+  runtime.secrets,
+);
 const api = new ControlApi(runtime, controlToken, "0.0.0.0", 7789);
 
 await mcp.start();

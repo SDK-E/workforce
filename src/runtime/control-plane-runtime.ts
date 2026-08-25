@@ -23,6 +23,7 @@ export class ControlPlaneRuntime {
   readonly modelVerifier: ModelVerifier;
   readonly supervisor: DockerSupervisor;
   readonly attemptMcpTokens = new AttemptMcpTokenService();
+  readonly secrets: EncryptedSecretStore;
   private readonly timers: NodeJS.Timeout[] = [];
   private readonly logger;
   private readonly ceoLoop: CeoOperatingLoop;
@@ -37,6 +38,7 @@ export class ControlPlaneRuntime {
       this.store.append(event, "secret-store", data.companyId, { ...data });
     });
     secrets.initialize();
+    this.secrets = secrets;
     const docker = new ExecaDockerClient({
       networkName: "workforce-egress-internal",
       proxyUrl: "http://workforce-egress-proxy:3128",
@@ -114,6 +116,7 @@ export class ControlPlaneRuntime {
   async close(): Promise<void> {
     for (const timer of this.timers) clearInterval(timer);
     await this.supervisor.waitForIdle();
+    this.secrets.close();
     this.store.close();
   }
 

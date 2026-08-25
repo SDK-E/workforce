@@ -14,13 +14,13 @@ The implementation will use the official open-source [Model Context Protocol Typ
 Every session resolves an immutable principal before tool discovery:
 
 - `human-admin`: explicit company allowlist plus named administrative capabilities;
-- `ceo`: one company, company-policy authority, no host or secret-store export;
+- `ceo`: one company with complete company-owner authority, including workforce and scoped secret management, but no host authority or cross-company access;
 - `arm`: one company, workforce-management authority;
 - `manager`: one company plus managed employees/projects;
 - `employee`: one company plus assigned tasks and memberships;
 - `reviewer`: read evidence and submit scoped findings only.
 
-Tool visibility is capability-filtered. Authorization is repeated inside every service call to prevent confused-deputy attacks. MCP arguments, results, errors, and principal identity are bounded, sanitized, and audited. Secret values are never MCP resources, prompts, or tool results.
+Tool visibility is capability-filtered. Authorization is repeated inside every service call to prevent confused-deputy attacks. MCP arguments, results, errors, and principal identity are bounded, sanitized, and audited. Secret values are returned only by an explicit authorized `get_secret` call; values never enter audit payloads, general resources, tool discovery, or list results.
 
 ## Initial resources
 
@@ -76,7 +76,7 @@ Create a protected JSON configuration whose `principal` declares an ID, role, ex
 
 Configure the MCP client command as `pnpm workforce:mcp -- /absolute/path/to/config.json`. Tool arguments are validated, authorization is repeated inside the query service, and every successful read is added to the company audit chain.
 
-Tool discovery is capability filtered. Relationship policy then narrows records further: ordinary employees see assigned tasks and joined rooms, reviewers see reviewed tasks, managers see managed work, and meeting participation is limited to organizers and participants. Attempts never expose command/environment data, deliverables never expose host storage paths, responses are capped at 100 KB, and secret values are never returned.
+Tool discovery is capability filtered. Relationship policy then narrows records further: ordinary employees see assigned tasks and joined rooms, reviewers see reviewed tasks, managers see managed work, and meeting participation is limited to organizers and participants. Attempts never expose command/environment data, deliverables never expose host storage paths, and responses are capped at 100 KB. Attempt principals may list, fetch, create, update, and remove only credentials matching their signed employee/task scope. New employee credentials are forced to that exact scope even if broader scope arguments are supplied. The CEO has company-owner secret authority; neither CEO nor employee authority crosses company boundaries.
 
 ## Acceptance
 

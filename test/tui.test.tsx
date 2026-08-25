@@ -160,13 +160,13 @@ test("task form uses maintained controls and confirms before submitting", async 
   for (const input of ["Verify release", "\r", "Tests pass", "\r", "\r"]) {
     view.stdin.write(input);
     await new Promise<void>((resolve) => {
-      setTimeout(resolve, 20);
+      setTimeout(resolve, 75);
     });
   }
   assert.match(view.lastFrame() ?? "", /Confirm/);
   view.stdin.write("\r");
   await new Promise<void>((resolve) => {
-    setTimeout(resolve, 20);
+    setTimeout(resolve, 75);
   });
   assert.equal(submitted?.objective, "Verify release");
   assert.deepEqual(submitted.acceptanceCriteria, ["Tests pass"]);

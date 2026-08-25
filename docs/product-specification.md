@@ -69,7 +69,7 @@ Every runtime container uses:
 
 Input repositories are exported or copied into the private volume. Agents never edit a host checkout directly. Outputs are exported to the control-plane artifact store after termination and validated there.
 
-Secrets are references in the control plane, never task text or image layers. The encrypted Workforce secret store enforces company, employee, and task scope. Authorized attempts receive declared values through the Docker client process environment using name-only `--env` arguments; values never appear in Docker command arguments, task records, or host mounts. GitHub credentials are imported from trusted `gh auth token` output and Vercel tokens are accepted only over protected stdin/TUI input.
+Secrets are references in the control plane, never task text or image layers. The encrypted Workforce secret store enforces company, employee, and task scope. Authorized attempts receive declared values through the Docker client process environment using name-only `--env` arguments; values never appear in Docker command arguments, task records, host mounts, or audit payloads. GitHub credentials are imported from trusted `gh auth token` output, while Vercel and arbitrary named credentials are accepted only over protected stdin/TUI input. Through Workforce MCP, agents may list, fetch, create, update, and revoke only credentials matching their signed company/employee/task authority; the CEO owns all credential operations inside its company.
 
 ## Supervisor
 

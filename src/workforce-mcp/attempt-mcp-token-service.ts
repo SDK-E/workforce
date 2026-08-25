@@ -76,6 +76,8 @@ export class AttemptMcpTokenService {
       role: claims.role,
       companyIds: [claims.companyId],
       employeeId: claims.employeeId,
+      taskId: claims.taskId,
+      attemptId: claims.attemptId,
       capabilities: claims.capabilities,
     };
   }
@@ -137,8 +139,19 @@ function attemptCapabilities(employeeId: string): WorkforceMcpCapability[] {
     "attempt:read",
     "deliverable:read",
     "decision:read",
+    "secret:read",
+    "secret:write",
   ];
-  if (employeeId === "ceo") return [...participation, "work:mutate", "company:manage"];
+  if (employeeId === "ceo")
+    return [
+      ...participation,
+      "audit:read",
+      "work:mutate",
+      "workforce:manage",
+      "company:manage",
+      "emergency:stop",
+      "secret:manage",
+    ];
   if (employeeId === "arm") return [...participation, "work:mutate", "workforce:manage"];
   return participation;
 }

@@ -18,6 +18,6 @@ export interface SecretMetadata {
 }
 
 export type SecretAuditSink = (
-  event: "secret.stored" | "secret.accessed" | "secret.denied",
+  event: "secret.stored" | "secret.accessed" | "secret.denied" | "secret.removed",
   data: { companyId: string; name: string; employeeId?: string; taskId?: string },
 ) => void;

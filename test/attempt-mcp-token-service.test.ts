@@ -39,6 +39,8 @@ test("attempt MCP tokens are scoped, expiring, tamper-evident, and revocable", (
   assert.deepEqual(principal.companyIds, ["acme"]);
   assert.equal(principal.employeeId, "worker-1");
   assert.ok(principal.capabilities.includes("message:write"));
+  assert.ok(principal.capabilities.includes("secret:read"));
+  assert.ok(principal.capabilities.includes("secret:write"));
   assert.ok(!principal.capabilities.includes("workforce:manage"));
   assert.throws(() => service.verify(token, { companyId: "other" }), /company mismatch/);
   assert.throws(() => service.verify(token, { attemptId: "attempt-2" }), /attempt mismatch/);
@@ -51,12 +53,14 @@ test("attempt MCP tokens are scoped, expiring, tamper-evident, and revocable", (
   assert.throws(() => service.verify(expiring), /expired/);
 });
 
-test("CEO and ARM attempt tokens receive only their role-specific management grants", () => {
+test("CEO receives company-owner authority while ARM receives workforce authority", () => {
   const service = new AttemptMcpTokenService("test-signing-key");
   const ceo = service.verify(service.issue(attempt({ employeeId: "ceo" })));
   const arm = service.verify(service.issue(attempt({ employeeId: "arm" })));
   assert.ok(ceo.capabilities.includes("company:manage"));
-  assert.ok(!ceo.capabilities.includes("workforce:manage"));
+  assert.ok(ceo.capabilities.includes("secret:manage"));
+  assert.ok(ceo.capabilities.includes("workforce:manage"));
+  assert.ok(ceo.capabilities.includes("emergency:stop"));
   assert.ok(arm.capabilities.includes("workforce:manage"));
   assert.ok(!arm.capabilities.includes("company:manage"));
 });

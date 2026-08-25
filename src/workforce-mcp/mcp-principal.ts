@@ -17,13 +17,18 @@ export type WorkforceMcpCapability =
   | "work:mutate"
   | "workforce:manage"
   | "company:manage"
-  | "emergency:stop";
+  | "emergency:stop"
+  | "secret:read"
+  | "secret:write"
+  | "secret:manage";
 
 export interface WorkforceMcpPrincipal {
   id: string;
   role: WorkforceMcpRole;
   companyIds: string[];
   employeeId: string | null;
+  taskId?: string | null | undefined;
+  attemptId?: string | null | undefined;
   capabilities: WorkforceMcpCapability[];
 }
 

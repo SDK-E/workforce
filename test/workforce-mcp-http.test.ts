@@ -8,6 +8,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { StateStore } from "../src/storage/state-store.js";
+import { EncryptedSecretStore } from "../src/secrets/encrypted-secret-store.js";
 import type { AttemptRecord, AttemptRequest } from "../src/supervision/attempt-types.js";
 import { AttemptMcpTokenService } from "../src/workforce-mcp/attempt-mcp-token-service.js";
 import { WorkforceMcpHttpService } from "../src/workforce-mcp/workforce-mcp-http-service.js";
@@ -57,17 +58,28 @@ test("agent uses authenticated Streamable HTTP with its attempt principal", asyn
   const root = mkdtempSync(join(tmpdir(), "workforce-mcp-http-"));
   const store = new StateStore(root);
   const tokens = new AttemptMcpTokenService("http-test-key");
+  const secrets = new EncryptedSecretStore(root);
   let service: WorkforceMcpHttpService | undefined;
   try {
     store.initialize();
     const company = store.createCompany({ id: "acme", name: "Acme" });
+    secrets.initialize();
+    secrets.set("acme", "HTTP_TEST_TOKEN", "transport-secret", {
+      employeeIds: ["ceo"],
+      taskIds: ["task-1"],
+    });
     const attempt = activate(store, request());
     const token = tokens.issue(attempt);
-    service = new WorkforceMcpHttpService(store, tokens, {
-      host: "127.0.0.1",
-      port: 0,
-      allowedHosts: ["127.0.0.1"],
-    });
+    service = new WorkforceMcpHttpService(
+      store,
+      tokens,
+      {
+        host: "127.0.0.1",
+        port: 0,
+        allowedHosts: ["127.0.0.1"],
+      },
+      secrets,
+    );
     const endpoint = await service.start();
     const client = new Client({ name: "agent-test", version: "1.0.0" });
     const transport = new StreamableHTTPClientTransport(endpoint, {
@@ -79,9 +91,15 @@ test("agent uses authenticated Streamable HTTP with its attempt principal", asyn
       arguments: { companyId: company.id },
     });
     assert.match(JSON.stringify(result), /Acme/);
+    const secret = await client.callTool({
+      name: "get_secret",
+      arguments: { companyId: company.id, name: "HTTP_TEST_TOKEN" },
+    });
+    assert.match(JSON.stringify(secret), /transport-secret/);
     await client.close();
   } finally {
     await service?.close();
+    secrets.close();
     store.close();
     rmSync(root, { recursive: true, force: true });
   }

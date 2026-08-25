@@ -6,10 +6,14 @@ import test from "node:test";
 import { EncryptedSecretStore } from "../src/secrets/encrypted-secret-store.js";
 import { CredentialImporter } from "../src/secrets/credential-importer.js";
 import { resolveAttemptSecrets } from "../src/secrets/attempt-secret-provider.js";
+import { StateStore } from "../src/storage/state-store.js";
 
 test("secrets are encrypted, company scoped, and access scoped", () => {
   const root = mkdtempSync(join(tmpdir(), "workforce-secrets-"));
   const events: string[] = [];
+  const state = new StateStore(root);
+  state.initialize();
+  state.createCompany({ id: "acme", name: "Acme" });
   const store = new EncryptedSecretStore(root, (event) => {
     events.push(event);
   });
@@ -41,12 +45,16 @@ test("secrets are encrypted, company scoped, and access scoped", () => {
     assert.deepEqual(events, ["secret.stored", "secret.accessed", "secret.denied"]);
   } finally {
     store.close();
+    state.close();
     rmSync(root, { recursive: true, force: true });
   }
 });
 
 test("trusted credential import and attempt injection preserve scopes without exposing values", async () => {
   const root = mkdtempSync(join(tmpdir(), "workforce-credential-import-"));
+  const state = new StateStore(root);
+  state.initialize();
+  state.createCompany({ id: "acme", name: "Acme" });
   const secrets = new EncryptedSecretStore(root);
   try {
     secrets.initialize();
@@ -123,6 +131,7 @@ test("trusted credential import and attempt injection preserve scopes without ex
     );
   } finally {
     secrets.close();
+    state.close();
     rmSync(root, { recursive: true, force: true });
   }
 });

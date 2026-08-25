@@ -28,6 +28,8 @@ Repositories are company-scoped and domain-specific. Organization units and stra
 
 Every forward-only migration is a separately versioned SQL file in `src/storage/migrations` (`001.sql`, `002.sql`, and so on). The loader requires a contiguous sequence and records each successfully applied version in `schema_migrations`; production builds copy the same SQL files beside the compiled database adapter.
 
+Encrypted credential metadata and ciphertext are part of the same migrated database schema. Migration `026.sql` owns the `secrets` table; initialization contains no hidden table creation. A legacy standalone secret database is transactionally imported once and retained with a `.migrated` suffix. The AES-GCM master key remains a mode-0600 file inside the persistent state volume and is never stored in SQLite.
+
 ## Conversations
 
 The conversation application service composes separate room, thread, message, and attachment repositories. Rooms own membership, announcements, retention, and archival state. Threads and messages validate their company/room parents. Edits, redactions, pins, membership changes, and attachments are durable audit events; attachment records require SHA-256 digests and artifact URIs rather than embedding files in SQLite.
@@ -57,6 +59,8 @@ Model registry entries are company-scoped records. The TUI can configure and rev
 The trusted control plane exposes an official-SDK MCP server through stdio for external clients and stateless Streamable HTTP on the internal agent network. A validated immutable principal fixes role, employee identity, allowed companies, and capabilities before connection. Tool discovery hides unavailable capabilities, while every application service repeats company and relationship authorization. Employee access is narrowed to assigned/reviewed tasks, joined rooms, own mail, and meetings where the employee participates. Agent mutations create normal domain audit events plus an MCP-origin audit event. Results are sanitized and bounded; attempt commands, environments, artifact host paths, and secret values are not returned.
 
 Docker attempts declare encrypted persistent secrets and ephemeral control-plane credentials separately. Workforce generates a 15-minute HMAC-signed attempt token containing company, employee, task, attempt, role capabilities, timestamps, and a nonce. Docker receives the token only through its inherited process environment; the database and Docker argument vector contain its declared name but never its value. The HTTP service checks the signed identity against the currently active attempt, validates the Host header, bounds bodies and concurrency, rate limits each attempt, and denies expired, forged, cross-company, or ended credentials. Reissue invalidates the prior nonce and attempt completion revokes the active nonce.
+
+The scoped MCP secret broker exposes metadata listing plus explicit fetch, set, and removal tools. Employee attempts are restricted to secret scopes matching both their employee and task claims; they cannot broaden newly created or updated records. CEO principals have complete secret authority inside their company only. Secret operations audit names, scopes, actors, and operation types without recording values.
 
 ## Acceptance
 

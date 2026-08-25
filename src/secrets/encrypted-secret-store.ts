@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type {
@@ -24,7 +24,7 @@ export class EncryptedSecretStore {
     private readonly audit?: SecretAuditSink,
   ) {
     this.directory = resolve(stateRoot, "secrets");
-    this.databasePath = resolve(this.directory, "secrets.sqlite");
+    this.databasePath = resolve(stateRoot, "workforce.sqlite");
     this.keyPath = resolve(this.directory, "master.key");
   }
 
@@ -32,21 +32,13 @@ export class EncryptedSecretStore {
     mkdirSync(this.directory, { recursive: true, mode: 0o700 });
     this.#key = this.loadOrCreateKey();
     this.#database = new DatabaseSync(this.databasePath);
-    this.database.exec(`
-      PRAGMA journal_mode = WAL;
-      PRAGMA synchronous = FULL;
-      CREATE TABLE IF NOT EXISTS secrets (
-        company_id TEXT NOT NULL,
-        name TEXT NOT NULL,
-        nonce TEXT NOT NULL,
-        tag TEXT NOT NULL,
-        ciphertext TEXT NOT NULL,
-        scope_json TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        PRIMARY KEY (company_id, name)
-      );
-    `);
+    this.database.exec("PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
+    const schema = this.database
+      .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='secrets'")
+      .get();
+    if (!schema)
+      throw new Error("Secret schema is unavailable; initialize Workforce migrations first");
+    this.importLegacyDatabase();
   }
 
   close(): void {
@@ -93,10 +85,7 @@ export class EncryptedSecretStore {
   }
 
   get(name: string, context: SecretAccessContext): string {
-    const row = this.database
-      .prepare("SELECT * FROM secrets WHERE company_id = ? AND name = ?")
-      .get(context.companyId, name) as Record<string, unknown> | undefined;
-    if (!row) throw new Error(`Secret not found: ${name}`);
+    const row = this.secretRow(context.companyId, name);
     const scope = JSON.parse(String(row.scope_json)) as SecretScope;
     if (!this.isAllowed(scope, context)) {
       this.audit?.("secret.denied", {
@@ -107,17 +96,7 @@ export class EncryptedSecretStore {
       });
       throw new Error(`Secret access denied: ${name}`);
     }
-    const decipher = createDecipheriv(
-      "aes-256-gcm",
-      this.key,
-      Buffer.from(String(row.nonce), "base64"),
-    );
-    decipher.setAAD(Buffer.from(`${context.companyId}\0${name}`, "utf8"));
-    decipher.setAuthTag(Buffer.from(String(row.tag), "base64"));
-    const value = Buffer.concat([
-      decipher.update(Buffer.from(String(row.ciphertext), "base64")),
-      decipher.final(),
-    ]).toString("utf8");
+    const value = this.decrypt(context.companyId, name, row);
     this.audit?.("secret.accessed", {
       companyId: context.companyId,
       name,
@@ -125,6 +104,20 @@ export class EncryptedSecretStore {
       taskId: context.taskId,
     });
     return value;
+  }
+
+  getForCompanyOwner(companyId: string, name: string, actorId: string): string {
+    const value = this.decrypt(companyId, name, this.secretRow(companyId, name));
+    this.audit?.("secret.accessed", { companyId, name, employeeId: actorId, taskId: "*" });
+    return value;
+  }
+
+  remove(companyId: string, name: string, actorId: string): void {
+    const result = this.database
+      .prepare("DELETE FROM secrets WHERE company_id=? AND name=?")
+      .run(companyId, name);
+    if (result.changes === 0) throw new Error(`Secret not found: ${name}`);
+    this.audit?.("secret.removed", { companyId, name, employeeId: actorId });
   }
 
   list(companyId: string): SecretMetadata[] {
@@ -149,6 +142,28 @@ export class EncryptedSecretStore {
     return employeeAllowed && taskAllowed;
   }
 
+  private secretRow(companyId: string, name: string): Record<string, unknown> {
+    const row = this.database
+      .prepare("SELECT * FROM secrets WHERE company_id = ? AND name = ?")
+      .get(companyId, name) as Record<string, unknown> | undefined;
+    if (!row) throw new Error(`Secret not found: ${name}`);
+    return row;
+  }
+
+  private decrypt(companyId: string, name: string, row: Record<string, unknown>): string {
+    const decipher = createDecipheriv(
+      "aes-256-gcm",
+      this.key,
+      Buffer.from(String(row.nonce), "base64"),
+    );
+    decipher.setAAD(Buffer.from(`${companyId}\0${name}`, "utf8"));
+    decipher.setAuthTag(Buffer.from(String(row.tag), "base64"));
+    return Buffer.concat([
+      decipher.update(Buffer.from(String(row.ciphertext), "base64")),
+      decipher.final(),
+    ]).toString("utf8");
+  }
+
   private loadOrCreateKey(): Buffer {
     try {
       return readFileSync(this.keyPath);
@@ -163,6 +178,45 @@ export class EncryptedSecretStore {
         key.fill(0);
         return readFileSync(this.keyPath);
       }
+    }
+  }
+
+  private importLegacyDatabase(): void {
+    const legacyPath = resolve(this.directory, "secrets.sqlite");
+    if (!existsSync(legacyPath)) return;
+    const legacy = new DatabaseSync(legacyPath, { readOnly: true });
+    try {
+      const rows = legacy.prepare("SELECT * FROM secrets").all() as Record<string, unknown>[];
+      this.database.exec("BEGIN IMMEDIATE");
+      try {
+        const insert = this.database.prepare(
+          `INSERT OR IGNORE INTO secrets
+           (company_id,name,nonce,tag,ciphertext,scope_json,created_at,updated_at)
+           VALUES (?,?,?,?,?,?,?,?)`,
+        );
+        for (const row of rows)
+          insert.run(
+            String(row.company_id),
+            String(row.name),
+            String(row.nonce),
+            String(row.tag),
+            String(row.ciphertext),
+            String(row.scope_json),
+            String(row.created_at),
+            String(row.updated_at),
+          );
+        this.database.exec("COMMIT");
+      } catch (error) {
+        this.database.exec("ROLLBACK");
+        throw error;
+      }
+    } finally {
+      legacy.close();
+    }
+    renameSync(legacyPath, `${legacyPath}.migrated`);
+    for (const suffix of ["-wal", "-shm"]) {
+      const companion = `${legacyPath}${suffix}`;
+      if (existsSync(companion)) renameSync(companion, `${companion}.migrated`);
     }
   }
 
