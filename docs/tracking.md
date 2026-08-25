@@ -21,11 +21,15 @@ deferred item unless the user says "STOP"; defer new requests here until your to
   gates pass. No code change required.
 
 ### BUG-003 TUI input drops letters / overlaps / lags under fast typing
-- Reported 2026-08-25 with screenshot; not reproduced locally yet.
-- Suspects: useInput fan-out across nested components, overlay stacking repaints, status-message
-  state updates per keystroke.
-- Next: need reproduction details (terminal app, OS, Node version, whether overlays open, whether
-  NO_COLOR). Then profile before editing. Do not guess-fix.
+- Reported 2026-08-25 with screenshot; investigated 2026-08-25 with a scripted keystroke harness
+  against the compiled app (empty store): a 104-char instant flood is fully processed; sustained
+  ~40 chars/s for 6s processes all 239 keys with mostly-idle CPU; verifyAuditChain/loadWorkspaceData
+  measure ~0ms per render at this scale. NOT REPRODUCED.
+- Note (architecture observation): form values live in useFormController at the app root
+  (`workforce-app.tsx`), so each typed character re-renders the whole app including workspace data
+  loading. Cheap today; will scale poorly with larger stores. Cache/memoize if it ever shows up.
+- Next: still needs reporter environment details (terminal app, OS, Node version, overlays open,
+  NO_COLOR). Do not guess-fix.
 
 ### BUG-004 No real-Docker boundary evidence in test suite — FIXED (2026-08-25)
 - Was: `test/docker-supervisor.test.ts` used FakeDockerClient exclusively; hardening flags, volume
