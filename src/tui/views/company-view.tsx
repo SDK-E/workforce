@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import type { CompanyRecord } from "../../storage/records.js";
 import { Panel } from "../components/panel.js";
+import { truncate } from "../navigation.js";
 
 export function CompanyView({
   company,
@@ -37,6 +38,17 @@ export function CompanyView({
           </Text>
           <Text>Budget: {(inspected.budgetCents / 100).toFixed(2)}</Text>
           <Text>Network policy: {networkPolicy}</Text>
+          <Text>
+            Shareholders/governance:{" "}
+            {truncate(
+              JSON.stringify(
+                inspected.policies.shareholders ??
+                  inspected.policies.governance ??
+                  "Not configured",
+              ),
+              100,
+            )}
+          </Text>
         </Panel>
       </Box>
     </Box>
