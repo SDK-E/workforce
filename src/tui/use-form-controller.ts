@@ -42,5 +42,6 @@ function requiresSelection(kind: CreateFormKind | null): boolean {
     "project-integration",
     "room",
     "meeting",
+    "model",
   ].includes(kind ?? "");
 }

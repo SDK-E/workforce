@@ -48,6 +48,8 @@ MCP servers begin unverified and cannot be granted to tasks until a health recei
 
 Kilo and OpenCode have separate command adapters. The supervisor rejects commands that were not produced in the selected adapter's non-interactive `run --model provider/model objective` shape. Image verification executes both pinned engines with networking disabled and validates their reported versions. Circuit-breaker policy selects a compatible fallback after repeated model failures and reopens a provider only after cooldown.
 
+Model registry entries are company-scoped records. The TUI can configure and revise their engine, provider, model identifier, priority, capabilities, and roles, but an identity change clears any prior health receipt. A task only selects a non-placeholder model whose health and independent verification permit execution; configuration alone never asserts that a provider is safe or reachable.
+
 ## Acceptance
 
 Container completion is only an attempt result. Independent control-plane validation checks required outputs, manifests, tests, policy violations, step exhaustion, permission failures, and acceptance criteria before a task can close.

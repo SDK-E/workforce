@@ -8,6 +8,7 @@ export interface LifecycleTarget {
     | "employee"
     | "room"
     | "meeting"
+    | "model"
     | "organization"
     | "strategy"
     | "task"
@@ -31,6 +32,7 @@ export interface LifecycleData {
   employees: ReturnType<StateStore["employees"]>;
   rooms: ReturnType<StateStore["conversations"]["roomList"]>;
   meetings: ReturnType<StateStore["meetings"]["list"]>;
+  models: ReturnType<StateStore["models"]["list"]>;
 }
 
 export function lifecycleTargets(section: string, data: LifecycleData): LifecycleTarget[] {
@@ -61,6 +63,13 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       id: item.id,
       label: item.title,
       status: item.status,
+    }));
+  if (section === "Models & engines")
+    return data.models.map((item) => ({
+      kind: "model",
+      id: item.id,
+      label: `${item.engine} · ${item.model}`,
+      status: item.health,
     }));
   const organizationKinds = organizationSectionKinds(section);
   if (organizationKinds)
@@ -163,6 +172,10 @@ export function applyLifecycleAction(
       restore ? "RESTORE" : "ARCHIVE",
       actorId,
       `${restore ? "Restored" : "Archived"} through confirmed TUI lifecycle action`,
+    );
+  } else if (target.kind === "model") {
+    throw new Error(
+      "Model registry entries are retained for execution history and cannot be archived",
     );
   } else if (target.kind === "mcp") {
     store.mcpServers.setStatus(companyId, target.id, restore ? "active" : "archived", actorId);

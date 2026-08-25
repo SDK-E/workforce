@@ -98,7 +98,7 @@ The latest verified baseline is commit `d976655`. Inspect the worktree before mo
 
 ### 1. Finish execution readiness and observability
 
-- Add real TUI create/edit/verification actions for models, environments, and tools; a company must be able to configure a verified model without direct SQLite access.
+- Add independent model-verification action/receipt flow and real TUI create/edit/verification actions for environments and tools. Model registry create/edit is now available; configuration remains deliberately insufficient to claim verification.
 - Add an explicit execution-readiness panel: Docker availability/image presence, egress proxy, model availability, active attempts/queue, and blocking reason.
 - Verify the CEO, ARM, automation, supervisor, and restart/recovery loop using the compiled production TUI and a real Docker daemon. Do not accept event-only proof.
 - Ensure periodic supervisor reconciliation/ticking is sufficiently robust while the app is live; test queued work arriving independently of a completion event.

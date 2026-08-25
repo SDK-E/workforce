@@ -189,6 +189,7 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         tools={props.tools}
         environments={props.environments}
         models={props.models}
+        selectedRow={props.selectedRow}
       />
     );
   if (props.section === "MCP servers")

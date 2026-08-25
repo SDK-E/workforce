@@ -276,4 +276,5 @@ test("selected resource edit forms are prefilled and keep immutable integration 
   assert.equal(editFormForSection("MCP servers"), "mcp-server");
   assert.equal(editFormForSection("Conversations"), "room");
   assert.equal(editFormForSection("Meetings"), "meeting");
+  assert.equal(editFormForSection("Models & engines"), "model");
 });

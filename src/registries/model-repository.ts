@@ -61,6 +61,13 @@ export class ModelRepository {
     >[];
     return rows.map(mapModel);
   }
+
+  get(companyId: string, id: string): ModelRecord | undefined {
+    const row = this.database.connection
+      .prepare("SELECT * FROM models WHERE company_id=? AND id=?")
+      .get(companyId, id) as Record<string, unknown> | undefined;
+    return row ? mapModel(row) : undefined;
+  }
 }
 
 function mapModel(row: Record<string, unknown>): ModelRecord {

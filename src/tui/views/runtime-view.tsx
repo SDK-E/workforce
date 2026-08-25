@@ -12,6 +12,7 @@ interface RuntimeViewProps {
   tools: ToolRecord[];
   environments: EnvironmentRecord[];
   models: ModelRecord[];
+  selectedRow?: number;
 }
 
 export function RuntimeView(props: RuntimeViewProps) {
@@ -20,11 +21,16 @@ export function RuntimeView(props: RuntimeViewProps) {
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>{props.section}</Text>
       {rows.length === 0 && <Text>No company-scoped registry records.</Text>}
-      {rows.map((row) => (
-        <Text key={row}>• {row}</Text>
+      {rows.map((row, index) => (
+        <Text key={row} inverse={props.selectedRow === index}>
+          {props.selectedRow === index ? "›" : "•"} {row}
+        </Text>
       ))}
       {props.section === "Tools" && (
         <Text dimColor>Capabilities are granted per approved sandbox plan.</Text>
+      )}
+      {props.section === "Models & engines" && (
+        <Text dimColor>n configure · e edit · [/] select · verify before execution</Text>
       )}
     </Box>
   );

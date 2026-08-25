@@ -13,7 +13,7 @@ The local control plane uses transactional SQLite state with foreign keys, WAL d
 1. Install a supported Node.js release and pnpm, then run `pnpm install --frozen-lockfile`.
 2. Build and verify the sandbox images with `pnpm images:build`.
 3. Start the production TUI with `pnpm build && pnpm start`.
-4. Create or select a company, then configure and verify a model registry entry before requesting work. Default model records are deliberately unconfigured, so CEO/automation cycles will record a blocked decision instead of launching an undefined provider.
+4. Create or select a company, then use **Models & engines** to configure a model registry entry and complete its independent verification before requesting work. Default model records are deliberately unconfigured, so CEO/automation cycles will record a blocked decision instead of launching an undefined provider.
 5. Create an objective and task, assign an eligible employee, approve it, then use `r` in **Tasks** to request a Docker attempt. Inspect **Live work**, **Deliverables**, and **Audit** for durable evidence.
 
 CEO, ARM, and approved automation loops run every ten seconds while the control plane is running. They create durable operating-cycle records and route approved work into the same Docker supervisor used by the TUI. A verified model, Docker daemon, and any required scoped credentials remain mandatory prerequisites for an attempt to launch.
