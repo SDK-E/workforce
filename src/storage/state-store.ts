@@ -23,6 +23,7 @@ import type { CompanyRecord, CreateCompanyInput, UpdateCompanyInput } from "./re
 import type { MessageRecord } from "../conversations/conversation-types.js";
 import { EmploymentRepository } from "../governance/employment-repository.js";
 import { MeetingRepository } from "../governance/meeting-repository.js";
+import { MeetingContributionRepository } from "../governance/meeting-contribution-repository.js";
 import { IncidentRepository } from "../governance/incident-repository.js";
 import { PerformanceRepository } from "../governance/performance-repository.js";
 import { AttemptRepository } from "../supervision/attempt-repository.js";
@@ -40,6 +41,7 @@ import { AutonomyRepository } from "../autonomy/autonomy-repository.js";
 import { McpServerRepository } from "../integrations/mcp-server-repository.js";
 import { ProjectIntegrationRepository } from "../integrations/project-integration-repository.js";
 import { MailRepository } from "../integrations/mail-repository.js";
+import { TaskCheckpointRepository } from "../tasks/task-checkpoint-repository.js";
 
 /** Composition facade used by the application while feature services are introduced. */
 export class StateStore {
@@ -53,6 +55,7 @@ export class StateStore {
   readonly strategyRepository: StrategyRepository;
   readonly employment: EmploymentRepository;
   readonly meetings: MeetingRepository;
+  readonly meetingContributions: MeetingContributionRepository;
   readonly incidents: IncidentRepository;
   readonly performance: PerformanceRepository;
   readonly attempts: AttemptRepository;
@@ -70,6 +73,7 @@ export class StateStore {
   readonly mcpServers: McpServerRepository;
   readonly projectIntegrations: ProjectIntegrationRepository;
   readonly mail: MailRepository;
+  readonly taskCheckpoints: TaskCheckpointRepository;
 
   constructor(root?: string) {
     this.database = new WorkforceDatabase(root);
@@ -86,6 +90,7 @@ export class StateStore {
       this.audit,
     );
     this.tasksRepository = new TaskRepository(this.database, this.companiesRepository, this.audit);
+    this.taskCheckpoints = new TaskCheckpointRepository(this.database, this.audit);
     this.organizationRepository = new OrganizationRepository(
       this.database,
       this.companiesRepository,
@@ -108,6 +113,7 @@ export class StateStore {
       },
     );
     this.meetings = new MeetingRepository(this.database, this.companiesRepository, this.audit);
+    this.meetingContributions = new MeetingContributionRepository(this.database, this.audit);
     this.incidents = new IncidentRepository(this.database, this.companiesRepository, this.audit);
     this.performance = new PerformanceRepository(
       this.database,

@@ -51,8 +51,8 @@ Management tools, visible only with authority: `create_objective`, `create_task`
 
 ## Delivery slices
 
-1. **In progress:** the official MCP server package, immutable principal/capability contracts, stdio transport, audited `company_overview` and `list_tasks` tools, and company-isolation tests are implemented. Read-only resources and the remaining read tools are next.
-2. Add scoped task/message/mail/checkpoint tools and inject the agent MCP endpoint/token only into authorized attempts.
+1. **Complete:** the official MCP server package, immutable principal/capability contracts, stdio transport, overview/organization/strategy resources, read tools, response bounds, capability-filtered discovery, relationship scoping, and company-isolation tests are implemented.
+2. **In progress:** agents can list joined rooms, read/send room messages, read/send internal mail, list and contribute to their meetings, and record checkpoints only on assigned tasks. These calls are separately MCP-audited. Next, inject a short-lived attempt principal and endpoint into authorized containers and add claims, artifacts, approvals, automation requests, and help/handoff tools.
 3. Add administrative mutation tools through application services with idempotency and approval enforcement.
 4. Add authenticated Streamable HTTP, revocation, rate limiting, request/result bounds, and security tests.
 5. Add MCP Inspector interoperability tests, malicious-client tests, cross-company denial tests, and operator documentation.
@@ -68,12 +68,14 @@ Create a protected JSON configuration whose `principal` declares an ID, role, ex
     "role": "human-admin",
     "companyIds": ["my-company"],
     "employeeId": null,
-    "capabilities": ["company:read", "task:read"]
+    "capabilities": ["company:read", "task:read", "message:read", "message:write"]
   }
 }
 ```
 
 Configure the MCP client command as `pnpm workforce:mcp -- /absolute/path/to/config.json`. Tool arguments are validated, authorization is repeated inside the query service, and every successful read is added to the company audit chain.
+
+Tool discovery is capability filtered. Relationship policy then narrows records further: ordinary employees see assigned tasks and joined rooms, reviewers see reviewed tasks, managers see managed work, and meeting participation is limited to organizers and participants. Attempts never expose command/environment data, deliverables never expose host storage paths, responses are capped at 100 KB, and secret values are never returned.
 
 ## Acceptance
 

@@ -153,4 +153,19 @@ export class RoomRepository {
       updatedAt: String(row.updated_at),
     }));
   }
+
+  memberships(companyId: string, employeeId: string): RoomMembership[] {
+    const rows = this.database.connection
+      .prepare(
+        "SELECT * FROM room_memberships WHERE company_id=? AND employee_id=? ORDER BY joined_at",
+      )
+      .all(companyId, employeeId) as Record<string, unknown>[];
+    return rows.map((row) => ({
+      companyId: String(row.company_id),
+      roomId: String(row.room_id),
+      employeeId: String(row.employee_id),
+      role: String(row.role) as RoomMembership["role"],
+      joinedAt: String(row.joined_at),
+    }));
+  }
 }

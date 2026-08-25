@@ -50,6 +50,10 @@ Kilo and OpenCode have separate command adapters. The supervisor rejects command
 
 Model registry entries are company-scoped records. The TUI can configure and revise their engine, provider, model identifier, priority, capabilities, roles, and required secret names, but an identity change clears any prior health receipt. Verification retrieves narrowly scoped secrets, passes values only through the Docker client environment with name-only arguments, and invokes the actual engine/model inside the hardened universal image through audited egress. Bounded output is redacted before a receipt and audit event are stored. A task only selects a non-placeholder model whose health and independent verification permit execution; configuration alone never asserts that a provider is safe or reachable.
 
+## Workforce MCP boundary
+
+The trusted control plane exposes an official-SDK MCP server through stdio. A validated immutable principal fixes role, employee identity, allowed companies, and capabilities before connection. Tool discovery hides unavailable capabilities, while every application service repeats company and relationship authorization. Employee access is narrowed to assigned/reviewed tasks, joined rooms, own mail, and meetings where the employee participates. Agent mutations create normal domain audit events plus an MCP-origin audit event. Results are sanitized and bounded; attempt commands, environments, artifact host paths, and secret values are not returned. The next transport slice binds the same principal model to short-lived attempt tokens inside Docker.
+
 ## Acceptance
 
 Container completion is only an attempt result. Independent control-plane validation checks required outputs, manifests, tests, policy violations, step exhaustion, permission failures, and acceptance criteria before a task can close.

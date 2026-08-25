@@ -113,6 +113,8 @@ The system provides channels, task threads, direct conversations, mentions, repl
 
 Messages cannot be falsely labeled delivered to a model mid-generation. Requirement changes create a checkpoint, version the job contract, and resume or replace the attempt safely.
 
+Agents receive a capability-filtered Workforce MCP interface so they can actively coordinate rather than merely observe. Within their durable identity and relationships they may read and send joined-room messages, use internal mail, participate in their meetings, and record progress checkpoints on assigned tasks. MCP access never implies company-wide visibility or management authority; every operation is company-scoped, relationship-checked, bounded, sanitized, and audited.
+
 ## TUI
 
 The TUI is the primary human interface. It includes:

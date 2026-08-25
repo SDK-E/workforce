@@ -30,7 +30,6 @@ export interface ActionItemRecord {
   createdAt: string;
   completedAt: string | null;
 }
-
 export class MeetingRepository {
   constructor(
     private readonly database: WorkforceDatabase,
