@@ -35,6 +35,8 @@ CEO, ARM, and approved automation loops run every ten seconds while the control 
 - `pnpm workforce:mcp -- /absolute/path/to/principal-config.json` (company-scoped stdio MCP)
 - `pnpm tui` (production alias)
 
+Container-scoped Workforce MCP credentials are issued when `WORKFORCE_MCP_URL` names an authenticated internal endpoint. The internal Streamable HTTP transport is still an explicit remaining delivery slice; stdio is the currently operational transport.
+
 Node.js 22.13–26 and pnpm 10–11 are supported and checked explicitly. Dependency install scripts are denied unless individually allowlisted. The lockfile pins the dependency graph.
 
 ## TUI keys

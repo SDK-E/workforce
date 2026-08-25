@@ -52,10 +52,11 @@ Management tools, visible only with authority: `create_objective`, `create_task`
 ## Delivery slices
 
 1. **Complete:** the official MCP server package, immutable principal/capability contracts, stdio transport, overview/organization/strategy resources, read tools, response bounds, capability-filtered discovery, relationship scoping, and company-isolation tests are implemented.
-2. **In progress:** agents can list joined rooms, read/send room messages, read/send internal mail, list and contribute to their meetings, and record checkpoints only on assigned tasks. These calls are separately MCP-audited. Next, inject a short-lived attempt principal and endpoint into authorized containers and add claims, artifacts, approvals, automation requests, and help/handoff tools.
-3. Add administrative mutation tools through application services with idempotency and approval enforcement.
-4. Add authenticated Streamable HTTP, revocation, rate limiting, request/result bounds, and security tests.
-5. Add MCP Inspector interoperability tests, malicious-client tests, cross-company denial tests, and operator documentation.
+2. **Complete:** agents can list joined rooms, read/send room messages, read/send internal mail, list and contribute to their meetings, and record checkpoints only on assigned tasks. These calls are separately MCP-audited. Claims, artifact submission, approvals, automation requests, and help/handoff tools remain.
+3. **Complete:** Docker attempts declare ephemeral secrets separately from encrypted persistent secrets. When `WORKFORCE_MCP_URL` is configured, the control plane injects that non-secret endpoint plus an HMAC-signed `WORKFORCE_MCP_TOKEN` through Docker's process environment. The token binds the company, employee, task, attempt, role grants, issue/expiry time, and nonce; it is never stored or placed in command arguments, is replaced on reissue, and is revoked when the attempt ends. Tampering, expiry, revocation, attempt mismatch, company mismatch, and role grants are tested.
+4. Add administrative mutation tools through application services with idempotency and approval enforcement.
+5. Add the authenticated internal Streamable HTTP transport, rate limiting, request/result bounds, and security tests. Token issuance is present, but containers cannot use Workforce MCP until this transport is running at the configured endpoint.
+6. Add MCP Inspector interoperability tests, malicious-client tests, cross-company denial tests, and operator documentation.
 
 ## Local stdio usage
 

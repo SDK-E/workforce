@@ -31,8 +31,8 @@ export class AttemptRepository {
           `INSERT INTO attempts
            (id,company_id,task_id,employee_id,status,sandbox_json,command_json,container_name,
             exit_code,failure_reason,queued_at,started_at,finished_at,updated_at,secret_names_json,
-            instruction_revision,instruction_digest,environment_json)
-           VALUES (?,?,?,?,?,?,?,?,NULL,NULL,?,NULL,NULL,?,?,?,?,?)`,
+            instruction_revision,instruction_digest,environment_json,ephemeral_secret_names_json)
+           VALUES (?,?,?,?,?,?,?,?,NULL,NULL,?,NULL,NULL,?,?,?,?,?,?)`,
         )
         .run(
           record.id,
@@ -49,6 +49,7 @@ export class AttemptRepository {
           record.instructionRevision,
           record.instructionDigest,
           JSON.stringify(record.environment),
+          JSON.stringify(record.ephemeralSecretNames),
         );
       this.audit.append("attempt.queued", "supervisor", record.companyId, {
         attemptId: record.id,
@@ -167,6 +168,7 @@ export class AttemptRepository {
       sandbox: parseJson(row.sandbox_json),
       command: parseJson(row.command_json),
       secretNames: parseJson(row.secret_names_json),
+      ephemeralSecretNames: parseJson(row.ephemeral_secret_names_json),
       environment: parseJson(row.environment_json),
       instructionRevision:
         typeof row.instruction_revision === "number" ? row.instruction_revision : null,

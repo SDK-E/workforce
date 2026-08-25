@@ -43,6 +43,14 @@ export class DockerSupervisor {
     private readonly finalizer?: AttemptFinalizer,
     private readonly evidence?: ExecutionEvidenceRepository,
     private readonly completionProcessor?: AttemptCompletionProcessor,
+    private readonly ephemeralSecretProvider: (attempt: AttemptRecord) => Record<string, string> = (
+      attempt,
+    ) => {
+      if (attempt.ephemeralSecretNames.length > 0)
+        throw new Error("Attempt ephemeral secrets require an authorized provider");
+      return {};
+    },
+    private readonly revokeEphemeralSecrets?: (attempt: AttemptRecord) => void,
   ) {}
 
   enqueue(request: AttemptRequest): AttemptRecord {
@@ -115,9 +123,17 @@ export class DockerSupervisor {
     try {
       await this.docker.createVolume(attempt.sandbox.workspace.name);
       this.attempts.setStatus(attempt.id, "running");
-      const secrets = this.secretProvider(attempt);
-      if (Object.keys(secrets).some((name) => !attempt.secretNames.includes(name)))
-        throw new Error("Secret provider returned an undeclared secret");
+      const persistentSecrets = this.secretProvider(attempt);
+      const ephemeralSecrets = this.ephemeralSecretProvider(attempt);
+      const overlap = Object.keys(ephemeralSecrets).find((name) => name in persistentSecrets);
+      if (overlap) throw new Error(`Secret providers overlap: ${overlap}`);
+      const secrets = { ...persistentSecrets, ...ephemeralSecrets };
+      if (Object.keys(persistentSecrets).some((name) => !attempt.secretNames.includes(name)))
+        throw new Error("Persistent secret provider returned an undeclared secret");
+      if (
+        Object.keys(ephemeralSecrets).some((name) => !attempt.ephemeralSecretNames.includes(name))
+      )
+        throw new Error("Ephemeral secret provider returned an undeclared secret");
       const result = await this.docker.start(
         attempt.sandbox,
         attempt.id,
@@ -130,6 +146,8 @@ export class DockerSupervisor {
       const reason = error instanceof Error ? error.message : "Unknown Docker failure";
       this.attempts.setStatus(attempt.id, "infrastructure-blocked", { reason });
       await this.docker.stop(attempt.containerName);
+    } finally {
+      this.revokeEphemeralSecrets?.(attempt);
     }
   }
 

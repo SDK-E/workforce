@@ -114,6 +114,7 @@ test("requirements are versioned and active attempts require safe checkpoints", 
       sandbox: {} as never,
       command: [],
       secretNames: [],
+      ephemeralSecretNames: [],
     });
     store.attempts.acquire(attempt, "test-supervisor");
     const update: UpdateTaskRequirementsInput = {

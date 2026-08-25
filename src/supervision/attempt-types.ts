@@ -18,6 +18,7 @@ export interface AttemptRequest {
   sandbox: SandboxSpec;
   command: string[];
   secretNames: string[];
+  ephemeralSecretNames: string[];
   environment?: Record<string, string>;
   instructionRevision?: number | null;
   instructionDigest?: string | null;

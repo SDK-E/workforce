@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { ModelRepository } from "../registries/model-repository.js";
 import type { ToolRepository } from "../registries/tool-repository.js";
 import { planSandbox } from "../sandbox-planner.js";
@@ -8,6 +9,11 @@ import type { DockerSupervisor } from "../supervision/docker-supervisor.js";
 import type { TaskRecord } from "./task-types.js";
 import { taskJobRequirements } from "./task-job-requirements.js";
 import type { AttemptCapabilityResolver } from "../integrations/attempt-capability-resolver.js";
+import { WORKFORCE_MCP_TOKEN_ENV } from "../workforce-mcp/attempt-mcp-token-service.js";
+
+export interface AttemptMcpAccessConfiguration {
+  endpoint: string;
+}
 
 export class TaskExecutionService {
   constructor(
@@ -17,6 +23,7 @@ export class TaskExecutionService {
     private readonly attempts: AttemptFactory,
     private readonly supervisor: DockerSupervisor,
     private readonly capabilityResolver?: AttemptCapabilityResolver,
+    private readonly mcpAccess?: AttemptMcpAccessConfiguration,
   ) {}
 
   async start(companyId: string, taskId: string, actorId: string): Promise<AttemptRecord> {
@@ -41,6 +48,9 @@ export class TaskExecutionService {
     const toolchains = resolveToolchainBundles(task);
     const environment = {
       ...capabilities.environment,
+      ...(this.mcpAccess
+        ? { WORKFORCE_MCP_URL: validatedMcpEndpoint(this.mcpAccess.endpoint) }
+        : {}),
       ...(toolchains.length > 0
         ? {
             WORKFORCE_REQUIRED_TOOLCHAINS: toolchains.join(","),
@@ -52,11 +62,13 @@ export class TaskExecutionService {
       ...new Set([...this.resolveToolSecrets(task), ...capabilities.secretNames]),
     ];
     const request = this.attempts.create({
+      attemptId: randomUUID(),
       task,
       employeeId,
       sandbox,
       model: model.model,
       secretNames,
+      ephemeralSecretNames: this.mcpAccess ? [WORKFORCE_MCP_TOKEN_ENV] : [],
       environment,
     });
     const attempt = this.supervisor.enqueue(request);
@@ -97,6 +109,15 @@ export class TaskExecutionService {
       ),
     ].sort();
   }
+}
+
+function validatedMcpEndpoint(endpoint: string): string {
+  const url = new URL(endpoint);
+  if (!["http:", "https:"].includes(url.protocol))
+    throw new Error("Workforce MCP endpoint must use HTTP or HTTPS");
+  url.username = "";
+  url.password = "";
+  return url.toString();
 }
 
 function resolveToolchainBundles(task: TaskRecord): string[] {

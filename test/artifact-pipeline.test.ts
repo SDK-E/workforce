@@ -66,6 +66,7 @@ test("artifact pipeline validates, hashes, and rejects secret leakage", async ()
       sandbox,
       command: ["opencode", "run", "--model", "openai/gpt-5", "Work"],
       secretNames: [],
+      ephemeralSecretNames: [],
     });
     const pipeline = new ArtifactPipeline(
       store.root,

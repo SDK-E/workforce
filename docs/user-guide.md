@@ -91,6 +91,10 @@ While the control plane is running, CEO, ARM, and automation loops evaluate work
 
 If events appear but agents do not start, inspect Docker status, image availability, the selected model's verification state, task assignment/status, approvals, secret scope, and operating-cycle failure reason.
 
+## Agent Workforce MCP access
+
+The local stdio MCP command is available today for trusted external clients. Container access additionally requires the forthcoming authenticated internal HTTP service. Once that service is deployed on the audited agent network, set `WORKFORCE_MCP_URL` to its HTTP/S endpoint before starting Workforce. Authorized attempts then receive the endpoint and a short-lived attempt token; the token is ephemeral, scoped to one company/employee/task/attempt, omitted from Docker command arguments and persistent state, and revoked when execution ends. Do not put credentials in `WORKFORCE_MCP_URL`; user information is stripped during validation.
+
 ## 7. Recovery and safety
 
 On startup, Workforce expires stale leases and reconciles managed containers. Use `pnpm doctor` for Docker/image readiness and `pnpm sandbox:verify` for isolation checks. Emergency stop interrupts managed attempts without deleting task, employee, message, artifact, or audit history.

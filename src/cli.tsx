@@ -8,6 +8,7 @@ import { DockerSupervisor } from "./supervision/docker-supervisor.js";
 import { EncryptedSecretStore } from "./secrets/encrypted-secret-store.js";
 import { resolveAttemptSecrets } from "./secrets/attempt-secret-provider.js";
 import { ArtifactPipeline } from "./acceptance/artifact-pipeline.js";
+import type { ArtifactRecord } from "./acceptance/artifact-types.js";
 import { TaskExecutionService } from "./tasks/task-execution-service.js";
 import { CeoOperatingLoop } from "./autonomy/ceo-operating-loop.js";
 import { AttemptCapabilityResolver } from "./integrations/attempt-capability-resolver.js";
@@ -16,6 +17,8 @@ import { MailAttemptBridge } from "./integrations/mail-attempt-bridge.js";
 import { DockerMcpProbeRunner, McpHealthVerifier } from "./integrations/mcp-health-verifier.js";
 import { ArmOperatingLoop } from "./autonomy/arm-operating-loop.js";
 import { DockerModelProbeRunner, ModelVerifier } from "./registries/model-verifier.js";
+import { AttemptMcpTokenService } from "./workforce-mcp/attempt-mcp-token-service.js";
+import type { AttemptRecord } from "./supervision/attempt-types.js";
 
 const store = new StateStore();
 store.initialize();
@@ -56,6 +59,7 @@ const modelVerifier = new ModelVerifier(store.models, new DockerModelProbeRunner
     ]),
   ),
 );
+const attemptMcpTokens = new AttemptMcpTokenService();
 const supervisor = new DockerSupervisor(
   store.attempts,
   dockerClient,
@@ -65,7 +69,14 @@ const supervisor = new DockerSupervisor(
   (attempt) => resolveAttemptSecrets(secrets, attempt),
   artifactPipeline,
   store.executionEvidence,
-  { process: (attempt, artifacts) => mailBridge.importOutbox(attempt, artifacts) },
+  {
+    process: (attempt: AttemptRecord, artifacts: ArtifactRecord[]) =>
+      mailBridge.importOutbox(attempt, artifacts),
+  },
+  (attempt: AttemptRecord) => attemptMcpTokens.secretProvider(attempt),
+  (attempt: AttemptRecord) => {
+    attemptMcpTokens.revokeAttempt(attempt.id);
+  },
 );
 const taskExecution = new TaskExecutionService(
   store.tasksRepository,
@@ -74,6 +85,7 @@ const taskExecution = new TaskExecutionService(
   store.attemptFactory,
   supervisor,
   new AttemptCapabilityResolver(store.mcpServers, store.projectIntegrations, mailBridge),
+  process.env.WORKFORCE_MCP_URL ? { endpoint: process.env.WORKFORCE_MCP_URL } : undefined,
 );
 const operatingLoop = new CeoOperatingLoop(store, store.autonomy, taskExecution);
 const automationService = new AutomationService(store, taskExecution);

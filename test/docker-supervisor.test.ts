@@ -101,6 +101,7 @@ test("supervisor runs two attempts, queues the third, refills capacity, and clea
         sandbox: { ...sandbox, workspace: { type: "volume", name: `volume-${id}` } },
         command: ["opencode", "run", "--model", "openai/gpt-5", "Complete task"],
         secretNames: [],
+        ephemeralSecretNames: [],
       });
     await supervisor.tick();
     await until(() => docker.starts.length === 2);
@@ -149,6 +150,7 @@ test("supervisor redacts injected secrets before persisting container output", a
       sandbox,
       command: ["opencode", "run", "--model", "openai/gpt-5", "Complete task"],
       secretNames: ["TOKEN"],
+      ephemeralSecretNames: [],
     });
     await supervisor.tick();
     await until(() => docker.starts.length === 1);
@@ -182,6 +184,7 @@ test("Docker unavailability blocks queued execution without host fallback", asyn
       sandbox,
       command: ["opencode", "run", "--model", "openai/gpt-5", "Complete task"],
       secretNames: [],
+      ephemeralSecretNames: [],
     });
     await supervisor.tick();
     assert.equal(store.attempts.get("blocked").status, "infrastructure-blocked");

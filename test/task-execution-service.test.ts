@@ -6,14 +6,21 @@ import test from "node:test";
 import type { SandboxSpec } from "../src/domain.js";
 import { StateStore } from "../src/storage/state-store.js";
 import type { AttemptResult } from "../src/supervision/attempt-types.js";
+import type { AttemptRecord } from "../src/supervision/attempt-types.js";
 import type { DockerClient } from "../src/supervision/docker-client.js";
 import { DockerSupervisor } from "../src/supervision/docker-supervisor.js";
 import { TaskExecutionService } from "../src/tasks/task-execution-service.js";
 import { AttemptCapabilityResolver } from "../src/integrations/attempt-capability-resolver.js";
+import {
+  AttemptMcpTokenService,
+  WORKFORCE_MCP_TOKEN_ENV,
+} from "../src/workforce-mcp/attempt-mcp-token-service.js";
 
 class InstantDocker implements DockerClient {
   started: SandboxSpec[] = [];
   runtimeEnvironment: Record<string, string> = {};
+  secretEnvironment: Record<string, string> = {};
+  inspectSecrets?: (secrets: Record<string, string>) => void;
   available() {
     return Promise.resolve(true);
   }
@@ -31,7 +38,8 @@ class InstantDocker implements DockerClient {
     runtimeEnvironment: Record<string, string> = {},
   ): Promise<AttemptResult> {
     this.started.push(spec);
-    void secretEnvironment;
+    this.secretEnvironment = secretEnvironment;
+    this.inspectSecrets?.(secretEnvironment);
     this.runtimeEnvironment = runtimeEnvironment;
     return Promise.resolve({ exitCode: 0, stdout: "done", stderr: "", timedOut: false });
   }
@@ -44,6 +52,28 @@ class InstantDocker implements DockerClient {
   removeContainer() {
     return Promise.resolve();
   }
+}
+
+function supervisorWithMcp(
+  store: StateStore,
+  docker: InstantDocker,
+  tokens: AttemptMcpTokenService,
+) {
+  return new DockerSupervisor(
+    store.attempts,
+    docker,
+    store.audit,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    (attempt: AttemptRecord) => tokens.secretProvider(attempt),
+    (attempt: AttemptRecord) => {
+      tokens.revokeAttempt(attempt.id);
+    },
+  );
 }
 
 test("approved task contracts queue verified inference-capable Docker execution", async () => {
@@ -141,7 +171,13 @@ test("approved task contracts queue verified inference-capable Docker execution"
     store.transitionTask("acme", task.id, "REQUEST_APPROVAL", "ceo", "Ready for approval");
     store.transitionTask("acme", task.id, "APPROVE", "human", "Approved");
     const docker = new InstantDocker();
-    const supervisor = new DockerSupervisor(store.attempts, docker, store.audit);
+    const tokens = new AttemptMcpTokenService("integration-signing-key");
+    let tokenEmployee: string | null = null;
+    docker.inspectSecrets = (environment) => {
+      const token = environment[WORKFORCE_MCP_TOKEN_ENV] ?? "";
+      tokenEmployee = tokens.verify(token, { companyId: "acme" }).employeeId;
+    };
+    const supervisor = supervisorWithMcp(store, docker, tokens);
     const execution = new TaskExecutionService(
       store.tasksRepository,
       store.models,
@@ -149,6 +185,7 @@ test("approved task contracts queue verified inference-capable Docker execution"
       store.attemptFactory,
       supervisor,
       new AttemptCapabilityResolver(store.mcpServers, store.projectIntegrations),
+      { endpoint: "http://workforce-mcp:8080/mcp" },
     );
 
     const attempt = await execution.start("acme", task.id, "human");
@@ -162,6 +199,12 @@ test("approved task contracts queue verified inference-capable Docker execution"
     assert.match(docker.runtimeEnvironment.OPENCODE_CONFIG_CONTENT ?? "", /quality/);
     assert.equal(docker.runtimeEnvironment.WORKFORCE_REQUIRED_TOOLCHAINS, "beads,laravel,python");
     assert.match(attempt.command.at(-1) ?? "", /workforce-toolchain install beads laravel python/);
+    assert.equal(docker.runtimeEnvironment.WORKFORCE_MCP_URL, "http://workforce-mcp:8080/mcp");
+    const token = docker.secretEnvironment[WORKFORCE_MCP_TOKEN_ENV] ?? "";
+    assert.equal(tokenEmployee, "ceo");
+    assert.throws(() => tokens.verify(token), /revoked/);
+    assert.doesNotMatch(JSON.stringify(store.attempts.get(attempt.id)), new RegExp(token));
+    assert.ok(!attempt.command.some((argument) => argument.includes(token)));
   } finally {
     store.close();
     rmSync(root, { recursive: true, force: true });

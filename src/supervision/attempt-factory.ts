@@ -13,7 +13,9 @@ export class AttemptFactory {
     employeeId: string;
     sandbox: SandboxSpec;
     model: string;
+    attemptId?: string;
     secretNames?: string[];
+    ephemeralSecretNames?: string[];
     environment?: Record<string, string>;
   }): AttemptRequest {
     if (input.task.companyId.length === 0) throw new Error("Task company is required");
@@ -27,7 +29,7 @@ export class AttemptFactory {
     );
     const adapter = engineAdapter(input.sandbox.engine);
     return {
-      id: randomUUID(),
+      id: input.attemptId ?? randomUUID(),
       companyId: input.task.companyId,
       taskId: input.task.id,
       employeeId: input.employeeId,
@@ -38,6 +40,7 @@ export class AttemptFactory {
         objective,
       }),
       secretNames: input.secretNames ?? [],
+      ephemeralSecretNames: input.ephemeralSecretNames ?? [],
       environment: input.environment ?? {},
       instructionRevision: version.revision,
       instructionDigest: this.profiles.digest(version),
