@@ -56,7 +56,11 @@ install_bundles() {
 install_ecosystem_tools() {
   for bundle in "$@"; do
     if test "$bundle" = "beads"; then
-      npm install --global --prefix /work/.tools/npm "@beads/bd@1.1.0"
+      PNPM_HOME=/work/.tools/pnpm pnpm add --global "@beads/bd@1.1.0"
+      (
+        cd /work/.tools/pnpm/global/5/node_modules/@beads/bd
+        node scripts/postinstall.js
+      )
     fi
   done
 }

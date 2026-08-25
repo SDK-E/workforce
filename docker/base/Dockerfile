@@ -2,15 +2,19 @@ FROM alpine:3.22.1
 
 ARG KILO_VERSION
 ARG OPENCODE_VERSION
+ENV PNPM_HOME=/usr/local/share/pnpm
+ENV PATH=$PNPM_HOME:$PATH
 
 RUN test -n "$KILO_VERSION" && test -n "$OPENCODE_VERSION" \
- && apk add --no-cache bash zsh ca-certificates chromium curl gcompat git jq nodejs npm tini \
- && npm install --global "@kilocode/cli@$KILO_VERSION" "opencode-ai@$OPENCODE_VERSION" \
- && find /usr/local/lib/node_modules/@kilocode/cli/node_modules/@kilocode \
-      -mindepth 1 -maxdepth 1 -type d -name 'cli-linux-*' ! -name '*-musl' -exec rm -rf '{}' + \
- && find /usr/local/lib/node_modules/opencode-ai/node_modules \
-      -mindepth 1 -maxdepth 1 -type d -name 'opencode-linux-*' ! -name '*-musl' -exec rm -rf '{}' + \
- && npm cache clean --force \
+ && apk add --no-cache bash zsh ca-certificates chromium curl gcompat git jq nodejs pnpm tini \
+ && pnpm add --global "@kilocode/cli@$KILO_VERSION" "opencode-ai@$OPENCODE_VERSION" \
+ && (cd "$PNPM_HOME/global/5/node_modules/@kilocode/cli" && node postinstall.mjs) \
+ && (cd "$PNPM_HOME/global/5/node_modules/opencode-ai" && node postinstall.mjs) \
+ && find "$PNPM_HOME/global/5/.pnpm" -mindepth 1 -maxdepth 1 -type d \
+      -name '@kilocode+cli-linux-*' ! -name '*-musl@*' -exec rm -rf '{}' + \
+ && find "$PNPM_HOME/global/5/.pnpm" -mindepth 1 -maxdepth 1 -type d \
+      -name 'opencode-linux-*' ! -name '*-musl@*' -exec rm -rf '{}' + \
+ && pnpm store prune \
  && addgroup -g 10001 workforce \
  && adduser -D -u 10001 -G workforce -h /home/workforce -s /sbin/nologin workforce
 

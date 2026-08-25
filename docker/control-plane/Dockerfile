@@ -1,6 +1,5 @@
 FROM alpine:3.22 AS build
-RUN apk add --no-cache nodejs npm
-RUN npm install --global pnpm@11.21.0
+RUN apk add --no-cache nodejs pnpm
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY scripts ./scripts
