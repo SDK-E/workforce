@@ -244,7 +244,8 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     return <AuditView events={props.events} verified={props.auditVerified} />;
   if (props.section === "Settings")
     return <SettingsView company={props.company} runtime={props.runtime} />;
-  return <DiagnosticsView events={props.events} />;
+  if (props.section === "Advanced diagnostics") return <DiagnosticsView events={props.events} />;
+  throw new Error(`No workspace view is registered for ${props.section}`);
 }
 
 function businessView(props: WorkspaceViewProps) {

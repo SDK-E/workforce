@@ -45,7 +45,7 @@ This is a reduced path to a viable release, not a reduction of the product ident
 
 - Business pipeline MCP, viable CEO commercial autonomy, and ARM reinforcement are implemented.
 - The full local quality gate currently passes formatting, typed lint, Knip dead-code analysis,
-  compilation, migrations, and **97 tests**.
+  compilation, migrations, and **98 tests**.
 - Human forms now generate company/model/MCP/tool/environment IDs; infer company, actor, timestamps,
   approval targets, and safe defaults; and select company-scoped relationships by readable names.
   This covers organization, strategy, business, governance, meetings, automations, project
@@ -61,6 +61,8 @@ This is a reduced path to a viable release, not a reduction of the product ident
   uses tested width thresholds, hides the sidebar below 64 columns without leaving hidden focus behind,
   and falls back to usable dimensions on non-TTY output. A child-process render proves `NO_COLOR`
   removes Ink styling while retaining required cursor controls.
+- Every configured navigation destination now has a compiled render-contract test. Unknown sections
+  fail visibly instead of silently falling through to Advanced diagnostics.
 
 ## What to defer until after the viable release
 
