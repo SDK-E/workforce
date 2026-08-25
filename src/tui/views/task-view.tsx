@@ -22,9 +22,7 @@ export function TaskView({
           </Text>
         ))
       )}
-      <Text dimColor>
-        n create · e edit · [/] select · d archive · u restore · r run ready task
-      </Text>
+      <Text dimColor>n create · e edit · [] select · d archive · u restore · r run ready task</Text>
     </Box>
   );
 }

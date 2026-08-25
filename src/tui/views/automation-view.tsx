@@ -22,7 +22,7 @@ export function AutomationView({
           </Text>
         ))
       )}
-      <Text dimColor>n propose · e decide/configure · [/] select · d archive · u restore</Text>
+      <Text dimColor>n propose · e decide/configure · [] select · d archive · u restore</Text>
     </Box>
   );
 }

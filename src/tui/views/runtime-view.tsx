@@ -30,7 +30,7 @@ export function RuntimeView(props: RuntimeViewProps) {
         <Text dimColor>Capabilities are granted per approved sandbox plan.</Text>
       )}
       {props.section === "Models & engines" && (
-        <Text dimColor>n configure · e edit · [/] select · verify before execution</Text>
+        <Text dimColor>n configure · e edit · [] select · verify before execution</Text>
       )}
     </Box>
   );

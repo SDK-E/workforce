@@ -22,7 +22,7 @@ export function McpServerView({
           </Text>
         ))
       )}
-      <Text dimColor>n register · e edit · [/] select · d archive · u restore · v verify</Text>
+      <Text dimColor>n register · e edit · [] select · d archive · u restore · v verify</Text>
     </Box>
   );
 }

@@ -19,7 +19,7 @@ export function CompanyView({
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>Companies</Text>
-      <Text dimColor>n create · e edit · [/] select · Enter activate · d archive · u restore</Text>
+      <Text dimColor>n create · e edit · [] select · Enter activate · d archive · u restore</Text>
       <Box marginTop={1} gap={1} flexDirection={compact ? "column" : "row"}>
         <Panel title="COMPANY LIST" width={compact ? "100%" : "36%"}>
           {companies.map((item, index) => (

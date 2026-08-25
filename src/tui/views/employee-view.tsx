@@ -21,7 +21,7 @@ export function EmployeeView({
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>Employee directory</Text>
       <Text dimColor>
-        {employees.length} durable identities · n hire · e persona · [/] select · d terminate · u
+        {employees.length} durable identities · n hire · e persona · [] select · d terminate · u
         reinstate
       </Text>
       <Box marginTop={1} gap={1} flexDirection={compact ? "column" : "row"}>
