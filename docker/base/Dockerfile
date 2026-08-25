@@ -15,6 +15,8 @@ RUN test -n "$KILO_VERSION" && test -n "$OPENCODE_VERSION" \
  && find "$PNPM_HOME/global/5/.pnpm" -mindepth 1 -maxdepth 1 -type d \
       -name 'opencode-linux-*' ! -name '*-musl@*' -exec rm -rf '{}' + \
  && pnpm store prune \
+ && pnpm_store="$(pnpm store path)" \
+ && rm -rf "$pnpm_store" /root/.cache /tmp/* /var/cache/apk/* \
  && addgroup -g 10001 workforce \
  && adduser -D -u 10001 -G workforce -h /home/workforce -s /sbin/nologin workforce
 

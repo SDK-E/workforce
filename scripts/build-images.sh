@@ -14,4 +14,5 @@ docker build --build-arg "KILO_VERSION=$kilo_version" --build-arg "OPENCODE_VERS
 docker build -t workforce-egress-proxy:0.1.0 docker/egress
 docker build -t workforce-control-plane:0.1.0 -f docker/control-plane/Dockerfile .
 KILO_VERSION="$kilo_version" OPENCODE_VERSION="$opencode_version" sh scripts/verify-engines.sh
+sh scripts/verify-image-cleanup.sh
 sh scripts/verify-image-sizes.sh
