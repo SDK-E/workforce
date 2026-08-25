@@ -191,5 +191,6 @@ function workspaceData(store: StateStore, companyId: string) {
     mail: store.mail.listCompany(companyId),
     incidents: store.incidents.listIncidents(companyId),
     claims: store.performance.listClaims(companyId),
+    correctiveActions: store.incidents.listCorrective(companyId),
   };
 }

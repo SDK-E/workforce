@@ -7,7 +7,12 @@ import { matchesKeybinding } from "../keybindings.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { FormFrame } from "./form-frame.js";
 
-export type GovernanceFormKind = "performance" | "recognition" | "incident" | "claim";
+export type GovernanceFormKind =
+  | "performance"
+  | "recognition"
+  | "incident"
+  | "corrective"
+  | "claim";
 
 export type GovernanceFormResult =
   | {
@@ -23,6 +28,14 @@ export type GovernanceFormResult =
       severity: IncidentRecord["severity"];
       summary: string;
       evidenceIds: string[];
+    }
+  | {
+      kind: "corrective";
+      employeeId: string;
+      correctiveKind: "coaching" | "warning" | "restriction" | "suspension";
+      rationale: string;
+      evidenceIds: string[];
+      incidentId: string | null;
     }
   | {
       kind: "claim";
@@ -46,6 +59,13 @@ const FIELDS: Record<GovernanceFormKind, string[]> = {
     "Severity (low, medium, high, critical)",
     "Incident summary",
     "Evidence IDs (comma separated)",
+  ],
+  corrective: [
+    "Employee ID",
+    "Action (coaching, warning, restriction, suspension)",
+    "Evidence-based rationale",
+    "Evidence IDs (comma separated)",
+    "Related incident ID (or none)",
   ],
   claim: [
     "Subject ID",
@@ -119,6 +139,7 @@ function defaults(kind: GovernanceFormKind): string[] {
   if (kind === "performance") return ["", "observation", "", ""];
   if (kind === "recognition") return ["", "", ""];
   if (kind === "incident") return ["", "medium", "", ""];
+  if (kind === "corrective") return ["", "coaching", "", "", "none"];
   return ["", "", "true", "", "0.8"];
 }
 
@@ -141,6 +162,16 @@ function buildResult(kind: GovernanceFormKind, values: string[]): GovernanceForm
       summary: required(values[2], "Summary"),
       evidenceIds: evidence(values[3]),
     };
+  if (kind === "corrective")
+    return {
+      kind,
+      employeeId: required(values[0], "Employee ID"),
+      correctiveKind: correctiveKind(values[1]),
+      rationale: required(values[2], "Rationale"),
+      evidenceIds: evidence(values[3]),
+      incidentId:
+        values[4]?.trim().toLowerCase() === "none" ? null : required(values[4], "Incident ID"),
+    };
   const confidence = Number(values[4]);
   if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1)
     throw new Error("Confidence must be between zero and one");
@@ -158,6 +189,7 @@ function titleFor(kind: GovernanceFormKind): string {
   if (kind === "performance") return "Record performance evidence";
   if (kind === "recognition") return "Record recognition";
   if (kind === "incident") return "Report incident";
+  if (kind === "corrective") return "Draft corrective action";
   return "Assert evidence-backed claim";
 }
 
@@ -190,6 +222,16 @@ function severity(value: string | undefined): IncidentRecord["severity"] {
   if (!allowed.some((candidate) => candidate === result))
     throw new Error("Severity must be low, medium, high, or critical");
   return result as IncidentRecord["severity"];
+}
+
+function correctiveKind(
+  value: string | undefined,
+): "coaching" | "warning" | "restriction" | "suspension" {
+  const allowed = ["coaching", "warning", "restriction", "suspension"] as const;
+  const result = value?.trim();
+  if (!allowed.some((candidate) => candidate === result))
+    throw new Error("Action must be coaching, warning, restriction, or suspension");
+  return result as (typeof allowed)[number];
 }
 
 function parseJson(value: string | undefined): unknown {

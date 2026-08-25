@@ -24,12 +24,12 @@ export function IncidentView({
           [{incident.status}] {incident.severity}: {incident.title}
         </Text>
       ))}
-      {actions.map((action) => (
-        <Text key={action.id}>
+      {actions.map((action, index) => (
+        <Text key={action.id} inverse={incidents.length + index === selectedRow}>
           [{action.status}] {action.kind} for {action.employeeId}
         </Text>
       ))}
-      <Text dimColor>n report · e advance selected incident · [ ] select</Text>
+      <Text dimColor>n report/draft action · e advance selected record · [ ] select</Text>
     </Box>
   );
 }

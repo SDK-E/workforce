@@ -6,6 +6,7 @@ import { GovernanceForm } from "../src/tui/overlays/governance-form.js";
 import { createFormForSection } from "../src/tui/overlays/form-routing.js";
 import { editFormForSection } from "../src/tui/overlays/form-routing.js";
 import { IncidentDecisionForm } from "../src/tui/overlays/incident-decision-form.js";
+import { CorrectiveDecisionForm } from "../src/tui/overlays/corrective-decision-form.js";
 
 const noop = (): undefined => undefined;
 
@@ -48,6 +49,26 @@ test("selected incidents expose only valid XState transitions", async () => {
   assert.match(frame, /investigate/);
   assert.match(frame, /contain/);
   assert.doesNotMatch(frame, /resolve/);
+  view.unmount();
+});
+
+test("selected corrective actions expose only valid XState transitions", async () => {
+  const view = render(
+    <Box width={100} height={30}>
+      <CorrectiveDecisionForm
+        actionId="action-one"
+        status="issued"
+        terminalWidth={100}
+        onSubmit={noop}
+        onCancel={noop}
+      />
+    </Box>,
+  );
+  await settle();
+  const frame = view.lastFrame() ?? "";
+  assert.match(frame, /acknowledge/);
+  assert.match(frame, /challenge/);
+  assert.doesNotMatch(frame, /archive/);
   view.unmount();
 });
 

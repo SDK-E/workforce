@@ -19,6 +19,7 @@ export interface LifecycleTarget {
     | "hiring-proposal"
     | "mail"
     | "incident"
+    | "corrective"
     | "claim"
     | "tool"
     | "environment";
@@ -46,6 +47,7 @@ export interface LifecycleData {
   mail: ReturnType<StateStore["mail"]["listCompany"]>;
   incidents: ReturnType<StateStore["incidents"]["listIncidents"]>;
   claims: ReturnType<StateStore["performance"]["listClaims"]>;
+  correctiveActions: ReturnType<StateStore["incidents"]["listCorrective"]>;
   tools: ReturnType<StateStore["tools"]["list"]>;
   environments: ReturnType<StateStore["environments"]["list"]>;
 }
@@ -100,14 +102,7 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       label: `${item.subject} · ${item.recipientId}`,
       status: item.status,
     }));
-  if (section === "Warnings & incidents")
-    return data.incidents.map((item) => ({
-      kind: "incident",
-      id: item.id,
-      label: `${item.severity} · ${item.title}`,
-      status: item.status,
-      lifecycleMutable: false,
-    }));
+  if (section === "Warnings & incidents") return incidentTargets(data);
   if (section === "Critics & reviews")
     return data.claims.map((item) => ({
       kind: "claim",
@@ -280,6 +275,25 @@ function organizationSectionKinds(section: string): readonly OrganizationUnitKin
   if (section === "Teams") return ["team"] as const;
   if (section === "Offices & rooms") return ["office", "room"] as const;
   return null;
+}
+
+function incidentTargets(data: LifecycleData): LifecycleTarget[] {
+  return [
+    ...data.incidents.map((item) => ({
+      kind: "incident" as const,
+      id: item.id,
+      label: `${item.severity} · ${item.title}`,
+      status: item.status,
+      lifecycleMutable: false,
+    })),
+    ...data.correctiveActions.map((item) => ({
+      kind: "corrective" as const,
+      id: item.id,
+      label: `${item.kind} · ${item.employeeId}`,
+      status: item.status,
+      lifecycleMutable: false,
+    })),
+  ];
 }
 
 function strategySectionKind(section: string): StrategyItemKind | null {
