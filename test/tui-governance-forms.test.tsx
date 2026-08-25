@@ -7,6 +7,11 @@ import { createFormForSection } from "../src/tui/overlays/form-routing.js";
 import { editFormForSection } from "../src/tui/overlays/form-routing.js";
 import { IncidentDecisionForm } from "../src/tui/overlays/incident-decision-form.js";
 import { CorrectiveDecisionForm } from "../src/tui/overlays/corrective-decision-form.js";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { StateStore } from "../src/storage/state-store.js";
+import { governanceSubjectOptions } from "../src/tui/governance-subjects.js";
 
 const noop = (): undefined => undefined;
 
@@ -70,6 +75,51 @@ test("selected corrective actions expose only valid XState transitions", async (
   assert.match(frame, /challenge/);
   assert.doesNotMatch(frame, /archive/);
   view.unmount();
+});
+
+test("claim subjects use readable company-scoped records instead of opaque IDs", async () => {
+  const root = mkdtempSync(join(tmpdir(), "workforce-claim-subjects-"));
+  const store = new StateStore(root);
+  try {
+    store.initialize();
+    store.createCompany({ id: "acme", name: "Acme" });
+    store.createTask({
+      companyId: "acme",
+      objective: "Validate customer release",
+      acceptanceCriteria: ["Evidence passes"],
+      risk: "low",
+      dataSensitivity: "internal",
+      managerId: "ceo",
+    });
+    const subjects = governanceSubjectOptions(store, "acme");
+    assert.equal(
+      subjects.some(({ label }) => label.includes("Chief Executive")),
+      true,
+    );
+    assert.equal(
+      subjects.some(({ label }) => label === "Task — Validate customer release"),
+      true,
+    );
+    const view = render(
+      <Box width={100} height={30}>
+        <GovernanceForm
+          kind="claim"
+          subjects={subjects}
+          terminalWidth={100}
+          onSubmit={noop}
+          onCancel={noop}
+        />
+      </Box>,
+    );
+    await settle();
+    view.stdin.write("\r");
+    await settle();
+    assert.match(view.lastFrame() ?? "", /Predicate/);
+    view.unmount();
+  } finally {
+    store.close();
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 async function settle(): Promise<void> {

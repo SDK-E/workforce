@@ -6,6 +6,7 @@ import type { StateStore } from "../../storage/state-store.js";
 import { GovernanceForm, type GovernanceFormKind } from "./governance-form.js";
 import { FormFrame } from "./form-frame.js";
 import { matchesKeybinding } from "../keybindings.js";
+import { governanceSubjectOptions } from "../governance-subjects.js";
 
 export function GovernanceMutationOverlay(props: {
   kind: GovernanceFormKind;
@@ -44,6 +45,7 @@ export function GovernanceMutationOverlay(props: {
       kind={incidentKind ?? props.kind}
       employees={props.store.employees(props.company.id)}
       incidents={props.store.incidents.listIncidents(props.company.id)}
+      subjects={governanceSubjectOptions(props.store, props.company.id)}
       terminalWidth={props.terminalWidth}
       onCancel={props.onClose}
       onSubmit={(result) => {

@@ -45,7 +45,7 @@ This is a reduced path to a viable release, not a reduction of the product ident
 
 - Business pipeline MCP, viable CEO commercial autonomy, and ARM reinforcement are implemented.
 - The full local quality gate currently passes formatting, typed lint, Knip dead-code analysis,
-  compilation, migrations, and **99 tests**.
+  compilation, migrations, and **100 tests**.
 - Human forms now generate company/model/MCP/tool/environment IDs; infer company, actor, timestamps,
   approval targets, and safe defaults; and select company-scoped relationships by readable names.
   This covers organization, strategy, business, governance, meetings, automations, project
@@ -69,6 +69,9 @@ This is a reduced path to a viable release, not a reduction of the product ident
   and message relationships use named selectors, human authorship is inferred, and messages can target
   an open thread without requesting internal IDs. Attachment registration accepts validated artifact
   metadata and never imports arbitrary host files.
+- Claim creation now selects readable company-scoped employees, tasks, strategy, opportunities, leads,
+  clients, or engagements instead of asking the operator for a raw subject ID. Evidence references
+  remain explicit because they are the governed basis of the claim.
 
 ## What to defer until after the viable release
 

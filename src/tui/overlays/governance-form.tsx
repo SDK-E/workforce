@@ -72,6 +72,7 @@ export function GovernanceForm(props: {
   kind: GovernanceFormKind;
   employees?: Employee[];
   incidents?: IncidentRecord[];
+  subjects?: NamedOption[];
   terminalWidth: number;
   onSubmit: (result: GovernanceFormResult) => void;
   onCancel: () => void;
@@ -151,6 +152,7 @@ function selectOptions(
   if (props.kind === "performance" && step === 1)
     return named(["observation", "warning", "review", "challenge"]);
   if (props.kind === "incident" && step === 1) return named(["low", "medium", "high", "critical"]);
+  if (props.kind === "claim" && step === 0 && props.subjects?.length) return props.subjects;
   if (props.kind === "corrective" && step === 1)
     return named(["coaching", "warning", "restriction", "suspension"]);
   if (props.kind === "corrective" && step === 4)
