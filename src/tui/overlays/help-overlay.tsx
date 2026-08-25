@@ -20,8 +20,13 @@ export function HelpOverlay({ compact, terminalWidth }: HelpOverlayProps) {
         paddingX={2}
       >
         <Text bold>Keyboard help</Text>
-        <Text>↑/k, ↓/j Navigate</Text>
+        <Text>Tab / Shift-Tab Change area</Text>
+        <Text>↑/k, ↓/j Navigate within area</Text>
+        <Text>[ / ] Select previous / next record</Text>
         <Text>←/→ Change page or detail panel</Text>
+        <Text>Ctrl-P Command palette (VS Code)</Text>
+        <Text>Ctrl-B Toggle sidebar (VS Code)</Text>
+        <Text>Ctrl-, Open settings (VS Code)</Text>
         <Text>n New record where available</Text>
         <Text>e Edit or decide where available</Text>
         <Text>! Global emergency stop</Text>

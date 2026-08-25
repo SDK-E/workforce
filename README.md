@@ -51,7 +51,7 @@ Use arrows or `j`/`k` to navigate sections, `[`/`]` to select records, `n` to cr
 
 See [docs/coding-standards.md](docs/coding-standards.md). Formatting, typed linting, the 300-line module boundary, dead-code analysis, compilation, and tests are enforced by `pnpm test`; use `pnpm format` to apply formatting.
 
-Read [docs/architecture.md](docs/architecture.md) for system boundaries, [docs/product-specification.md](docs/product-specification.md) for requirements, [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules, and [SECURITY.md](SECURITY.md) for private vulnerability reporting. The project is available under the [MIT License](LICENSE).
+Start with the [documentation index](docs/README.md), [user guide](docs/user-guide.md), and [repository map](docs/repository-map.md). Read [docs/architecture.md](docs/architecture.md) for system boundaries, [docs/product-specification.md](docs/product-specification.md) for requirements, [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules, and [SECURITY.md](SECURITY.md) for private vulnerability reporting. The project is available under the [MIT License](LICENSE).
 
 Docker Desktop or another compatible Docker daemon must be running before any agent attempt can start.
 

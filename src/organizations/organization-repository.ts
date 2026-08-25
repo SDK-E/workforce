@@ -4,12 +4,12 @@ import type {
   OrganizationUnit,
   OrganizationUnitKind,
   UpdateOrganizationUnitInput,
-} from "../organizations/organization-types.js";
-import type { AuditRepository } from "./audit-repository.js";
-import type { CompanyRepository } from "./company-repository.js";
-import type { WorkforceDatabase } from "./database.js";
-import { parseJson } from "./serialization.js";
-import { sanitizeTerminal } from "./sanitize-terminal.js";
+} from "./organization-types.js";
+import type { AuditRepository } from "../storage/audit-repository.js";
+import type { CompanyRepository } from "../storage/company-repository.js";
+import type { WorkforceDatabase } from "../storage/database.js";
+import { parseJson } from "../storage/serialization.js";
+import { sanitizeTerminal } from "../storage/sanitize-terminal.js";
 
 export class OrganizationRepository {
   constructor(

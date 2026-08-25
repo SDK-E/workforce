@@ -72,7 +72,7 @@ The practical readiness dependency is intentional: a company must have a configu
 ### TUI quality
 
 - Forms use opaque `FormFrame`/modal backdrops, so text behind a popup is not exposed.
-- Navigation uses panels/sidebar/sections, selected rows, confirmation for lifecycle mutations, command palette, help, no-color-compatible Ink rendering, and responsive compact behavior.
+- Navigation uses seven focused areas, arrow-key page movement, Tab area movement, VS Code-style `Ctrl-P`/`Ctrl-B`/`Ctrl-,` bindings, selected rows, confirmations, command palette, help, no-color-compatible Ink rendering, and responsive compact behavior.
 - Company, organization, strategy, task, employee, agent profile, conversation room, MCP, integration, mail, automation, and meeting creation forms exist to varying degrees of completeness. Meeting create/edit/archive/restore is complete and tested.
 
 ### Project foundation
@@ -80,6 +80,7 @@ The practical readiness dependency is intentional: a company must have a configu
 - `README.md` documents actual Docker execution readiness; `CONTRIBUTING.md`, `SECURITY.md`, and MIT `LICENSE` are present.
 - GitHub CI runs quality gates on Node 22 and 24. Container verification builds images and runs sandbox checks on relevant changes.
 - Recent commit: `d976655 Add meeting workflows and project foundations`.
+- Navigation is grouped into seven focused areas; Tab changes area and j/k stays inside it. The documentation index and user guide replace duplicate short requirement notes. `docs/workforce-mcp.md` defines the external-admin and agent-scoped MCP delivery plan.
 
 ## Start here
 
@@ -92,7 +93,7 @@ pnpm test
 git diff --check
 ```
 
-The latest verified baseline is commit `d976655`. Inspect the worktree before modifying it; preserve unrelated user changes.
+The latest verified committed baseline is `45e7280`; the navigation/docs/repository-organization slice immediately after it passes all 49 tests. Inspect the worktree before modifying it; preserve unrelated user changes.
 
 ## Remaining work, in recommended order
 
@@ -163,7 +164,7 @@ You are the principal engineer continuing Workforce in /Users/hsaddek/workplace/
 
 Your goal is not to make a narrow demo pass: complete the production-grade multi-company AI Workforce Operating System described in HANDOFF.md. Preserve Docker-only execution, company isolation, audited network/secret controls, forward-only SQL migrations, an Alpine universal sub-500MiB image, dynamic agent identities, and an organized Ink TUI with real confirmed management workflows.
 
-Start by running: git status --short; pnpm format; pnpm test; git diff --check. The current worktree intentionally contains an unfinished meeting-management slice and documentation/CI additions; finish and verify that slice rather than deleting it. Commit coherent, tested vertical slices.
+Start by running: git status --short; pnpm format; pnpm test; git diff --check. The baseline includes grouped navigation, a user guide, a repository map, and a decision-complete Workforce MCP design. Continue with execution readiness, then implement the MCP boundary as a focused tested slice. Commit coherent, tested vertical slices.
 
 For every slice: inspect relevant code/tests/docs; implement domain policy and repository methods before TUI; add migrations only as numbered SQL files; add test coverage for state transitions, company isolation, and the user workflow; update docs; run pnpm format && pnpm test && git diff --check; remove dead code; commit. Do not create god files, decorative placeholders, host execution fallbacks, insecure mounts, or compatibility facades without active callers and removal dates.
 

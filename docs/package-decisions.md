@@ -11,6 +11,7 @@ Packages are preferred over custom infrastructure when maintained, compatible wi
 - **ink-testing-library** provides deterministic Ink rendering and keyboard tests.
 - **Knip** rejects unused files, exports, and dependencies in the normal test gate. See [Knip](https://knip.dev/).
 - **typescript-eslint** uses its official [strict typed-linting configuration](https://typescript-eslint.io/getting-started/typed-linting/).
+- **Official Model Context Protocol TypeScript SDK** is selected for the planned `workforce-mcp` server, stdio transport, Streamable HTTP transport, resources, tools, and protocol interoperability. Workforce authorization and domain policy remain in application services. See the [official SDK](https://github.com/modelcontextprotocol/typescript-sdk) and [MCP server guide](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/server.md).
 
 ## Evaluated but not adopted
 

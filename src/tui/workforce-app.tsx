@@ -1,20 +1,21 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useState } from "react";
 import { Box, useInput, useStdout } from "ink";
 import type { DockerStatus } from "../docker-runtime.js";
 import type { CompanyRecord } from "../storage/records.js";
-import { sanitizeTerminal } from "../storage/sanitize-terminal.js";
 import type { StateStore } from "../storage/state-store.js";
 import { Breadcrumbs } from "./components/breadcrumbs.js";
 import { Sidebar } from "./components/sidebar.js";
 import { StatusBar } from "./components/status-bar.js";
 import { TopBar } from "./components/top-bar.js";
-import { NAVIGATION_SECTIONS } from "./navigation.js";
+import { DEFAULT_SECTION, moveGroup, moveWithinGroup, NAVIGATION_SECTIONS } from "./navigation.js";
 import { ExecutiveOverview } from "./views/executive-overview.js";
 import { WorkspaceView } from "./views/workspace-view.js";
 import { WorkforceOverlays } from "./overlays/workforce-overlays.js";
 import { useLifecycleController } from "./use-lifecycle-controller.js";
 import { loadWorkspaceData, type WorkspaceData } from "./workspace-data.js";
 import { useFormController } from "./use-form-controller.js";
+import { processPaletteInput } from "./command-palette-input.js";
+import { applicationShortcut } from "./application-shortcuts.js";
 
 interface WorkforceAppProps {
   store: StateStore;
@@ -24,6 +25,8 @@ interface WorkforceAppProps {
   onStartTask: (companyId: string, taskId: string) => Promise<void>;
   onVerifyMcp: (companyId: string, serverId: string) => Promise<void>;
 }
+
+const READY_STATUS = "Ready — no agent work starts without an approved task";
 
 export function WorkforceApp({
   store,
@@ -36,11 +39,10 @@ export function WorkforceApp({
   const { stdout } = useStdout();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [paletteVisible, setPaletteVisible] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
   const [helpVisible, setHelpVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusMessage, setStatusMessage] = useState(
-    "Ready — no agent work starts without an approved task",
-  );
+  const [statusMessage, setStatusMessage] = useState(READY_STATUS);
   const [company, setCompany] = useState(initialCompany);
   const [emergencyVisible, setEmergencyVisible] = useState(false);
   const [executionTaskId, setExecutionTaskId] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export function WorkforceApp({
   const width = stdout.columns;
   const height = stdout.rows;
   const compact = width < 88;
-  const selectedSection = NAVIGATION_SECTIONS[selectedIndex] ?? NAVIGATION_SECTIONS[0];
+  const selectedSection = NAVIGATION_SECTIONS[selectedIndex] ?? DEFAULT_SECTION;
   const data = loadWorkspaceData(store, company.id);
   const lifecycle = useLifecycleController({
     section: selectedSection,
@@ -70,11 +72,26 @@ export function WorkforceApp({
     }
 
     if (paletteVisible) {
-      handlePaletteInput(input, key);
+      processPaletteInput(input, key, searchQuery, {
+        close: () => {
+          setPaletteVisible(false);
+          setSearchQuery("");
+        },
+        select: setSelectedIndex,
+        status: setStatusMessage,
+        query: setSearchQuery,
+      });
       return;
     }
 
-    if (input === "q") process.exit(0);
+    const shortcut = applicationShortcut(input, key);
+    if (shortcut === "toggle-sidebar") setSidebarVisible((visible) => !visible);
+    else if (shortcut === "open-settings")
+      setSelectedIndex(NAVIGATION_SECTIONS.indexOf("Settings"));
+    else if (shortcut === "open-palette") setPaletteVisible(true);
+    if (shortcut) return;
+
+    if (input === "q" && !key.ctrl && !key.meta) process.exit(0);
     if (input === "n") forms.openCreate(selectedSection);
     if (input === "e") forms.openEdit(selectedSection, Boolean(lifecycle.selected));
     lifecycle.handleKey(input);
@@ -89,28 +106,15 @@ export function WorkforceApp({
     }
     if (input === "?") setHelpVisible(true);
     else if (input === "p" || input === "/") setPaletteVisible(true);
+    else if (key.tab) setSelectedIndex((current) => moveGroup(current, key.shift ? -1 : 1));
     else if (key.upArrow || input === "k")
-      setSelectedIndex((current) => moveNavigation(current, -1));
+      setSelectedIndex((current) => moveWithinGroup(current, -1));
     else if (key.downArrow || input === "j")
-      setSelectedIndex((current) => moveNavigation(current, 1));
+      setSelectedIndex((current) => moveWithinGroup(current, 1));
     else if (key.return && selectedSection === "Companies")
       activateSelectedCompany(data.companies[lifecycle.rowIndex], setCompany, setStatusMessage);
     else if (key.return) setStatusMessage(`Opened ${selectedSection}`);
   });
-
-  function handlePaletteInput(input: string, key: PaletteKey): void {
-    processPaletteInput(input, key, searchQuery, {
-      close: closePalette,
-      select: setSelectedIndex,
-      status: setStatusMessage,
-      query: setSearchQuery,
-    });
-  }
-
-  function closePalette(): void {
-    setPaletteVisible(false);
-    setSearchQuery("");
-  }
 
   return (
     <Box width={width} height={height} flexDirection="column">
@@ -131,6 +135,7 @@ export function WorkforceApp({
         height={height}
         data={data}
         rowIndex={lifecycle.rowIndex}
+        sidebarVisible={sidebarVisible}
       />
 
       <StatusBar message={statusMessage} />
@@ -210,46 +215,6 @@ function startTaskExecution(
     });
 }
 
-interface PaletteKey {
-  escape: boolean;
-  return: boolean;
-  backspace: boolean;
-  delete: boolean;
-  ctrl: boolean;
-  meta: boolean;
-}
-
-function processPaletteInput(
-  input: string,
-  key: PaletteKey,
-  searchQuery: string,
-  actions: {
-    close: () => void;
-    select: (index: number) => void;
-    status: (message: string) => void;
-    query: Dispatch<SetStateAction<string>>;
-  },
-): void {
-  if (key.escape) {
-    actions.close();
-    return;
-  }
-  if (key.return) {
-    const match = NAVIGATION_SECTIONS.findIndex((section) =>
-      section.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-    if (match >= 0) {
-      actions.select(match);
-      actions.status(`Opened ${NAVIGATION_SECTIONS[match]}`);
-    }
-    actions.close();
-  } else if (key.backspace || key.delete) {
-    actions.query((current) => current.slice(0, -1));
-  } else if (input && !key.ctrl && !key.meta) {
-    actions.query((current) => sanitizeTerminal(current + input, 60));
-  }
-}
-
 function WorkforceContent(props: {
   selectedIndex: number;
   section: string;
@@ -260,10 +225,17 @@ function WorkforceContent(props: {
   height: number;
   data: WorkspaceData;
   rowIndex: number;
+  sidebarVisible: boolean;
 }) {
   return (
     <Box flexGrow={1} flexDirection="row">
-      <Sidebar compact={props.compact} height={props.height} selectedIndex={props.selectedIndex} />
+      {props.sidebarVisible && (
+        <Sidebar
+          compact={props.compact}
+          height={props.height}
+          selectedIndex={props.selectedIndex}
+        />
+      )}
       {props.selectedIndex === 0 ? (
         <ExecutiveOverview
           company={props.company}
@@ -288,10 +260,6 @@ function WorkforceContent(props: {
       )}
     </Box>
   );
-}
-
-function moveNavigation(current: number, offset: number): number {
-  return (current + offset + NAVIGATION_SECTIONS.length) % NAVIGATION_SECTIONS.length;
 }
 
 function activateSelectedCompany(

@@ -5,9 +5,9 @@ import { AuditRepository } from "./audit-repository.js";
 import { CompanyRepository } from "./company-repository.js";
 import { ConversationService } from "../conversations/conversation-service.js";
 import { WorkforceDatabase } from "./database.js";
-import { TaskRepository } from "./task-repository.js";
-import { OrganizationRepository } from "./organization-repository.js";
-import { StrategyRepository } from "./strategy-repository.js";
+import { TaskRepository } from "../tasks/task-repository.js";
+import { OrganizationRepository } from "../organizations/organization-repository.js";
+import { StrategyRepository } from "../strategy/strategy-repository.js";
 import type {
   CreateOrganizationUnitInput,
   OrganizationUnit,

@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
-import type { CreateTaskInput, TaskEvent, TaskRecord, TaskStatus } from "../tasks/task-types.js";
-import { nextTaskStatus } from "../tasks/task-machine.js";
-import type { AuditRepository } from "./audit-repository.js";
-import type { CompanyRepository } from "./company-repository.js";
-import type { WorkforceDatabase } from "./database.js";
-import { parseJson } from "./serialization.js";
-import { sanitizeTerminal } from "./sanitize-terminal.js";
-import { TaskRequirementRepository } from "../tasks/task-requirement-repository.js";
+import type { CreateTaskInput, TaskEvent, TaskRecord, TaskStatus } from "./task-types.js";
+import { nextTaskStatus } from "./task-machine.js";
+import type { AuditRepository } from "../storage/audit-repository.js";
+import type { CompanyRepository } from "../storage/company-repository.js";
+import type { WorkforceDatabase } from "../storage/database.js";
+import { parseJson } from "../storage/serialization.js";
+import { sanitizeTerminal } from "../storage/sanitize-terminal.js";
+import { TaskRequirementRepository } from "./task-requirement-repository.js";
 
 export class TaskRepository {
   readonly requirements: TaskRequirementRepository;

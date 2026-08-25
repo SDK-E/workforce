@@ -50,13 +50,7 @@ Performance measures must be role-specific. Evidence includes acceptance results
 
 ## Docker execution
 
-Images are pinned and built through an audited build command. Profiles are minimal layers:
-
-- Document.
-- Research.
-- Engineering.
-- Browser.
-- Restricted reviewer.
+The pinned build produces one direct-Alpine universal agent image. Document, research, engineering, browser, and restricted-review profiles are sandbox policies, not separate images. Mixed task toolchains are installed additively inside the private writable job volume.
 
 Every runtime container uses:
 
@@ -68,7 +62,7 @@ Every runtime container uses:
 - All capabilities dropped.
 - No new privileges.
 - PID, memory, CPU, and time limits.
-- Network none unless routed through an allowlisting egress proxy.
+- Audited network through the internal egress proxy; the task policy determines permitted inference, retrieval, and engineering access.
 - No Docker socket.
 - Managed labels and deterministic attempt identity.
 - Graceful stop followed by bounded forced cleanup.

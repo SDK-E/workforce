@@ -1,0 +1,13 @@
+# Workforce documentation
+
+Start with the documents that match what you are doing:
+
+- [User guide](user-guide.md) — install, configure, operate, and troubleshoot Workforce.
+- [Repository map](repository-map.md) — source ownership and file-placement rules.
+- [Product specification](product-specification.md) — authoritative product behavior and acceptance scope.
+- [Architecture](architecture.md) — trust boundaries, execution flow, persistence, and domain design.
+- [Workforce MCP plan](workforce-mcp.md) — external AI control and agent-scoped workforce tools.
+- [Coding standards](coding-standards.md) — repository structure and contribution rules.
+- [Package decisions](package-decisions.md) — maintained open-source dependency choices.
+
+Short duplicate requirement and ARM notes were consolidated into the product specification and architecture. Do not create a second source of truth for product requirements.

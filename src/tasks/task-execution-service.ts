@@ -1,7 +1,7 @@
 import type { ModelRepository } from "../registries/model-repository.js";
 import type { ToolRepository } from "../registries/tool-repository.js";
 import { planSandbox } from "../sandbox-planner.js";
-import type { TaskRepository } from "../storage/task-repository.js";
+import type { TaskRepository } from "./task-repository.js";
 import type { AttemptFactory } from "../supervision/attempt-factory.js";
 import type { AttemptRecord } from "../supervision/attempt-types.js";
 import type { DockerSupervisor } from "../supervision/docker-supervisor.js";
