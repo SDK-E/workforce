@@ -1,9 +1,10 @@
-FROM node:22-alpine
+FROM alpine:3.22.1
 
 ARG KILO_VERSION
 ARG OPENCODE_VERSION
+
 RUN test -n "$KILO_VERSION" && test -n "$OPENCODE_VERSION" \
- && apk add --no-cache ca-certificates git tini \
+ && apk add --no-cache bash sh zsh ca-certificates chromium curl git jq nodejs npm tini \
  && npm install --global "@kilocode/cli@$KILO_VERSION" "opencode-ai@$OPENCODE_VERSION" \
  && find /usr/local/lib/node_modules/@kilocode/cli/node_modules/@kilocode \
       -mindepth 1 -maxdepth 1 -type d -name 'cli-linux-*' ! -name '*-musl' -exec rm -rf '{}' + \
@@ -16,5 +17,6 @@ RUN test -n "$KILO_VERSION" && test -n "$OPENCODE_VERSION" \
 COPY --chmod=0555 workforce-entrypoint /usr/local/bin/workforce-entrypoint
 RUN mkdir -p /work && chown 10001:10001 /work
 WORKDIR /work
+ENV CHROME_BIN=/usr/bin/chromium
 USER 10001:10001
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/workforce-entrypoint"]

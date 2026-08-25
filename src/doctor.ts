@@ -1,17 +1,7 @@
 import { dockerImageExists, dockerStatus } from "./docker-runtime.js";
 
 const docker = await dockerStatus();
-const images = docker.available
-  ? await Promise.all([
-      dockerImageExists("workforce-agent-base:0.1.0"),
-      dockerImageExists("workforce-agent-builder:0.1.0"),
-      dockerImageExists("workforce-agent-reviewer:0.1.0"),
-      dockerImageExists("workforce-agent-document:0.1.0"),
-      dockerImageExists("workforce-agent-research:0.1.0"),
-      dockerImageExists("workforce-agent-browser:0.1.0"),
-    ])
-  : [false, false, false, false, false, false];
-const imagesReady = images.every(Boolean);
+const imagesReady = docker.available ? await dockerImageExists("workforce-agent:0.1.0") : false;
 console.log("Workforce doctor");
 console.log(`Docker: ${docker.available ? `available (${docker.version})` : "BLOCKED"}`);
 if (!docker.available) console.log(`Reason: ${docker.reason}`);

@@ -27,7 +27,7 @@ class ArchiveDockerClient implements DockerClient {
 const sandbox: SandboxSpec = {
   jobId: "artifact-job",
   profile: "engineering",
-  image: "workforce-agent-builder:0.1.0",
+  image: "workforce-agent:0.1.0",
   engine: "opencode",
   networkMode: "inference-only",
   allowedHosts: [],

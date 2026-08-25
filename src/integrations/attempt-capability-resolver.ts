@@ -82,16 +82,16 @@ function renderMcpConfig(
   const mcp: Record<string, unknown> = {};
   const permission: Record<string, "allow" | "deny"> = {};
   for (const { record, tools } of servers) {
-    const environment = Object.fromEntries(
-      record.secretRequirements.map((name) => [name, `{env:${name}}`]),
+    const credentials = Object.fromEntries(
+      record.credentialBindings.map(({ target, secretName }) => [target, `{env:${secretName}}`]),
     );
     mcp[record.id] =
       record.transport === "stdio"
-        ? { type: "local", command: record.command, environment, enabled: true }
+        ? { type: "local", command: record.command, environment: credentials, enabled: true }
         : {
             type: "remote",
             url: record.endpoint,
-            headers: environment,
+            headers: credentials,
             oauth: false,
             enabled: true,
           };

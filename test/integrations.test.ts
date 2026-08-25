@@ -24,6 +24,7 @@ test("MCP, Beads, and mail capabilities are scoped, audited, and reversible", ()
         command: [],
         toolAllowlist: ["search", "read-resource"],
         secretRequirements: ["MCP_TOKEN"],
+        credentialBindings: [{ target: "Authorization", secretName: "MCP_TOKEN" }],
         status: "active",
         health: "healthy",
       },
@@ -68,25 +69,7 @@ test("MCP, Beads, and mail capabilities are scoped, audited, and reversible", ()
       "active",
     );
     assert.equal(beads.companyId, "alpha");
-    assert.throws(
-      () =>
-        store.mcpServers.save(
-          {
-            companyId: "alpha",
-            id: "unsafe",
-            name: "Unsafe",
-            transport: "http",
-            endpoint: "https://user:secret@example.test/mcp",
-            command: [],
-            toolAllowlist: ["*"],
-            secretRequirements: [],
-            status: "active",
-            health: "healthy",
-          },
-          "human",
-        ),
-      /embedded credentials/,
-    );
+    assertUnsafeConfigurationsAreRejected(store, project.id);
 
     const outbound = store.mail.send({
       companyId: "alpha",
@@ -117,6 +100,59 @@ test("MCP, Beads, and mail capabilities are scoped, audited, and reversible", ()
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+function assertUnsafeConfigurationsAreRejected(store: StateStore, projectId: string): void {
+  assert.throws(
+    () =>
+      store.mcpServers.save(
+        {
+          companyId: "alpha",
+          id: "unsafe",
+          name: "Unsafe",
+          transport: "http",
+          endpoint: "https://user:secret@example.test/mcp",
+          command: [],
+          toolAllowlist: ["*"],
+          secretRequirements: [],
+          credentialBindings: [],
+          status: "active",
+          health: "healthy",
+        },
+        "human",
+      ),
+    /embedded credentials/,
+  );
+  assert.throws(
+    () =>
+      store.projectIntegrations.save(
+        {
+          companyId: "alpha",
+          projectId,
+          provider: "unsafe",
+          config: { apiToken: "plaintext-secret" },
+          secretRequirements: ["API_TOKEN"],
+          status: "active",
+        },
+        "human",
+      ),
+    /declared secret/,
+  );
+  assert.throws(
+    () =>
+      store.projectIntegrations.save(
+        {
+          companyId: "alpha",
+          projectId,
+          provider: "undeclared",
+          config: { authorization: "{env:API_TOKEN}" },
+          secretRequirements: [],
+          status: "active",
+        },
+        "human",
+      ),
+    /declared secret/,
+  );
+}
 
 function createProject(store: StateStore, companyId: string) {
   const objective = store.createStrategyItem({

@@ -17,7 +17,7 @@ docker run --rm --name "$container" \
   --cpus 0.5 --memory 256m --pids-limit 32 \
   --tmpfs /tmp:rw,noexec,nosuid,size=16m \
   --mount "type=volume,src=$volume,dst=/work" \
-  workforce-agent-builder:0.1.0 sh -eu -c '
+  workforce-agent:0.1.0 sh -eu -c '
     test "$(id -u)" = 10001
     if touch /etc/forbidden 2>/dev/null; then exit 21; fi
     printf SANDBOX_OK > /work/result.txt
@@ -26,7 +26,7 @@ docker run --rm --name "$container" \
 
 result="$(docker run --rm --user 10001:10001 --network none \
   --mount "type=volume,src=$volume,dst=/work" \
-  workforce-agent-reviewer:0.1.0 sh -eu -c 'cat /work/result.txt')"
+  workforce-agent:0.1.0 sh -eu -c 'cat /work/result.txt')"
 test "$result" = "SANDBOX_OK"
 
 if docker ps -a --format '{{.Names}}' | grep -qx "$container"; then
@@ -34,4 +34,3 @@ if docker ps -a --format '{{.Names}}' | grep -qx "$container"; then
   exit 23
 fi
 echo "Sandbox boundaries verified."
-

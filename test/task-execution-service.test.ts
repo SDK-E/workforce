@@ -79,6 +79,7 @@ test("approved task contracts queue verified inference-capable Docker execution"
         command: ["quality-mcp"],
         toolAllowlist: ["inspect"],
         secretRequirements: [],
+        credentialBindings: [],
         status: "active",
         health: "healthy",
       },

@@ -1,12 +1,7 @@
 import { SandboxSpecSchema, type JobRequirements, type SandboxSpec } from "./domain.js";
 
-const IMAGE_BY_PROFILE = {
-  document: "workforce-agent-document:0.1.0",
-  research: "workforce-agent-research:0.1.0",
-  engineering: "workforce-agent-builder:0.1.0",
-  browser: "workforce-agent-browser:0.1.0",
-  "restricted-review": "workforce-agent-reviewer:0.1.0",
-} as const;
+const UNIVERSAL_AGENT_IMAGE = "workforce-agent:0.1.0";
+type SandboxProfile = SandboxSpec["profile"];
 
 export function planSandbox(job: JobRequirements): SandboxSpec {
   const { capabilities: c } = job;
@@ -15,7 +10,7 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
   const engine = job.enginePreference[0];
   if (!engine) throw new Error("At least one engine preference is required");
 
-  let profile: keyof typeof IMAGE_BY_PROFILE = "document";
+  let profile: SandboxProfile = "document";
   if (job.dataSensitivity === "restricted" || job.risk === "critical")
     profile = "restricted-review";
   else if (c.shell || c.sourceControl || c.packageInstall || c.buildTools.length)
@@ -83,7 +78,7 @@ export function planSandbox(job: JobRequirements): SandboxSpec {
   return SandboxSpecSchema.parse({
     jobId: job.id,
     profile,
-    image: IMAGE_BY_PROFILE[profile],
+    image: UNIVERSAL_AGENT_IMAGE,
     engine,
     networkMode: taskNetworkApproved ? requestedNetworkMode : "inference-only",
     allowedHosts: taskNetworkApproved ? job.network.allowedHosts : [],

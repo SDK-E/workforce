@@ -11,6 +11,7 @@ const FIELDS = [
   "Endpoint or argv command",
   "Allowed tools (comma separated)",
   "Secret environment names (comma separated)",
+  "Credential bindings (target=SECRET, comma separated)",
 ] as const;
 
 export function McpServerForm(props: {
@@ -20,7 +21,7 @@ export function McpServerForm(props: {
   onCancel: () => void;
 }) {
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState(["", "", "http", "", "", ""]);
+  const [values, setValues] = useState(["", "", "http", "", "", "", ""]);
   const confirming = step === FIELDS.length;
   useInput((_input, key) => {
     if (key.escape) props.onCancel();
@@ -38,6 +39,7 @@ export function McpServerForm(props: {
       command: transport === "stdio" ? splitWords(target) : [],
       toolAllowlist: splitList(values[4]),
       secretRequirements: splitList(values[5]),
+      credentialBindings: parseBindings(values[6]),
       status: "active",
       health: "unknown",
     });
@@ -86,4 +88,14 @@ function splitList(value: string | undefined): string[] {
 
 function splitWords(value: string): string[] {
   return value.split(/\s+/).filter(Boolean);
+}
+
+function parseBindings(value: string | undefined): { target: string; secretName: string }[] {
+  return splitList(value).map((item) => {
+    const separator = item.indexOf("=");
+    return {
+      target: separator < 0 ? item : item.slice(0, separator).trim(),
+      secretName: separator < 0 ? item : item.slice(separator + 1).trim(),
+    };
+  });
 }

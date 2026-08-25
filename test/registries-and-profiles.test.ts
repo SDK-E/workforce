@@ -9,7 +9,7 @@ import { StateStore } from "../src/storage/state-store.js";
 const sandbox: SandboxSpec = {
   jobId: "profile-job",
   profile: "engineering",
-  image: "workforce-agent-builder:0.1.0",
+  image: "workforce-agent:0.1.0",
   engine: "opencode",
   networkMode: "inference-only",
   allowedHosts: [],
@@ -37,7 +37,8 @@ test("registries and dynamic agent instructions are company scoped and versioned
     store.createCompany({ id: "acme", name: "Acme" });
     store.createCompany({ id: "other", name: "Other" });
     assert.equal(store.tools.list("acme").length, 5);
-    assert.equal(store.environments.list("acme").length, 5);
+    assert.equal(store.environments.list("acme").length, 1);
+    assert.equal(store.environments.list("acme")[0]?.id, "universal");
     assert.equal(store.models.list("acme").length, 2);
     assert.equal(store.tools.list("other").length, 5);
 

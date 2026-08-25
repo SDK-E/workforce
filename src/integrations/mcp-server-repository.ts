@@ -3,6 +3,7 @@ import type { CompanyRepository } from "../storage/company-repository.js";
 import type { WorkforceDatabase } from "../storage/database.js";
 import { sanitizeTerminal } from "../storage/sanitize-terminal.js";
 import { parseJson } from "../storage/serialization.js";
+import { validateSecretName } from "./integration-config-policy.js";
 import type { ManagedStatus, McpServerRecord } from "./integration-types.js";
 
 export class McpServerRepository {
@@ -26,12 +27,16 @@ export class McpServerRepository {
     this.database.transaction(() => {
       this.database.connection
         .prepare(
-          `INSERT INTO mcp_servers VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+          `INSERT INTO mcp_servers
+           (company_id,id,name,transport,endpoint,command_json,tool_allowlist_json,
+            secret_requirements_json,status,health,created_at,updated_at,credential_bindings_json)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
            ON CONFLICT(company_id,id) DO UPDATE SET name=excluded.name,transport=excluded.transport,
            endpoint=excluded.endpoint,command_json=excluded.command_json,
            tool_allowlist_json=excluded.tool_allowlist_json,
            secret_requirements_json=excluded.secret_requirements_json,status=excluded.status,
-           health=excluded.health,updated_at=excluded.updated_at`,
+           health=excluded.health,credential_bindings_json=excluded.credential_bindings_json,
+           updated_at=excluded.updated_at`,
         )
         .run(
           record.companyId,
@@ -46,6 +51,7 @@ export class McpServerRepository {
           record.health,
           record.createdAt,
           record.updatedAt,
+          JSON.stringify(record.credentialBindings),
         );
       this.audit.append("mcp-server.saved", actorId, record.companyId, {
         serverId: record.id,
@@ -95,8 +101,24 @@ function validateMcp(input: Omit<McpServerRecord, "createdAt" | "updatedAt">): v
     if (!["http:", "https:"].includes(endpoint.protocol) || endpoint.username || endpoint.password)
       throw new Error("MCP endpoint must be an HTTP URL without embedded credentials");
   }
-  for (const name of input.secretRequirements)
-    if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(name)) throw new Error(`Invalid MCP secret name: ${name}`);
+  for (const name of input.secretRequirements) validateSecretName(name, "MCP");
+  const targets = new Set<string>();
+  for (const binding of input.credentialBindings) {
+    if (!/^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(binding.target))
+      throw new Error(`Invalid MCP credential target: ${binding.target}`);
+    validateSecretName(binding.secretName, "MCP binding");
+    if (!input.secretRequirements.includes(binding.secretName))
+      throw new Error(`MCP binding references undeclared secret: ${binding.secretName}`);
+    if (targets.has(binding.target))
+      throw new Error(`Duplicate MCP credential target: ${binding.target}`);
+    targets.add(binding.target);
+  }
+  if (
+    input.secretRequirements.some(
+      (name) => !input.credentialBindings.some((item) => item.secretName === name),
+    )
+  )
+    throw new Error("Every MCP secret requirement must have a credential binding");
 }
 
 function mapMcp(row: Record<string, unknown>): McpServerRecord {
@@ -109,6 +131,7 @@ function mapMcp(row: Record<string, unknown>): McpServerRecord {
     command: parseJson(row.command_json),
     toolAllowlist: parseJson(row.tool_allowlist_json),
     secretRequirements: parseJson(row.secret_requirements_json),
+    credentialBindings: parseJson(row.credential_bindings_json),
     status: String(row.status) as ManagedStatus,
     health: String(row.health) as McpServerRecord["health"],
     createdAt: String(row.created_at),

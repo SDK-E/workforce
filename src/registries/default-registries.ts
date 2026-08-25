@@ -51,31 +51,24 @@ export class DefaultRegistries {
   }
 
   private seedEnvironments(companyId: string): void {
-    for (const [id, image, profiles] of [
-      ["document", "workforce-agent-document:0.1.0", ["document"]],
-      ["research", "workforce-agent-research:0.1.0", ["research"]],
-      ["engineering", "workforce-agent-builder:0.1.0", ["engineering"]],
-      ["browser", "workforce-agent-browser:0.1.0", ["browser"]],
-      ["restricted-review", "workforce-agent-reviewer:0.1.0", ["restricted-review"]],
-    ] as const)
-      this.environments.save({
-        companyId,
-        id,
-        name: `${id} sandbox`,
-        sandboxImage: image,
-        runtime: { user: "10001:10001", rootFilesystem: "read-only" },
-        buildToolchain: [],
-        browser: id === "browser" ? { provider: "playwright", hostBrowser: false } : {},
-        networkPolicy: { default: "inference-only", auditedProxyRequired: true },
-        inputContract: { mode: "copy", hostMounts: false },
-        secretsPolicy: { scopedInjectionOnly: true },
-        resourcePolicy: { cpu: 1, memoryMb: 1024, pids: 128 },
-        outputContract: { privateVolume: true, validatedExport: true },
-        cleanupPolicy: { containers: "immediate", volumes: "retained-by-policy" },
-        supportedProfiles: [...profiles],
-        health: "unknown",
-        healthReceiptId: null,
-      });
+    this.environments.save({
+      companyId,
+      id: "universal",
+      name: "Universal agent sandbox",
+      sandboxImage: "workforce-agent:0.1.0",
+      runtime: { user: "10001:10001", rootFilesystem: "read-only" },
+      buildToolchain: ["audited-tool-registry:/work/.tools"],
+      browser: { provider: "chromium", hostBrowser: false },
+      networkPolicy: { default: "inference-only", auditedProxyRequired: true },
+      inputContract: { mode: "copy", hostMounts: false },
+      secretsPolicy: { scopedInjectionOnly: true },
+      resourcePolicy: { cpu: 1, memoryMb: 1024, pids: 128 },
+      outputContract: { privateVolume: true, validatedExport: true },
+      cleanupPolicy: { containers: "immediate", volumes: "retained-by-policy" },
+      supportedProfiles: ["document", "research", "engineering", "browser", "restricted-review"],
+      health: "unknown",
+      healthReceiptId: null,
+    });
   }
 
   private seedModels(companyId: string): void {

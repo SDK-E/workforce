@@ -1,6 +1,7 @@
 import type { AuditRepository } from "../storage/audit-repository.js";
 import type { WorkforceDatabase } from "../storage/database.js";
 import { parseJson } from "../storage/serialization.js";
+import { validateIntegrationConfig, validateSecretName } from "./integration-config-policy.js";
 import type { ManagedStatus, ProjectIntegrationRecord } from "./integration-types.js";
 
 export class ProjectIntegrationRepository {
@@ -16,9 +17,8 @@ export class ProjectIntegrationRepository {
     this.requireProject(input.companyId, input.projectId);
     if (!/^[a-z][a-z0-9_-]{1,63}$/.test(input.provider))
       throw new Error("Invalid integration provider id");
-    for (const name of input.secretRequirements)
-      if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(name))
-        throw new Error(`Invalid integration secret name: ${name}`);
+    for (const name of input.secretRequirements) validateSecretName(name, "integration");
+    validateIntegrationConfig(input.config, input.secretRequirements);
     const existing = this.get(input.companyId, input.projectId, input.provider);
     const now = new Date().toISOString();
     const record = { ...input, createdAt: existing?.createdAt ?? now, updatedAt: now };

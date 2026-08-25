@@ -1,5 +1,10 @@
 export type ManagedStatus = "active" | "disabled" | "archived";
 
+interface CredentialBinding {
+  target: string;
+  secretName: string;
+}
+
 export interface McpServerRecord {
   companyId: string;
   id: string;
@@ -9,6 +14,7 @@ export interface McpServerRecord {
   command: string[];
   toolAllowlist: string[];
   secretRequirements: string[];
+  credentialBindings: CredentialBinding[];
   status: ManagedStatus;
   health: "unknown" | "healthy" | "degraded" | "unavailable";
   createdAt: string;
