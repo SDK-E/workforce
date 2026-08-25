@@ -5,10 +5,12 @@ export function StrategyView({
   title,
   kind,
   items,
+  selectedRow,
 }: {
   title: string;
   kind: StrategyItemKind;
   items: StrategyItem[];
+  selectedRow: number;
 }) {
   const matching = items.filter((item) => item.kind === kind);
   return (
@@ -17,14 +19,14 @@ export function StrategyView({
       {matching.length === 0 ? (
         <Text dimColor>No {kind}s configured.</Text>
       ) : (
-        matching.map((item) => (
-          <Text key={item.id}>
+        matching.map((item, index) => (
+          <Text key={item.id} inverse={index === selectedRow}>
             [{item.status}] {item.name} · owner {item.ownerId} · measures{" "}
             {item.successMeasures.length}
           </Text>
         ))
       )}
-      <Text dimColor>Press n to create a {kind} with measurable exit criteria.</Text>
+      <Text dimColor>n create · e edit · [/] select · d archive · u restore</Text>
     </Box>
   );
 }

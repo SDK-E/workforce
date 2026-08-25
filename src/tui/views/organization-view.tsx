@@ -7,9 +7,11 @@ import type {
 export function OrganizationView({
   units,
   kind,
+  selectedRow,
 }: {
   units: OrganizationUnit[];
   kind?: OrganizationUnitKind | OrganizationUnitKind[];
+  selectedRow: number;
 }) {
   const kinds = Array.isArray(kind) ? kind : kind ? [kind] : undefined;
   const visible = kinds ? units.filter((unit) => kinds.includes(unit.kind)) : units;
@@ -19,13 +21,13 @@ export function OrganizationView({
       {visible.length === 0 ? (
         <Text dimColor>No departments, teams, offices, or rooms configured.</Text>
       ) : (
-        visible.map((unit) => (
-          <Text key={unit.id}>
+        visible.map((unit, index) => (
+          <Text key={unit.id} inverse={index === selectedRow}>
             [{unit.kind}] {unit.name} · manager {unit.managerId ?? "unassigned"}
           </Text>
         ))
       )}
-      <Text dimColor>Press n to create an organization unit.</Text>
+      <Text dimColor>n create · e edit · [/] select · d archive · u restore</Text>
     </Box>
   );
 }

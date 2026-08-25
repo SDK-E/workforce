@@ -3,8 +3,10 @@ import type { ProjectIntegrationRecord } from "../../integrations/integration-ty
 
 export function ProjectIntegrationView({
   integrations,
+  selectedRow,
 }: {
   integrations: ProjectIntegrationRecord[];
+  selectedRow: number;
 }) {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
@@ -13,13 +15,16 @@ export function ProjectIntegrationView({
       {integrations.length === 0 ? (
         <Text dimColor>No project integrations configured.</Text>
       ) : (
-        integrations.map((integration) => (
-          <Text key={`${integration.projectId}:${integration.provider}`}>
+        integrations.map((integration, index) => (
+          <Text
+            key={`${integration.projectId}:${integration.provider}`}
+            inverse={index === selectedRow}
+          >
             [{integration.status}] {integration.provider} · project {integration.projectId}
           </Text>
         ))
       )}
-      <Text dimColor>n configure · e edit · d archive · u restore</Text>
+      <Text dimColor>n configure · e edit · [/] select · d archive · u restore</Text>
     </Box>
   );
 }

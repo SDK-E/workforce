@@ -76,7 +76,7 @@ const taskMachine = createMachine({
     rejected: { on: terminalTransitions },
     failed: { on: { RETRY: "retrying", ...terminalTransitions } },
     cancelled: { on: terminalTransitions },
-    archived: { type: "final" },
+    archived: { on: { RESTORE: "draft" } },
   },
 });
 

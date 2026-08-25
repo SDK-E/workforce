@@ -46,7 +46,8 @@ export type TaskEvent =
   | "REJECT"
   | "FAIL"
   | "CANCEL"
-  | "ARCHIVE";
+  | "ARCHIVE"
+  | "RESTORE";
 
 interface TaskInputContract {
   name: string;

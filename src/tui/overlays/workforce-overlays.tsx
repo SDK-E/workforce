@@ -5,12 +5,14 @@ import { CreateOverlay, type CreateFormKind } from "./create-overlay.js";
 import { EmergencyStopDialog } from "./emergency-stop-dialog.js";
 import { HelpOverlay } from "./help-overlay.js";
 import { ConfirmationDialog } from "./confirmation-dialog.js";
+import { lifecycleVerb, type LifecycleTarget } from "../lifecycle-actions.js";
 
 export function WorkforceOverlays(props: {
   paletteVisible: boolean;
   helpVisible: boolean;
   emergencyVisible: boolean;
   executionTask: { id: string; objective: string } | null;
+  lifecycleTarget: LifecycleTarget | null;
   activeForm: CreateFormKind | null;
   query: string;
   compact: boolean;
@@ -25,6 +27,8 @@ export function WorkforceOverlays(props: {
   onEmergencyStop: () => Promise<void>;
   onConfirmExecution: () => void;
   onCancelExecution: () => void;
+  onConfirmLifecycle: () => void;
+  onCancelLifecycle: () => void;
 }) {
   return (
     <>
@@ -60,6 +64,15 @@ export function WorkforceOverlays(props: {
           confirmLabel="queue attempt"
           onConfirm={props.onConfirmExecution}
           onCancel={props.onCancelExecution}
+        />
+      )}
+      {props.lifecycleTarget && (
+        <ConfirmationDialog
+          title={`${lifecycleVerb(props.lifecycleTarget) === "archive" ? "Archive" : "Restore"} record`}
+          message={`${lifecycleVerb(props.lifecycleTarget) === "archive" ? "Archive" : "Restore"} “${props.lifecycleTarget.label}”? The record and audit history will be preserved.`}
+          confirmLabel={lifecycleVerb(props.lifecycleTarget)}
+          onConfirm={props.onConfirmLifecycle}
+          onCancel={props.onCancelLifecycle}
         />
       )}
     </>

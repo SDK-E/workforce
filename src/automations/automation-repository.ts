@@ -90,6 +90,12 @@ export class AutomationRepository {
     return this.updateStatus(current, "disabled", actorId, reason);
   }
 
+  archive(companyId: string, id: string, actorId: string, reason: string): AutomationRecord {
+    const current = this.require(companyId, id);
+    if (current.status === "archived") throw new Error("Automation is already archived");
+    return this.updateStatus(current, "archived", actorId, reason);
+  }
+
   restore(companyId: string, id: string, actorId: string, reason: string): AutomationRecord {
     const current = this.require(companyId, id);
     if (current.status !== "disabled" && current.status !== "archived")

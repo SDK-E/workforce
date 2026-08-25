@@ -1,7 +1,13 @@
 import { Box, Text } from "ink";
 import type { McpServerRecord } from "../../integrations/integration-types.js";
 
-export function McpServerView({ servers }: { servers: McpServerRecord[] }) {
+export function McpServerView({
+  servers,
+  selectedRow,
+}: {
+  servers: McpServerRecord[];
+  selectedRow: number;
+}) {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
       <Text bold>MCP server registry</Text>
@@ -9,14 +15,14 @@ export function McpServerView({ servers }: { servers: McpServerRecord[] }) {
       {servers.length === 0 ? (
         <Text dimColor>No MCP servers registered.</Text>
       ) : (
-        servers.map((server) => (
-          <Text key={server.id}>
+        servers.map((server, index) => (
+          <Text key={server.id} inverse={index === selectedRow}>
             [{server.status}] {server.name} · {server.transport} · {server.health} · tools{" "}
             {server.toolAllowlist.join(", ") || "none"}
           </Text>
         ))
       )}
-      <Text dimColor>n register · e edit · d archive · u restore · v verify in Docker</Text>
+      <Text dimColor>n register · e edit · [/] select · d archive · u restore · v verify</Text>
     </Box>
   );
 }

@@ -28,7 +28,7 @@ Node.js 22.13–26 and pnpm 10–11 are supported and checked explicitly. Depend
 
 ## TUI keys
 
-Use arrows or `j`/`k` to navigate, Enter to open, `/` or `p` for the command palette, `?` for contextual help, and `q` to quit. Docker status, active container capacity, pending decisions, and alerts remain visible in the top bar.
+Use arrows or `j`/`k` to navigate sections, `[`/`]` to select records, `n` to create, `e` to edit where supported, `d` to archive, and `u` to restore. Consequential lifecycle actions open an opaque confirmation dialog and preserve the record plus its audit history. Enter opens or confirms, `/` or `p` opens the command palette, `?` shows contextual help, and `q` quits. Docker status, active container capacity, pending decisions, and alerts remain visible in the top bar.
 
 ## Source organization
 
@@ -49,7 +49,7 @@ Docker Desktop or another compatible Docker daemon must be running before any ag
 - No agent receives the Docker socket.
 - One container and one private job volume per attempt.
 - Root filesystem is read-only; capabilities are dropped.
-- Network is disabled unless explicit requirements justify an approved profile.
+- Agent inference always uses the audited egress path; broader retrieval and engineering access is capability-scoped and logged.
 - Secrets are never baked into images or task records.
 - A zero exit code is not acceptance.
 - Missing deliverables, step exhaustion, permission failures, and validation failures keep work incomplete.

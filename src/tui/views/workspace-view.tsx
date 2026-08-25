@@ -88,6 +88,7 @@ interface WorkspaceViewProps {
   compact: boolean;
   companies: CompanyRecord[];
   onCompanySelect: (company: CompanyRecord) => void;
+  selectedRow: number;
 }
 
 const STRATEGY_SECTIONS: Record<string, StrategyItemKind> = {
@@ -108,18 +109,45 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         onSelect={props.onCompanySelect}
       />
     );
-  if (props.section === "Organization") return <OrganizationView units={props.organizationUnits} />;
+  if (props.section === "Organization")
+    return <OrganizationView units={props.organizationUnits} selectedRow={props.selectedRow} />;
   if (props.section === "Departments")
-    return <OrganizationView units={props.organizationUnits} kind="department" />;
+    return (
+      <OrganizationView
+        units={props.organizationUnits}
+        kind="department"
+        selectedRow={props.selectedRow}
+      />
+    );
   if (props.section === "Teams")
-    return <OrganizationView units={props.organizationUnits} kind="team" />;
+    return (
+      <OrganizationView
+        units={props.organizationUnits}
+        kind="team"
+        selectedRow={props.selectedRow}
+      />
+    );
   if (props.section === "Offices & rooms")
-    return <OrganizationView units={props.organizationUnits} kind={["office", "room"]} />;
+    return (
+      <OrganizationView
+        units={props.organizationUnits}
+        kind={["office", "room"]}
+        selectedRow={props.selectedRow}
+      />
+    );
   const strategyKind = STRATEGY_SECTIONS[props.section];
   if (strategyKind) {
-    return <StrategyView title={props.section} kind={strategyKind} items={props.strategyItems} />;
+    return (
+      <StrategyView
+        title={props.section}
+        kind={strategyKind}
+        items={props.strategyItems}
+        selectedRow={props.selectedRow}
+      />
+    );
   }
-  if (props.section === "Tasks") return <TaskView tasks={props.tasks} />;
+  if (props.section === "Tasks")
+    return <TaskView tasks={props.tasks} selectedRow={props.selectedRow} />;
   if (props.section === "Employees")
     return (
       <EmployeeView
@@ -157,10 +185,17 @@ export function WorkspaceView(props: WorkspaceViewProps) {
         models={props.models}
       />
     );
-  if (props.section === "MCP servers") return <McpServerView servers={props.mcpServers} />;
+  if (props.section === "MCP servers")
+    return <McpServerView servers={props.mcpServers} selectedRow={props.selectedRow} />;
   if (props.section === "Project integrations")
-    return <ProjectIntegrationView integrations={props.projectIntegrations} />;
-  if (props.section === "Automations") return <AutomationView automations={props.automations} />;
+    return (
+      <ProjectIntegrationView
+        integrations={props.projectIntegrations}
+        selectedRow={props.selectedRow}
+      />
+    );
+  if (props.section === "Automations")
+    return <AutomationView automations={props.automations} selectedRow={props.selectedRow} />;
   if (props.section === "Audit")
     return <AuditView events={props.events} verified={props.auditVerified} />;
   if (props.section === "Settings")
