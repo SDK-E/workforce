@@ -27,15 +27,16 @@ deferred item unless the user says "STOP"; defer new requests here until your to
 - Next: need reproduction details (terminal app, OS, Node version, whether overlays open, whether
   NO_COLOR). Then profile before editing. Do not guess-fix.
 
-### BUG-004 No real-Docker boundary evidence in test suite
-- Evidence: `test/docker-supervisor.test.ts` uses FakeDockerClient exclusively; hardening flags,
-  volume persistence, timeout cleanup, secret argv hygiene, refill, orphan reconcile, and
-  false-completion have no daemon-backed proof.
-- Impact: Slice 2 acceptance cannot be claimed from mocks.
-- Next: add `test/docker-boundary.test.ts` covering: hardening flags + non-root uid, read-only root,
-  private volume persistence across containers, timeout cleanup, secret name-only argv, two-attempt
-  refill through ExecaDockerClient, orphan reconcile, stale leases, false-completion (exit 0 without
-  evidence stays incomplete), zero leftover managed containers.
+### BUG-004 No real-Docker boundary evidence in test suite — FIXED (2026-08-25)
+- Was: `test/docker-supervisor.test.ts` used FakeDockerClient exclusively; hardening flags, volume
+  persistence, timeout cleanup, secret argv hygiene, refill, orphan reconcile, and false-completion
+  had no daemon-backed proof.
+- Fix: added `test/docker-boundary.test.ts` against the local daemon: non-root/read-only-root
+  hardening behavior, private volume persistence across containers, timeout cleanup leaving no
+  managed container, secret name-only argv, capacity refill ≤ concurrency through ExecaDockerClient,
+  orphan reconcile removing an unknown managed container, stale lease recovery, and exit-0-without-
+  evidence staying failed via the completion processor. Tests skip cleanly when Docker or the agent
+  image is unavailable.
 
 ### OBS-005 Model creation form exposes registry-level fields during onboarding
 - Evidence: model form requests engine/model/provider plus capabilities, roles, secrets, context
