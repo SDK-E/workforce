@@ -139,7 +139,7 @@ export function CreateOverlay(props: CreateOverlayProps) {
       <ApprovalDecisionForm
         terminalWidth={props.terminalWidth}
         {...(props.selectedTarget?.kind === "approval"
-          ? { initialApprovalId: props.selectedTarget.id }
+          ? { approvalId: props.selectedTarget.id }
           : {})}
         onCancel={props.onClose}
         onSubmit={(input) => {
@@ -197,6 +197,7 @@ function CapabilityMutationOverlay(props: MutationOverlayProps) {
     return (
       <ProjectIntegrationForm
         companyId={props.company.id}
+        projects={props.store.strategyRepository.list(props.company.id, "project")}
         terminalWidth={props.terminalWidth}
         onCancel={props.onClose}
         initial={current}
@@ -235,6 +236,7 @@ function MeetingMutationOverlay(props: MutationOverlayProps) {
   return (
     <MeetingForm
       terminalWidth={props.terminalWidth}
+      employees={props.store.employees(props.company.id)}
       {...(current ? { initial: current } : {})}
       onCancel={props.onClose}
       onSubmit={(input) => {

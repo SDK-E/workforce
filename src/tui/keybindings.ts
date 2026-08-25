@@ -37,6 +37,7 @@ function formatChord(chord: string): string {
     right: "→",
     enter: "Enter",
     escape: "Esc",
+    space: "Space",
     tab: "Tab",
     ctrl: "Ctrl",
     shift: "Shift",
@@ -62,7 +63,7 @@ export function duplicateKeybindings(): { chord: string; commands: KeybindingCom
 
 function inputChord(input: string, key: InputKey): string {
   const special = specialKey(key);
-  const base = special ?? input.toLowerCase();
+  const base = special ?? (input === " " ? "space" : input.toLowerCase());
   const modifiers = [
     key.ctrl && "ctrl",
     key.meta && special !== "escape" && "meta",

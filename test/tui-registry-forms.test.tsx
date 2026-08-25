@@ -48,8 +48,8 @@ test("registry forms prefill selected tools and environments", async () => {
     healthReceiptId: "receipt-two",
   };
   for (const [kind, initial, expected] of [
-    ["tool", tool, "browser"],
-    ["environment", environment, "universal"],
+    ["tool", tool, "1.0.0"],
+    ["environment", environment, "Universal sandbox"],
   ] as const) {
     const view = render(
       <Box width={100} height={30}>

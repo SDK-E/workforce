@@ -3,6 +3,8 @@ import { Box, Text, useInput } from "ink";
 import TextInput from "ink-text-input";
 import type { IncidentRecord } from "../../governance/incident-repository.js";
 import type { PerformanceRecord } from "../../governance/performance-repository.js";
+import type { Employee } from "../../domain.js";
+import { NamedSelect, type NamedOption } from "../components/named-select.js";
 import { matchesKeybinding } from "../keybindings.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { FormFrame } from "./form-frame.js";
@@ -47,25 +49,15 @@ export type GovernanceFormResult =
     };
 
 const FIELDS: Record<GovernanceFormKind, string[]> = {
-  performance: [
-    "Employee ID",
-    "Kind (observation, warning, review, challenge)",
-    "Evidence-based summary",
-    "Evidence IDs (comma separated)",
-  ],
-  recognition: ["Employee ID", "Recognition summary", "Evidence IDs (comma separated)"],
-  incident: [
-    "Incident title",
-    "Severity (low, medium, high, critical)",
-    "Incident summary",
-    "Evidence IDs (comma separated)",
-  ],
+  performance: ["Employee", "Kind", "Evidence-based summary", "Evidence IDs (comma separated)"],
+  recognition: ["Employee", "Recognition summary", "Evidence IDs (comma separated)"],
+  incident: ["Incident title", "Severity", "Incident summary", "Evidence IDs (comma separated)"],
   corrective: [
-    "Employee ID",
-    "Action (coaching, warning, restriction, suspension)",
+    "Employee",
+    "Action",
     "Evidence-based rationale",
     "Evidence IDs (comma separated)",
-    "Related incident ID (or none)",
+    "Related incident (optional)",
   ],
   claim: [
     "Subject ID",
@@ -78,6 +70,8 @@ const FIELDS: Record<GovernanceFormKind, string[]> = {
 
 export function GovernanceForm(props: {
   kind: GovernanceFormKind;
+  employees?: Employee[];
+  incidents?: IncidentRecord[];
   terminalWidth: number;
   onSubmit: (result: GovernanceFormResult) => void;
   onCancel: () => void;
@@ -86,6 +80,7 @@ export function GovernanceForm(props: {
   const [step, setStep] = useState(0);
   const [values, setValues] = useState(() => defaults(props.kind));
   const [error, setError] = useState("");
+  const options = selectOptions(props, step);
   const confirming = step === fields.length;
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
@@ -112,6 +107,16 @@ export function GovernanceForm(props: {
       {error && <Text color="red">{error}</Text>}
       {confirming ? (
         <Text>Persist this evidence-backed {props.kind} record?</Text>
+      ) : options ? (
+        <NamedSelect
+          label={fields[step] ?? "Selection"}
+          items={options}
+          value={values[step] ?? ""}
+          onSelect={(value) => {
+            setValues((current) => current.map((item, index) => (index === step ? value : item)));
+            setStep((current) => current + 1);
+          }}
+        />
       ) : (
         <>
           <Text>{fields[step]}</Text>
@@ -133,6 +138,31 @@ export function GovernanceForm(props: {
       )}
     </FormFrame>
   );
+}
+
+function selectOptions(
+  props: Parameters<typeof GovernanceForm>[0],
+  step: number,
+): NamedOption[] | undefined {
+  if (["performance", "recognition", "corrective"].includes(props.kind) && step === 0)
+    return (props.employees ?? [])
+      .filter(({ status }) => status !== "terminated")
+      .map((employee) => ({ label: `${employee.name} — ${employee.title}`, value: employee.id }));
+  if (props.kind === "performance" && step === 1)
+    return named(["observation", "warning", "review", "challenge"]);
+  if (props.kind === "incident" && step === 1) return named(["low", "medium", "high", "critical"]);
+  if (props.kind === "corrective" && step === 1)
+    return named(["coaching", "warning", "restriction", "suspension"]);
+  if (props.kind === "corrective" && step === 4)
+    return [
+      { label: "No related incident", value: "none" },
+      ...(props.incidents ?? []).map(({ id, title }) => ({ label: title, value: id })),
+    ];
+  return undefined;
+}
+
+function named(values: string[]): NamedOption[] {
+  return values.map((value) => ({ label: value, value }));
 }
 
 function defaults(kind: GovernanceFormKind): string[] {

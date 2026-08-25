@@ -7,7 +7,6 @@ import type { UpdateAgentInstructionsInput } from "../../employees/agent-profile
 import { FormFrame } from "./form-frame.js";
 
 const FIELDS = [
-  "Employee ID",
   "Persona name",
   "Identity summary",
   "Communication style",
@@ -19,6 +18,7 @@ const FIELDS = [
 
 export function AgentProfileForm(props: {
   companyId: string;
+  employeeId: string;
   terminalWidth: number;
   onSubmit: (input: UpdateAgentInstructionsInput) => void;
   onCancel: () => void;
@@ -38,18 +38,18 @@ export function AgentProfileForm(props: {
   function submit(): void {
     props.onSubmit({
       companyId: props.companyId,
-      employeeId: values[0]?.trim() ?? "",
-      personaName: values[1]?.trim() ?? "",
-      identitySummary: values[2]?.trim() ?? "",
-      communicationStyle: values[3]?.trim() ?? "",
+      employeeId: props.employeeId,
+      personaName: values[0]?.trim() ?? "",
+      identitySummary: values[1]?.trim() ?? "",
+      communicationStyle: values[2]?.trim() ?? "",
       autonomyPolicy: { mode: "task-scoped", consequentialActionsRequireApproval: true },
-      systemPrompt: values[4]?.trim() ?? "",
-      instructions: split(values[5]),
-      constraints: split(values[6]),
+      systemPrompt: values[3]?.trim() ?? "",
+      instructions: split(values[4]),
+      constraints: split(values[5]),
       contextSources: ["company-policy", "employee-role", "task-requirements", "relevant-chat"],
       modelPolicy: { selection: "task-and-role-specific", hiddenSwitching: false },
       changedBy: "human",
-      changeReason: values[7]?.trim() ?? "",
+      changeReason: values[6]?.trim() ?? "",
     });
   }
   return (
@@ -64,7 +64,8 @@ export function AgentProfileForm(props: {
     >
       {confirming ? (
         <Text>
-          Activate a new instruction revision for {values[0]}? Prior revisions remain preserved.
+          Activate a new instruction revision for the selected employee? Prior revisions remain
+          preserved.
         </Text>
       ) : (
         <>
@@ -90,7 +91,6 @@ export function AgentProfileForm(props: {
 function initialValues(initial?: UpdateAgentInstructionsInput): string[] {
   if (!initial) return FIELDS.map(() => "");
   return [
-    initial.employeeId,
     initial.personaName,
     initial.identitySummary,
     initial.communicationStyle,

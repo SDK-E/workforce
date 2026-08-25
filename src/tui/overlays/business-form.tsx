@@ -7,6 +7,9 @@ import type {
   LeadRecord,
   OpportunityRecord,
 } from "../../business/business-types.js";
+import type { Employee } from "../../domain.js";
+import type { StrategyItem } from "../../strategy/strategy-types.js";
+import { NamedSelect, type NamedOption } from "../components/named-select.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
 import { FormFrame } from "./form-frame.js";
@@ -17,14 +20,22 @@ type BusinessRecord = OpportunityRecord | LeadRecord | ClientRecord | Engagement
 export function BusinessForm(props: {
   kind: BusinessFormKind;
   initial?: BusinessRecord;
+  employees?: Employee[];
+  opportunities?: OpportunityRecord[];
+  leads?: LeadRecord[];
+  clients?: ClientRecord[];
+  projects?: StrategyItem[];
   terminalWidth: number;
   onSubmit: (values: string[]) => void;
   onCancel: () => void;
 }) {
   const fields = FIELDS[props.kind];
+  const steps = props.initial ? fields.map((_, index) => index) : CREATE_STEPS[props.kind];
   const [step, setStep] = useState(0);
   const [values, setValues] = useState(() => initialValues(props.kind, props.initial));
-  const confirming = step === fields.length;
+  const fieldIndex = steps[step];
+  const options = fieldIndex === undefined ? undefined : selectOptions(props, fieldIndex);
+  const confirming = step === steps.length;
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
     if (confirming && matchesKeybinding("activate", input, key)) props.onSubmit(values);
@@ -36,25 +47,37 @@ export function BusinessForm(props: {
       footer={
         confirming
           ? "Enter confirm and audit · Esc cancel"
-          : `Enter next · Esc cancel · ${step + 1}/${fields.length}`
+          : `Enter next · Esc cancel · ${step + 1}/${steps.length}`
       }
     >
       {confirming ? (
         <Text>Persist this company-scoped {props.kind} record?</Text>
+      ) : options ? (
+        <NamedSelect
+          label={fields[fieldIndex ?? 0] ?? "Selection"}
+          items={options}
+          value={values[fieldIndex ?? 0] ?? ""}
+          onSelect={(value) => {
+            setValues((current) =>
+              current.map((item, index) => (index === fieldIndex ? value : item)),
+            );
+            setStep((current) => current + 1);
+          }}
+        />
       ) : (
         <>
-          <Text>{fields[step]}</Text>
+          <Text>{fields[fieldIndex ?? 0]}</Text>
           <Box>
             <PromptMarker />
             <TextInput
-              value={values[step] ?? ""}
+              value={values[fieldIndex ?? 0] ?? ""}
               onChange={(value) => {
                 setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
+                  current.map((item, index) => (index === fieldIndex ? value : item)),
                 );
               }}
               onSubmit={() => {
-                if ((values[step] ?? "").trim()) setStep((current) => current + 1);
+                if ((values[fieldIndex ?? 0] ?? "").trim()) setStep((current) => current + 1);
               }}
             />
           </Box>
@@ -72,11 +95,11 @@ const FIELDS: Record<BusinessFormKind, string[]> = {
     "Hypothesis",
     "Score (0-100)",
     "Stage",
-    "Owner ID (or none)",
+    "Owner (optional)",
     "Evidence IDs (comma separated, or none)",
   ],
   lead: [
-    "Opportunity ID (or none)",
+    "Opportunity (optional)",
     "Contact name",
     "Organization",
     "Email (or none)",
@@ -84,30 +107,97 @@ const FIELDS: Record<BusinessFormKind, string[]> = {
     "Source",
     "Qualification score (0-100)",
     "Status",
-    "Owner ID (or none)",
+    "Owner (optional)",
     "Notes (or none)",
   ],
   client: [
-    "Lead ID (or none)",
+    "Lead (optional)",
     "Client name",
     "Primary contact",
     "Email (or none)",
     "Status",
-    "Owner ID (or none)",
+    "Owner (optional)",
     "Notes (or none)",
   ],
   engagement: [
-    "Client ID",
-    "Project ID (or none)",
+    "Client",
+    "Project (optional)",
     "Engagement name",
     "Status",
     "Scope",
     "Success criteria (comma separated)",
-    "Owner ID (or none)",
+    "Owner (optional)",
     "Starts at ISO date (or none)",
     "Ends at ISO date (or none)",
   ],
 };
+
+const CREATE_STEPS: Record<BusinessFormKind, number[]> = {
+  opportunity: [0, 1, 2, 3],
+  lead: [0, 1, 2, 3, 4, 5],
+  client: [0, 1, 2, 3],
+  engagement: [0, 1, 2, 4, 5],
+};
+
+function selectOptions(
+  props: Parameters<typeof BusinessForm>[0],
+  step: number,
+): NamedOption[] | undefined {
+  if (isOwnerStep(props.kind, step))
+    return optionalOptions(
+      (props.employees ?? [])
+        .filter(({ status }) => status !== "terminated")
+        .map((employee) => ({ label: `${employee.name} — ${employee.title}`, value: employee.id })),
+    );
+  if (props.kind === "lead" && step === 0)
+    return optionalOptions(
+      (props.opportunities ?? []).map(({ id, name }) => ({ label: name, value: id })),
+    );
+  if (props.kind === "client" && step === 0)
+    return optionalOptions((props.leads ?? []).map(({ id, name }) => ({ label: name, value: id })));
+  if (props.kind === "engagement" && step === 0)
+    return (props.clients ?? []).map(({ id, name }) => ({ label: name, value: id }));
+  if (props.kind === "engagement" && step === 1)
+    return optionalOptions(
+      (props.projects ?? []).map(({ id, name }) => ({ label: name, value: id })),
+    );
+  if (isStatusStep(props.kind, step)) return statusOptions(props.kind);
+  return undefined;
+}
+
+function isOwnerStep(kind: BusinessFormKind, step: number): boolean {
+  return (
+    (kind === "opportunity" && step === 6) ||
+    (kind === "lead" && step === 8) ||
+    (kind === "client" && step === 5) ||
+    (kind === "engagement" && step === 6)
+  );
+}
+
+function isStatusStep(kind: BusinessFormKind, step: number): boolean {
+  return (
+    (kind === "opportunity" && step === 5) ||
+    (kind === "lead" && step === 7) ||
+    (kind === "client" && step === 4) ||
+    (kind === "engagement" && step === 3)
+  );
+}
+
+function statusOptions(kind: BusinessFormKind): NamedOption[] {
+  const values =
+    kind === "opportunity"
+      ? ["discovered", "researching", "validated", "rejected", "converted", "archived"]
+      : kind === "lead"
+        ? ["new", "qualified", "contacted", "nurturing", "won", "lost", "archived"]
+        : kind === "client"
+          ? ["prospect", "active", "paused", "former", "archived"]
+          : ["proposed", "active", "paused", "completed", "cancelled", "archived"];
+  return values.map((value) => ({ label: value, value }));
+}
+
+function optionalOptions(items: NamedOption[]): NamedOption[] {
+  return [{ label: "None", value: "none" }, ...items];
+}
 
 function initialValues(kind: BusinessFormKind, initial?: BusinessRecord): string[] {
   if (!initial) {

@@ -75,7 +75,8 @@ export function ModelForm(props: {
                 );
               }}
               onSubmit={() => {
-                if (values[step]?.trim()) setStep((current) => current + 1);
+                if (values[step]?.trim() || [4, 6].includes(step))
+                  setStep((current) => current + 1);
               }}
             />
           </Box>

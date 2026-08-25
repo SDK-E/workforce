@@ -5,19 +5,22 @@ import { matchesKeybinding } from "../keybindings.js";
 import { useWorkforceTheme } from "../themes/theme-context.js";
 import TextInput from "ink-text-input";
 import type { ProjectIntegrationRecord } from "../../integrations/integration-types.js";
+import type { StrategyItem } from "../../strategy/strategy-types.js";
+import { NamedSelect } from "../components/named-select.js";
 import { FormFrame } from "./form-frame.js";
 
-const FIELDS = ["Project ID", "Provider (for example beads)", "Configuration JSON", "Secret names"];
+const FIELDS = ["Project", "Provider (for example beads)", "Configuration JSON", "Secret names"];
 
 export function ProjectIntegrationForm(props: {
   companyId: string;
   terminalWidth: number;
+  projects?: StrategyItem[];
   onSubmit: (input: Omit<ProjectIntegrationRecord, "createdAt" | "updatedAt">) => void;
   onCancel: () => void;
   initial?: ProjectIntegrationRecord | undefined;
 }) {
   const theme = useWorkforceTheme();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(props.initial ? 1 : 0);
   const [values, setValues] = useState(
     props.initial
       ? [
@@ -65,6 +68,20 @@ export function ProjectIntegrationForm(props: {
         <Text>
           Activate {values[1]} only for project {values[0]}?
         </Text>
+      ) : step === 0 ? (
+        props.projects?.length ? (
+          <NamedSelect
+            label="Project"
+            items={props.projects.map(({ id, name }) => ({ label: name, value: id }))}
+            value={values[0] ?? ""}
+            onSelect={(value) => {
+              setValues((current) => current.map((item, index) => (index === 0 ? value : item)));
+              setStep(1);
+            }}
+          />
+        ) : (
+          <Text>Create an active project before configuring a project integration.</Text>
+        )
       ) : (
         <>
           <Text>{FIELDS[step]}</Text>

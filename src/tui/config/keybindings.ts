@@ -11,6 +11,7 @@ export const KEYBINDING_CONFIG = {
   areaPrevious: ["ctrl+shift+tab"],
   cancel: ["escape"],
   activate: ["enter"],
+  toggleSelection: ["space"],
   previous: ["up"],
   next: ["down"],
   previousVim: ["k"],

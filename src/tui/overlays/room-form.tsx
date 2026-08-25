@@ -21,6 +21,7 @@ export function RoomForm(props: {
   onSubmit: (input: RoomInput) => void;
   onCancel: () => void;
 }) {
+  const steps = props.initial ? [0, 1, 2, 3] : [0, 1];
   const [step, setStep] = useState(0);
   const [values, setValues] = useState([
     props.initial?.name ?? "",
@@ -28,7 +29,8 @@ export function RoomForm(props: {
     props.initial?.retentionDays?.toString() ?? "",
     props.initial?.announcement ?? "",
   ]);
-  const confirming = step === FIELDS.length;
+  const fieldIndex = steps[step];
+  const confirming = step === steps.length;
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
     if (confirming && matchesKeybinding("activate", input, key))
@@ -46,25 +48,26 @@ export function RoomForm(props: {
       footer={
         confirming
           ? "Enter confirm · Esc cancel"
-          : `Enter next · Esc cancel · ${step + 1}/${FIELDS.length}`
+          : `Enter next · Esc cancel · ${step + 1}/${steps.length}`
       }
     >
       {confirming ? (
         <Text>Save room “{values[0]}” with audited configuration?</Text>
       ) : (
         <>
-          <Text>{FIELDS[step]}</Text>
+          <Text>{FIELDS[fieldIndex ?? 0]}</Text>
           <Box>
             <PromptMarker />
             <TextInput
-              value={values[step] ?? ""}
+              value={values[fieldIndex ?? 0] ?? ""}
               onChange={(value) => {
                 setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
+                  current.map((item, index) => (index === fieldIndex ? value : item)),
                 );
               }}
               onSubmit={() => {
-                if (step >= 2 || values[step]?.trim()) setStep((current) => current + 1);
+                if ((fieldIndex ?? 0) >= 2 || values[fieldIndex ?? 0]?.trim())
+                  setStep((current) => current + 1);
               }}
             />
           </Box>

@@ -24,6 +24,7 @@ export function RegistryMutationOverlay(props: {
     <RegistryForm
       companyId={props.company.id}
       kind={props.kind}
+      environments={props.store.environments.list(props.company.id)}
       terminalWidth={props.terminalWidth}
       {...(initial ? { initial } : {})}
       onCancel={props.onClose}

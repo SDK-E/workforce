@@ -1,16 +1,18 @@
+import { randomUUID } from "node:crypto";
 import { useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { Box, Text, useInput } from "ink";
 import TextInput from "ink-text-input";
 import type { EnvironmentRecord, ToolRecord } from "../../registries/registry-types.js";
 import { matchesKeybinding } from "../keybindings.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { FormFrame } from "./form-frame.js";
+import { NamedSelect } from "../components/named-select.js";
 
 type RegistryKind = "tool" | "environment";
 
 const FIELDS: Record<RegistryKind, string[]> = {
   tool: [
-    "ID",
     "Version",
     "Provider",
     "Capabilities (comma separated)",
@@ -22,7 +24,6 @@ const FIELDS: Record<RegistryKind, string[]> = {
     "Audit behavior",
   ],
   environment: [
-    "ID",
     "Name",
     "Sandbox image",
     "Runtime (JSON object)",
@@ -44,6 +45,7 @@ export function RegistryForm(props: {
   kind: RegistryKind;
   terminalWidth: number;
   initial?: ToolRecord | EnvironmentRecord;
+  environments?: EnvironmentRecord[];
   onSubmit: (result: RegistryFormResult) => void;
   onCancel: () => void;
 }) {
@@ -58,7 +60,7 @@ export function RegistryForm(props: {
   });
   function submit(): void {
     try {
-      props.onSubmit(buildResult(props.companyId, props.kind, values));
+      props.onSubmit(buildResult(props.companyId, props.kind, values, props.initial?.id));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Invalid registry configuration");
       setStep(0);
@@ -77,8 +79,35 @@ export function RegistryForm(props: {
       {error && <Text color="red">{error}</Text>}
       {confirming ? (
         <Text>
-          Save {props.kind} {values[0]} as unverified configuration?
+          Save {props.kind} {props.kind === "tool" ? values[1] : values[0]} as unverified
+          configuration?
         </Text>
+      ) : props.kind === "tool" && step === 3 ? (
+        <NamedSelect
+          label="Risk"
+          items={["low", "medium", "high", "critical"].map((value) => ({
+            label: value,
+            value,
+          }))}
+          value={values[step] ?? ""}
+          onSelect={(value) => {
+            updateValue(setValues, step, value);
+            setStep((current) => current + 1);
+          }}
+        />
+      ) : props.kind === "tool" && step === 4 ? (
+        <NamedSelect
+          label="Required environment (optional)"
+          items={[
+            { label: "No required environment", value: "" },
+            ...(props.environments ?? []).map(({ id, name }) => ({ label: name, value: id })),
+          ]}
+          value={values[step] ?? ""}
+          onSelect={(value) => {
+            updateValue(setValues, step, value);
+            setStep((current) => current + 1);
+          }}
+        />
       ) : (
         <>
           <Text>{fields[step]}</Text>
@@ -107,7 +136,6 @@ function initialValues(kind: RegistryKind, initial?: ToolRecord | EnvironmentRec
   if (!initial)
     return kind === "tool"
       ? [
-          "",
           "1.0.0",
           "",
           "",
@@ -120,7 +148,6 @@ function initialValues(kind: RegistryKind, initial?: ToolRecord | EnvironmentRec
         ]
       : [
           "",
-          "",
           "workforce-agent:0.1.0",
           "{}",
           "",
@@ -132,7 +159,6 @@ function initialValues(kind: RegistryKind, initial?: ToolRecord | EnvironmentRec
         ];
   if (kind === "tool" && "provider" in initial)
     return [
-      initial.id,
       initial.version,
       initial.provider,
       csv(initial.capabilities),
@@ -145,7 +171,6 @@ function initialValues(kind: RegistryKind, initial?: ToolRecord | EnvironmentRec
     ];
   const environment = initial as EnvironmentRecord;
   return [
-    environment.id,
     environment.name,
     environment.sandboxImage,
     JSON.stringify(environment.runtime),
@@ -158,46 +183,51 @@ function initialValues(kind: RegistryKind, initial?: ToolRecord | EnvironmentRec
   ];
 }
 
-function buildResult(companyId: string, kind: RegistryKind, values: string[]): RegistryFormResult {
+function buildResult(
+  companyId: string,
+  kind: RegistryKind,
+  values: string[],
+  existingId?: string,
+): RegistryFormResult {
   if (kind === "tool")
     return {
       kind,
       record: {
         companyId,
-        id: required(values[0], "ID"),
-        version: required(values[1], "Version"),
-        provider: required(values[2], "Provider"),
-        capabilities: list(values[3]),
-        risk: risk(values[4]),
+        id: existingId ?? randomUUID(),
+        version: required(values[0], "Version"),
+        provider: required(values[1], "Provider"),
+        capabilities: list(values[2]),
+        risk: risk(values[3]),
         inputSchema: {},
         outputSchema: {},
-        requiredEnvironment: values[5]?.trim() ? values[5].trim() : null,
-        networkPolicy: object(values[6]),
-        secretRequirements: list(values[7]),
-        sandboxProfiles: list(values[8]),
+        requiredEnvironment: values[4]?.trim() ? values[4].trim() : null,
+        networkPolicy: object(values[5]),
+        secretRequirements: list(values[6]),
+        sandboxProfiles: list(values[7]),
         permissionPolicy: {},
         health: "unknown",
         testReceiptId: null,
-        auditBehavior: required(values[9], "Audit behavior"),
+        auditBehavior: required(values[8], "Audit behavior"),
       },
     };
   return {
     kind,
     record: {
       companyId,
-      id: required(values[0], "ID"),
-      name: required(values[1], "Name"),
-      sandboxImage: required(values[2], "Sandbox image"),
-      runtime: object(values[3]),
-      buildToolchain: list(values[4]),
-      browser: object(values[5]),
-      networkPolicy: object(values[6]),
+      id: existingId ?? randomUUID(),
+      name: required(values[0], "Name"),
+      sandboxImage: required(values[1], "Sandbox image"),
+      runtime: object(values[2]),
+      buildToolchain: list(values[3]),
+      browser: object(values[4]),
+      networkPolicy: object(values[5]),
       inputContract: {},
-      secretsPolicy: object(values[7]),
-      resourcePolicy: object(values[8]),
+      secretsPolicy: object(values[6]),
+      resourcePolicy: object(values[7]),
       outputContract: {},
       cleanupPolicy: {},
-      supportedProfiles: list(values[9]),
+      supportedProfiles: list(values[8]),
       health: "unknown",
       healthReceiptId: null,
     },
@@ -207,9 +237,17 @@ function buildResult(companyId: string, kind: RegistryKind, values: string[]): R
 function mayAdvance(step: number, value: string, kind: RegistryKind): boolean {
   return (
     value.trim().length > 0 ||
-    (kind === "tool" && [3, 5, 7].includes(step)) ||
-    (kind === "environment" && [4].includes(step))
+    (kind === "tool" && [2, 4, 6].includes(step)) ||
+    (kind === "environment" && [3].includes(step))
   );
+}
+
+function updateValue(
+  setter: Dispatch<SetStateAction<string[]>>,
+  step: number,
+  value: string,
+): void {
+  setter((current) => current.map((item, index) => (index === step ? value : item)));
 }
 function object(value: string | undefined): Record<string, unknown> {
   const parsed: unknown = JSON.parse(value ?? "{}");

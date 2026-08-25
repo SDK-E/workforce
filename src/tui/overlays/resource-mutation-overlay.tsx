@@ -33,6 +33,8 @@ function OrganizationMutation(props: Props) {
     <OrganizationForm
       companyId={props.company.id}
       kind={organizationKind(props.section)}
+      units={props.store.organizationRepository.list(props.company.id)}
+      employees={props.store.employees(props.company.id)}
       terminalWidth={props.terminalWidth}
       initial={current}
       onCancel={props.onClose}
@@ -65,6 +67,8 @@ function StrategyMutation(props: Props) {
     <StrategyForm
       companyId={props.company.id}
       kind={strategyKind(props.section)}
+      items={props.store.strategyRepository.list(props.company.id)}
+      employees={props.store.employees(props.company.id)}
       terminalWidth={props.terminalWidth}
       initial={current}
       onCancel={props.onClose}

@@ -6,6 +6,9 @@ import type { LifecycleTarget } from "../lifecycle-actions.js";
 import { AgentProfileForm } from "./agent-profile-form.js";
 import { EmployeeHireForm, type EmployeeHireInput } from "./employee-hire-form.js";
 import { HiringDecisionForm } from "./hiring-decision-form.js";
+import { FormFrame } from "./form-frame.js";
+import { Text, useInput } from "ink";
+import { matchesKeybinding } from "../keybindings.js";
 
 interface Props {
   kind: "employee-hire" | "agent-profile" | "hiring-decision";
@@ -52,6 +55,8 @@ export function EmployeeMutationOverlay(props: Props) {
     );
   const employeeId =
     props.selectedTarget?.kind === "employee" ? props.selectedTarget.id : undefined;
+  if (!employeeId)
+    return <SelectionRequired terminalWidth={props.terminalWidth} onCancel={props.onClose} />;
   const profile = employeeId
     ? props.store.agentProfiles.profile(props.company.id, employeeId)
     : undefined;
@@ -61,6 +66,7 @@ export function EmployeeMutationOverlay(props: Props) {
   return (
     <AgentProfileForm
       companyId={props.company.id}
+      employeeId={employeeId}
       terminalWidth={props.terminalWidth}
       initial={
         profile && instructions
@@ -88,6 +94,21 @@ export function EmployeeMutationOverlay(props: Props) {
         }, `Instruction revision activated for ${input.employeeId}`);
       }}
     />
+  );
+}
+
+function SelectionRequired(props: { terminalWidth: number; onCancel: () => void }) {
+  useInput((input, key) => {
+    if (matchesKeybinding("cancel", input, key)) props.onCancel();
+  });
+  return (
+    <FormFrame
+      title="Version agent identity and instructions"
+      terminalWidth={props.terminalWidth}
+      footer="Esc cancel"
+    >
+      <Text>Select an employee before editing an agent profile.</Text>
+    </FormFrame>
   );
 }
 

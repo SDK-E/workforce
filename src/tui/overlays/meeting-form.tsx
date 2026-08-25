@@ -1,18 +1,13 @@
 import { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import TextInput from "ink-text-input";
+import type { Employee } from "../../domain.js";
+import type { MeetingRecord } from "../../governance/meeting-repository.js";
+import { NamedMultiSelect } from "../components/named-multi-select.js";
+import { NamedSelect, type NamedOption } from "../components/named-select.js";
 import { PromptMarker } from "../components/prompt-marker.js";
 import { matchesKeybinding } from "../keybindings.js";
-import TextInput from "ink-text-input";
 import { FormFrame } from "./form-frame.js";
-import type { MeetingRecord } from "../../governance/meeting-repository.js";
-
-const FIELDS = [
-  "Title",
-  "Organizer ID",
-  "Participant IDs (comma separated)",
-  "Agenda (comma separated)",
-  "Scheduled ISO time",
-] as const;
 
 export interface MeetingFormInput {
   title: string;
@@ -24,65 +19,126 @@ export interface MeetingFormInput {
 
 export function MeetingForm(props: {
   terminalWidth: number;
+  employees?: Employee[];
   initial?: MeetingRecord;
   onSubmit: (input: MeetingFormInput) => void;
   onCancel: () => void;
 }) {
+  const employeeItems = activeEmployees(props.employees ?? []);
   const [step, setStep] = useState(0);
-  const [values, setValues] = useState([
-    props.initial?.title ?? "",
-    props.initial?.organizerId ?? "ceo",
-    props.initial?.participantIds.join(", ") ?? "ceo, arm",
-    props.initial?.agenda.join(", ") ?? "",
+  const [title, setTitle] = useState(props.initial?.title ?? "");
+  const [organizerId, setOrganizerId] = useState(props.initial?.organizerId ?? "ceo");
+  const [participantIds, setParticipantIds] = useState(
+    props.initial?.participantIds ?? ["ceo", "arm"],
+  );
+  const [agenda, setAgenda] = useState(props.initial?.agenda.join(", ") ?? "");
+  const [scheduledAt, setScheduledAt] = useState(
     props.initial?.scheduledAt ?? new Date().toISOString(),
-  ]);
-  const confirming = step === FIELDS.length;
+  );
   useInput((input, key) => {
     if (matchesKeybinding("cancel", input, key)) props.onCancel();
-    if (confirming && matchesKeybinding("activate", input, key))
+    if (step === 5 && matchesKeybinding("activate", input, key))
       props.onSubmit({
-        title: values[0] ?? "",
-        organizerId: values[1] ?? "",
-        participantIds: split(values[2]),
-        agenda: split(values[3]),
-        scheduledAt: values[4] ?? "",
+        title: title.trim(),
+        organizerId,
+        participantIds,
+        agenda: split(agenda),
+        scheduledAt,
       });
   });
   return (
     <FormFrame
       title={props.initial ? "Edit bounded meeting" : "Schedule bounded meeting"}
       terminalWidth={props.terminalWidth}
-      footer={confirming ? "Enter confirm · Esc cancel" : `Enter next · Esc cancel · ${step + 1}/5`}
+      footer={step === 5 ? "Enter confirm · Esc cancel" : "Enter/select next · Esc cancel"}
     >
-      {confirming ? (
-        <Text>
-          Schedule “{values[0]}” with {split(values[2]).length} bounded participants?
-        </Text>
+      {step === 0 ? (
+        <TextField
+          label="Title"
+          value={title}
+          onChange={setTitle}
+          onNext={() => {
+            setStep(1);
+          }}
+        />
+      ) : step === 1 ? (
+        <NamedSelect
+          label="Organizer"
+          items={employeeItems}
+          value={organizerId}
+          onSelect={(value) => {
+            setOrganizerId(value);
+            setStep(2);
+          }}
+        />
+      ) : step === 2 ? (
+        <NamedMultiSelect
+          label="Participants"
+          items={employeeItems}
+          selected={participantIds}
+          onSubmit={(values) => {
+            setParticipantIds(values);
+            setStep(3);
+          }}
+        />
+      ) : step === 3 ? (
+        <TextField
+          label="Agenda (comma separated)"
+          value={agenda}
+          onChange={setAgenda}
+          onNext={() => {
+            setStep(4);
+          }}
+        />
+      ) : step === 4 ? (
+        <TextField
+          label="Scheduled time (ISO)"
+          value={scheduledAt}
+          onChange={setScheduledAt}
+          onNext={() => {
+            setStep(5);
+          }}
+        />
       ) : (
-        <>
-          <Text>{FIELDS[step]}</Text>
-          <Box>
-            <PromptMarker />
-            <TextInput
-              value={values[step] ?? ""}
-              onChange={(value) => {
-                setValues((current) =>
-                  current.map((item, index) => (index === step ? value : item)),
-                );
-              }}
-              onSubmit={() => {
-                if (values[step]?.trim()) setStep((current) => current + 1);
-              }}
-            />
-          </Box>
-        </>
+        <Text>
+          Schedule “{title}” with {participantIds.length} bounded participants?
+        </Text>
       )}
     </FormFrame>
   );
 }
 
-function split(value: string | undefined): string[] {
-  return (value ?? "")
+function activeEmployees(employees: Employee[]): NamedOption[] {
+  return employees
+    .filter(({ status }) => status !== "terminated")
+    .map((employee) => ({ label: `${employee.name} — ${employee.title}`, value: employee.id }));
+}
+
+function TextField(props: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onNext: () => void;
+}) {
+  return (
+    <>
+      <Text>{props.label}</Text>
+      <Box>
+        <PromptMarker />
+        <TextInput
+          value={props.value}
+          onChange={props.onChange}
+          onSubmit={() => {
+            if (props.value.trim()) props.onNext();
+          }}
+        />
+      </Box>
+    </>
+  );
+}
+
+function split(value: string): string[] {
+  return value
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);

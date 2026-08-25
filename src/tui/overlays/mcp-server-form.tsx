@@ -73,7 +73,8 @@ export function McpServerForm(props: {
                 );
               }}
               onSubmit={() => {
-                if (values[step]?.trim()) setStep((current) => current + 1);
+                if (values[step]?.trim() || [4, 5].includes(step))
+                  setStep((current) => current + 1);
               }}
             />
           </Box>

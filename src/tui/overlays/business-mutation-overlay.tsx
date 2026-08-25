@@ -23,6 +23,11 @@ export function BusinessMutationOverlay(props: {
     <BusinessForm
       kind={props.kind}
       {...(initial ? { initial } : {})}
+      employees={props.store.employees(props.company.id)}
+      opportunities={props.store.opportunities.list(props.company.id)}
+      leads={props.store.leads.list(props.company.id)}
+      clients={props.store.clients.list(props.company.id)}
+      projects={props.store.strategyRepository.list(props.company.id, "project")}
       terminalWidth={props.terminalWidth}
       onCancel={props.onClose}
       onSubmit={(values) => {

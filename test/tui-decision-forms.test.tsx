@@ -13,7 +13,7 @@ test("governance decisions start from the selected record", async () => {
     <Box width={100} height={30}>
       <ApprovalDecisionForm
         terminalWidth={100}
-        initialApprovalId="approval-one"
+        approvalId="approval-one"
         onSubmit={noop}
         onCancel={noop}
       />

@@ -42,6 +42,8 @@ export function GovernanceMutationOverlay(props: {
   return (
     <GovernanceForm
       kind={incidentKind ?? props.kind}
+      employees={props.store.employees(props.company.id)}
+      incidents={props.store.incidents.listIncidents(props.company.id)}
       terminalWidth={props.terminalWidth}
       onCancel={props.onClose}
       onSubmit={(result) => {

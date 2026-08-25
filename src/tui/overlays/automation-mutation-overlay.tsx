@@ -17,6 +17,7 @@ export function AutomationMutationOverlay(props: {
     return (
       <AutomationForm
         companyId={props.company.id}
+        employees={props.store.employees(props.company.id)}
         terminalWidth={props.terminalWidth}
         onCancel={props.onClose}
         onSubmit={(input) => {

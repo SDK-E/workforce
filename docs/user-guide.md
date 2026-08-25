@@ -80,8 +80,11 @@ Create measurable objectives, initiatives, projects, goals, and milestones under
 
 Creation dialogs infer the current company and human identity, generate internal IDs and timestamps,
 and use the selected record for edits and decisions. Mail identifies you as the sender automatically,
-messages offer active rooms by name, and recipients are selected by employee name. Advanced identity
-and scope values remain visible only where changing them is itself the purpose of the configuration.
+messages offer active rooms by name, and recipients are selected by employee name. Parents, owners,
+assignees, organizers, participants, projects, clients, leads, opportunities, incidents, environments,
+and approval targets are selected by their readable company-scoped names. Multi-select lists use
+`Up`/`Down`, `Space` to toggle, and `Enter` to continue. Advanced evidence and polymorphic claim
+references remain explicit because choosing that evidence is itself the governed action.
 
 The ARM evaluates whether an existing employee can do the work before proposing a probationary hire. A human can also create a governed hire from **Organization → Employees**. Dynamic persona, system prompt, instructions, sandbox, and probation criteria derive from the job rather than a hard-coded template.
 
