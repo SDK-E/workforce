@@ -73,19 +73,15 @@ The practical readiness dependency is intentional: a company must have a configu
 
 - Forms use opaque `FormFrame`/modal backdrops, so text behind a popup is not exposed.
 - Navigation uses panels/sidebar/sections, selected rows, confirmation for lifecycle mutations, command palette, help, no-color-compatible Ink rendering, and responsive compact behavior.
-- Company, organization, strategy, task, employee, agent profile, conversation room, MCP, integration, mail, automation, and meeting creation forms exist to varying degrees of completeness.
+- Company, organization, strategy, task, employee, agent profile, conversation room, MCP, integration, mail, automation, and meeting creation forms exist to varying degrees of completeness. Meeting create/edit/archive/restore is complete and tested.
 
-## Work in progress at handoff
+### Project foundation
 
-The working tree contains an uncommitted **meeting-management slice** plus repository documentation/CI files. Finish, test, document, and commit it before starting a different slice.
+- `README.md` documents actual Docker execution readiness; `CONTRIBUTING.md`, `SECURITY.md`, and MIT `LICENSE` are present.
+- GitHub CI runs quality gates on Node 22 and 24. Container verification builds images and runs sandbox checks on relevant changes.
+- Recent commit: `d976655 Add meeting workflows and project foundations`.
 
-Current intended changes:
-
-- Meetings gain `RESTORE` in the XState lifecycle; archived meetings restore to `planned`.
-- `MeetingRepository.update`, `archive`, and `restore` provide audited record-preserving management.
-- Meetings gain selected-row TUI rendering and prefilled edit form.
-- Lifecycle actions support meetings; archival cancels planned/active meetings before archival.
-- `CONTRIBUTING.md`, `LICENSE` (MIT), `SECURITY.md`, `.github/workflows/ci.yml`, and `.github/workflows/images.yml` were added but have not yet passed the complete test gate/been committed.
+## Start here
 
 First command after taking over:
 
@@ -96,7 +92,7 @@ pnpm test
 git diff --check
 ```
 
-Resolve the meeting slice failures rather than discarding unrelated edits. Then commit the focused slice with a message such as `Add managed meeting lifecycle workflows`, followed by a separate documentation/CI commit if appropriate.
+The latest verified baseline is commit `d976655`. Inspect the worktree before modifying it; preserve unrelated user changes.
 
 ## Remaining work, in recommended order
 
