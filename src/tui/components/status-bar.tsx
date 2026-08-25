@@ -1,6 +1,7 @@
 import { Box, Text } from "ink";
 import { useWorkforceTheme } from "../themes/theme-context.js";
 import { bindingsFor } from "../keybindings.js";
+import { contentGuidance } from "../section-guidance.js";
 
 export function StatusBar({
   message,
@@ -17,7 +18,7 @@ export function StatusBar({
   const guidance =
     focus === "sidebar"
       ? `${bindingsFor("previous")}/${bindingsFor("next")} choose page · ${bindingsFor("previousPanel")}/${bindingsFor("nextPanel")} change area · ${bindingsFor("activate")} use dashboard`
-      : `${bindingsFor("previous")}/${bindingsFor("next")} choose item · ${sidebarVisible ? `${bindingsFor("focusNext")} return to sidebar` : `${bindingsFor("toggleSidebar")} show sidebar`} · ${bindingsFor("help")} help`;
+      : contentGuidance(section, sidebarVisible);
   return (
     <Box paddingX={1} flexDirection="column" backgroundColor={theme.colors.surface}>
       <Text>{message}</Text>

@@ -1,33 +1,6 @@
-export const KEYBINDINGS = {
-  quit: ["q"],
-  emergencyStop: ["!"],
-  help: ["?"],
-  commandPalette: ["/", "p", "ctrl+p", "ctrl+shift+p"],
-  toggleSidebar: ["ctrl+b"],
-  openSettings: ["ctrl+,"],
-  focusNext: ["tab"],
-  focusPrevious: ["shift+tab"],
-  areaNext: ["ctrl+tab"],
-  areaPrevious: ["ctrl+shift+tab"],
-  cancel: ["escape"],
-  activate: ["enter"],
-  previous: ["up"],
-  next: ["down"],
-  previousVim: ["k"],
-  nextVim: ["j"],
-  previousPanel: ["left"],
-  nextPanel: ["right"],
-  create: ["n"],
-  edit: ["e"],
-  archive: ["d"],
-  restore: ["u"],
-  run: ["r"],
-  verify: ["v"],
-  nextTheme: ["t"],
-  previousRecord: ["["],
-  nextRecord: ["]"],
-  confirm: ["y"],
-} as const;
+import { KEYBINDING_CONFIG } from "./config/keybindings.js";
+
+export const KEYBINDINGS = KEYBINDING_CONFIG;
 
 export type KeybindingCommand = keyof typeof KEYBINDINGS;
 export interface InputKey {

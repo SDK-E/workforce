@@ -65,6 +65,8 @@ The familiar VS Code-style bindings work too:
 
 Collapsing the sidebar with `Ctrl-B` transfers focus to dashboard content. Hidden navigation never receives arrow keys or mutation commands.
 
+The two-line bottom bar separates the latest system status from contextual keyboard guidance. It only lists actions implemented by the focused page; press `?` for the complete categorized keyboard reference. Read-only pages no longer advertise record selection or mutation keys.
+
 Themes are listed under **System → Settings**. Press `t` there to select the next registered theme, or set `WORKFORCE_THEME=high-contrast` before startup. See the [TUI customization guide](tui-customization.md) when adding themes or changing bindings.
 
 Terminal applications cannot reliably distinguish every platform shortcut, so these bindings are additive: the single-key alternatives remain available and all text-entry dialogs retain normal editing behavior.
