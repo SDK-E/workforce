@@ -19,6 +19,19 @@ test("rooms, threads, messages, pins, redaction, and attachments remain company 
       { retentionDays: 90, announcement: "Ship safely", status: "active" },
       "ceo",
     );
+    const updatedRoom = store.conversations.rooms.update(
+      "alpha",
+      room.id,
+      {
+        name: "Product engineering",
+        kind: "department",
+        retentionDays: 120,
+        announcement: "Evidence before claims",
+      },
+      "ceo",
+    );
+    assert.equal(updatedRoom.name, "Product engineering");
+    assert.equal(updatedRoom.retentionDays, 120);
     const membership = store.conversations.addRoomMember(
       "alpha",
       room.id,
@@ -74,7 +87,7 @@ test("rooms, threads, messages, pins, redaction, and attachments remain company 
     assert.equal(store.conversations.threads.list("alpha", room.id)[0]?.status, "closed");
     assert.equal(
       store.conversations.roomList("alpha").find(({ id }) => id === room.id)?.retentionDays,
-      90,
+      120,
     );
   } finally {
     store.close();

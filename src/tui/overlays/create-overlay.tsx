@@ -12,6 +12,7 @@ import { AutomationForm } from "./automation-form.js";
 import type { LifecycleTarget } from "../lifecycle-actions.js";
 import { ResourceMutationOverlay } from "./resource-mutation-overlay.js";
 import { EmployeeMutationOverlay } from "./employee-mutation-overlay.js";
+import { ConversationMutationOverlay } from "./conversation-mutation-overlay.js";
 
 export type CreateFormKind =
   | "company-create"
@@ -22,6 +23,7 @@ export type CreateFormKind =
   | "employee-hire"
   | "agent-profile"
   | "message"
+  | "room"
   | "meeting"
   | "approval-decision"
   | "mcp-server"
@@ -65,6 +67,7 @@ export function CreateOverlay(props: CreateOverlayProps) {
     );
   if (props.kind === "employee-hire" || props.kind === "agent-profile")
     return <EmployeeMutationOverlay {...props} kind={props.kind} finish={finish} />;
+  if (props.kind === "room") return <ConversationMutationOverlay {...props} finish={finish} />;
   if (props.kind === "message")
     return (
       <MessageForm
@@ -235,7 +238,8 @@ export function createFormForSection(section: string): CreateFormKind | null {
   if (["Projects", "Objectives", "Initiatives", "Goals", "Milestones"].includes(section))
     return "strategy";
   if (section === "Employees") return "employee-hire";
-  if (section === "CEO office" || section === "Conversations") return "message";
+  if (section === "CEO office") return "message";
+  if (section === "Conversations") return "room";
   if (section === "Meetings") return "meeting";
   if (section === "MCP servers") return "mcp-server";
   if (section === "Project integrations") return "project-integration";
@@ -247,6 +251,7 @@ export function createFormForSection(section: string): CreateFormKind | null {
 export function editFormForSection(section: string): CreateFormKind | null {
   if (section === "Companies") return "company-edit";
   if (section === "Employees") return "agent-profile";
+  if (section === "Conversations") return "room";
   if (section === "Approvals") return "approval-decision";
   if (["Organization", "Departments", "Teams", "Offices & rooms"].includes(section))
     return "organization";

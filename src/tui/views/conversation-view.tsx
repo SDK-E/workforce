@@ -6,15 +6,28 @@ interface ConversationViewProps {
   messages: MessageRecord[];
   rooms: RoomRecord[];
   threads: ConversationThread[];
+  selectedRow?: number;
 }
 
-export function ConversationView({ messages, rooms, threads }: ConversationViewProps) {
+export function ConversationView({
+  messages,
+  rooms,
+  threads,
+  selectedRow = 0,
+}: ConversationViewProps) {
   return (
     <Box flexGrow={1} flexDirection="column" paddingX={1}>
-      <Text bold>{rooms[0]?.name ?? "Company conversations"}</Text>
+      <Text bold>Conversation rooms</Text>
       <Text dimColor>
-        {rooms.length} rooms · {threads.length} threads in the selected room
+        {rooms.length} rooms · {threads.length} threads in the primary room
       </Text>
+      {rooms.map((room, index) => (
+        <Text key={room.id} inverse={index === selectedRow} dimColor={room.status === "archived"}>
+          {index === selectedRow ? "›" : " "} {room.name} · {room.kind} · {room.status}
+          {room.retentionDays ? ` · ${room.retentionDays}d retention` : ""}
+        </Text>
+      ))}
+      <Text bold>Primary room messages</Text>
       {messages.length === 0 ? (
         <Text dimColor>No messages yet.</Text>
       ) : (
@@ -26,7 +39,9 @@ export function ConversationView({ messages, rooms, threads }: ConversationViewP
           </Text>
         ))
       )}
-      <Text dimColor>Press n to compose a durable message.</Text>
+      <Text dimColor>
+        n create room · e edit · d archive/restore · CEO office composes messages
+      </Text>
     </Box>
   );
 }

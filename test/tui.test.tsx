@@ -12,6 +12,7 @@ import { ModalBackdrop } from "../src/tui/components/modal-backdrop.js";
 import { OrganizationForm } from "../src/tui/overlays/organization-form.js";
 import { McpServerForm } from "../src/tui/overlays/mcp-server-form.js";
 import { editFormForSection } from "../src/tui/overlays/create-overlay.js";
+import { RoomForm } from "../src/tui/overlays/room-form.js";
 
 const company: CompanyRecord = {
   id: "acme",
@@ -137,7 +138,7 @@ test("conversation view exposes rooms, threads, pins, and message state", () => 
   );
   const frame = view.lastFrame() ?? "";
   assert.match(frame, /Engineering/);
-  assert.match(frame, /1 rooms · 1 threads in the selected room/);
+  assert.match(frame, /1 rooms · 1 threads in the primary room/);
   assert.match(frame, /◆ arm: Evidence attached \(edited\)/);
   view.unmount();
 });
@@ -247,7 +248,31 @@ test("selected resource edit forms are prefilled and keep immutable integration 
   assert.match(mcp.lastFrame() ?? "", /Edit MCP server/);
   assert.match(mcp.lastFrame() ?? "", /research/);
   mcp.unmount();
+  const room = render(
+    <Box width={100} height={30}>
+      <RoomForm
+        terminalWidth={100}
+        initial={{
+          id: "engineering",
+          companyId: "acme",
+          name: "Engineering room",
+          kind: "team",
+          retentionDays: 90,
+          announcement: "Ship safely",
+          status: "active",
+          createdAt: company.createdAt,
+          updatedAt: company.createdAt,
+        }}
+        onSubmit={noop}
+        onCancel={noop}
+      />
+    </Box>,
+  );
+  assert.match(room.lastFrame() ?? "", /Edit conversation room/);
+  assert.match(room.lastFrame() ?? "", /Engineering room/);
+  room.unmount();
   assert.equal(editFormForSection("Departments"), "organization");
   assert.equal(editFormForSection("Tasks"), "task");
   assert.equal(editFormForSection("MCP servers"), "mcp-server");
+  assert.equal(editFormForSection("Conversations"), "room");
 });

@@ -16,6 +16,7 @@ test("selected TUI resources archive and restore without deleting records", () =
   try {
     store.initialize();
     store.createCompany({ id: "acme", name: "Acme" });
+    const room = store.conversations.rooms.create("acme", "Operations", "company", "human");
     const department = store.createOrganizationUnit({
       companyId: "acme",
       kind: "department",
@@ -54,21 +55,33 @@ test("selected TUI resources archive and restore without deleting records", () =
     const data = workspaceData(store, "acme");
     assert.equal(lifecycleTargets("Companies", data)[0]?.kind, "company");
     assert.equal(lifecycleTargets("Employees", data)[0]?.kind, "employee");
+    assert.equal(lifecycleTargets("Conversations", data)[0]?.kind, "room");
     const departmentTarget = lifecycleTargets("Departments", data)[0];
     const objectiveTarget = lifecycleTargets("Objectives", data)[0];
     const taskTarget = lifecycleTargets("Tasks", data)[0];
     const automationTarget = lifecycleTargets("Automations", data)[0];
-    assert.ok(departmentTarget && objectiveTarget && taskTarget && automationTarget);
+    const roomTarget = lifecycleTargets("Conversations", data)[0];
+    assert.ok(departmentTarget && objectiveTarget && taskTarget && automationTarget && roomTarget);
 
-    for (const target of [departmentTarget, objectiveTarget, taskTarget, automationTarget])
+    for (const target of [
+      departmentTarget,
+      objectiveTarget,
+      taskTarget,
+      automationTarget,
+      roomTarget,
+    ])
       applyLifecycleAction(store, "acme", target);
     assert.equal(store.organizationRepository.get("acme", department.id)?.status, "archived");
     assert.equal(store.strategyRepository.get("acme", objective.id)?.status, "archived");
     assert.equal(store.tasksRepository.get("acme", task.id)?.status, "archived");
     assert.equal(store.automations.list("acme")[0]?.status, "archived");
+    assert.equal(
+      store.conversations.roomList("acme").find((item) => item.id === room.id)?.status,
+      "archived",
+    );
 
     const archivedData = workspaceData(store, "acme");
-    for (const section of ["Departments", "Objectives", "Tasks", "Automations"]) {
+    for (const section of ["Departments", "Objectives", "Tasks", "Automations", "Conversations"]) {
       const target = lifecycleTargets(section, archivedData)[0];
       assert.ok(target);
       assert.equal(lifecycleVerb(target), "restore");
@@ -78,6 +91,10 @@ test("selected TUI resources archive and restore without deleting records", () =
     assert.equal(store.strategyRepository.get("acme", objective.id)?.status, "draft");
     assert.equal(store.tasksRepository.get("acme", task.id)?.status, "draft");
     assert.equal(store.automations.list("acme")[0]?.status, "approved");
+    assert.equal(
+      store.conversations.roomList("acme").find((item) => item.id === room.id)?.status,
+      "active",
+    );
     assert.ok(store.verifyAuditChain());
   } finally {
     store.close();
@@ -95,5 +112,6 @@ function workspaceData(store: StateStore, companyId: string) {
     automations: store.automations.list(companyId),
     companies: store.companies(),
     employees: store.employees(companyId),
+    rooms: store.conversations.roomList(companyId),
   };
 }

@@ -169,7 +169,12 @@ export function WorkspaceView(props: WorkspaceViewProps) {
   if (props.section === "Critics & reviews") return <ClaimView claims={props.claims} />;
   if (["CEO office", "Conversations"].includes(props.section)) {
     return (
-      <ConversationView messages={props.messages} rooms={props.rooms} threads={props.threads} />
+      <ConversationView
+        messages={props.messages}
+        rooms={props.rooms}
+        threads={props.threads}
+        selectedRow={props.selectedRow}
+      />
     );
   }
   if (props.section === "Mail") return <MailView mail={props.mail} />;

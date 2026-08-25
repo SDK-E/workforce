@@ -68,6 +68,42 @@ export class RoomRepository {
     });
   }
 
+  update(
+    companyId: string,
+    roomId: string,
+    input: {
+      name: string;
+      kind: string;
+      retentionDays: number | null;
+      announcement: string;
+    },
+    actorId: string,
+  ): RoomRecord {
+    requireRoom(this.database, companyId, roomId);
+    const name = sanitizeTerminal(input.name, 200);
+    const kind = sanitizeTerminal(input.kind, 80);
+    if (!name || !kind) throw new Error("Room name and kind are required");
+    if (input.retentionDays !== null && input.retentionDays < 1)
+      throw new Error("Retention must be at least one day");
+    const announcement = sanitizeTerminal(input.announcement, 2_000);
+    const current = this.list(companyId).find((item) => item.id === roomId);
+    if (!current) throw new Error(`Unknown room in company: ${roomId}`);
+    this.database.transaction(() => {
+      this.database.connection
+        .prepare("UPDATE rooms SET name=?,kind=? WHERE company_id=? AND id=?")
+        .run(name, kind, companyId, roomId);
+      this.database.connection
+        .prepare(
+          "UPDATE room_settings SET retention_days=?,announcement=?,updated_at=? WHERE company_id=? AND room_id=?",
+        )
+        .run(input.retentionDays, announcement, new Date().toISOString(), companyId, roomId);
+      this.audit.append("room.updated", actorId, companyId, { roomId, name, kind });
+    });
+    const updated = this.list(companyId).find((item) => item.id === roomId);
+    if (!updated) throw new Error(`Unknown room in company: ${roomId}`);
+    return updated;
+  }
+
   addMember(
     companyId: string,
     roomId: string,

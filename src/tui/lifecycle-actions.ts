@@ -6,6 +6,7 @@ export interface LifecycleTarget {
   kind:
     | "company"
     | "employee"
+    | "room"
     | "organization"
     | "strategy"
     | "task"
@@ -27,6 +28,7 @@ export interface LifecycleData {
   automations: ReturnType<StateStore["automations"]["list"]>;
   companies: ReturnType<StateStore["companies"]>;
   employees: ReturnType<StateStore["employees"]>;
+  rooms: ReturnType<StateStore["conversations"]["roomList"]>;
 }
 
 export function lifecycleTargets(section: string, data: LifecycleData): LifecycleTarget[] {
@@ -42,6 +44,13 @@ export function lifecycleTargets(section: string, data: LifecycleData): Lifecycl
       kind: "employee",
       id: item.id,
       label: `${item.name} · ${item.title}`,
+      status: item.status,
+    }));
+  if (section === "Conversations")
+    return data.rooms.map((item) => ({
+      kind: "room",
+      id: item.id,
+      label: `${item.name} · ${item.kind}`,
       status: item.status,
     }));
   const organizationKinds = organizationSectionKinds(section);
@@ -114,6 +123,19 @@ export function applyLifecycleAction(
       restore ? "REINSTATE" : "TERMINATE",
       actorId,
       `${restore ? "Reinstated" : "Terminated"} through confirmed TUI lifecycle action`,
+    );
+  } else if (target.kind === "room") {
+    const room = store.conversations.roomList(companyId).find((item) => item.id === target.id);
+    if (!room) throw new Error(`Unknown room in company: ${target.id}`);
+    store.conversations.rooms.configure(
+      companyId,
+      target.id,
+      {
+        retentionDays: room.retentionDays,
+        announcement: room.announcement,
+        status: restore ? "active" : "archived",
+      },
+      actorId,
     );
   } else if (target.kind === "organization") {
     if (restore) store.organizationRepository.restore(companyId, target.id, actorId);
